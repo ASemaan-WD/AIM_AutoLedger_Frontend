@@ -1,7 +1,7 @@
 import type { AirtableAttachment } from '@/lib/airtable/types';
 
 // Document Types
-export type DocumentType = 'invoices' | 'files' | 'emails' | 'pos' | 'shipping' | 'bank';
+export type DocumentType = 'invoices' | 'files' | 'emails' | 'store-receivers' | 'delivery-tickets';
 
 export type DocumentStatus = 'open' | 'pending' | 'approved' | 'rejected' | 'exported';
 
@@ -28,9 +28,6 @@ export interface DocumentLine {
     amount: number;
     lineNumber: number;
     // Optional line-level coding overrides
-    project?: string;
-    task?: string;
-    costCenter?: string;
     glAccount?: string;
     // Airtable alignment: optional timestamps on line items
     createdAt?: Date;
@@ -52,9 +49,6 @@ export interface Invoice extends BaseDocument {
     // Coding mode control
     isMultilineCoding: boolean; // Controls whether to use invoice-level or line-level coding
     // Invoice-level coding fields (ignored when isMultilineCoding = true, but preserved)
-    project?: string; // ISBN
-    task?: string; // 30-code
-    costCenter?: string;
     glAccount?: string; // 6-digit
     // Document processing
     rawTextOcr?: string; // OCR extracted text from original document

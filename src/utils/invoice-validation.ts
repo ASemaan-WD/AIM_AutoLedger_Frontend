@@ -59,9 +59,6 @@ export function getRequiredFields(invoice: Invoice): Array<{key: string, label: 
     // In single-line mode, also require coding fields
     if (!isMultiLineMode(invoice)) {
         baseFields.push(
-            { key: 'project', label: 'Project (ISBN)', value: invoice.project || '' },
-            { key: 'task', label: 'Task', value: invoice.task || '' },
-            { key: 'costCenter', label: 'Cost Center', value: invoice.costCenter || '' },
             { key: 'glAccount', label: 'GL Account', value: invoice.glAccount || '' }
         );
     }

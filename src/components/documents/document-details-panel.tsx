@@ -422,9 +422,6 @@ export const DocumentDetailsPanel = ({
         if (editedDocument && invoiceCoding) {
             setEditedDocument({
                 ...editedDocument,
-                project: invoiceCoding.project,
-                task: invoiceCoding.task,
-                costCenter: invoiceCoding.costCenter,
                 glAccount: invoiceCoding.glAccount,
                 isMultilineCoding: invoiceCoding.isMultilineCoding,
             });
@@ -529,21 +526,38 @@ export const DocumentDetailsPanel = ({
                     <TabPanel id="extracted">
                         <div className="space-y-4 w-full max-w-full">
                             <div>
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Store Number</label>
+                                <Select
+                                    placeholder="Select store"
+                                    items={[
+                                        { id: "1", label: "Store 1", supportingText: "Main Location" },
+                                        { id: "2", label: "Store 2", supportingText: "North Branch" },
+                                        { id: "3", label: "Store 3", supportingText: "South Branch" },
+                                        { id: "4", label: "Store 4", supportingText: "East Branch" },
+                                        { id: "5", label: "Store 5", supportingText: "West Branch" },
+                                        { id: "6", label: "Store 6", supportingText: "Downtown" },
+                                        { id: "7", label: "Store 7", supportingText: "Uptown" },
+                                        { id: "8", label: "Store 8", supportingText: "Midtown" },
+                                        { id: "9", label: "Store 9", supportingText: "Westside" },
+                                        { id: "10", label: "Store 10", supportingText: "Eastside" }
+                                    ]}
+                                    selectedKey={currentDoc?.storeNumber}
+                                    onSelectionChange={(key) => updateField('storeNumber', key as string)}
+                                    size="sm"
+                                    isDisabled={!canEdit}
+                                >
+                                    {(item) => (
+                                        <Select.Item key={item.id} id={item.id} supportingText={item.supportingText}>
+                                            {item.label}
+                                        </Select.Item>
+                                    )}
+                                </Select>
+                            </div>
+                            <div>
                                 <label className="text-xs font-medium text-tertiary mb-1 block">Vendor</label>
                                 <Input 
                                     value={currentDoc?.vendorName || ''}
                                     onChange={(value) => updateVendorName(value as string)}
-                                    size="sm"
-                                    isDisabled={!canEdit}
-                                    onFocus={keyboardNav?.handleInputFocus}
-                                    onBlur={keyboardNav?.handleInputBlur}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">Invoice Number</label>
-                                <Input 
-                                    value={currentDoc?.invoiceNumber || ''}
-                                    onChange={(value) => updateField('invoiceNumber', value)}
                                     size="sm"
                                     isDisabled={!canEdit}
                                     onFocus={keyboardNav?.handleInputFocus}
@@ -561,9 +575,20 @@ export const DocumentDetailsPanel = ({
                                 />
                             </FormField>
                             <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">Due Date</label>
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Invoice Number</label>
+                                <Input 
+                                    value={currentDoc?.invoiceNumber || ''}
+                                    onChange={(value) => updateField('invoiceNumber', value)}
+                                    size="sm"
+                                    isDisabled={!canEdit}
+                                    onFocus={keyboardNav?.handleInputFocus}
+                                    onBlur={keyboardNav?.handleInputBlur}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Date</label>
                                 <DatePicker 
-                                    aria-label="Due date picker"
+                                    aria-label="Date picker"
                                     value={formatDateValue(currentDoc?.dueDate)}
                                     onChange={(value) => {
                                         if (value) {

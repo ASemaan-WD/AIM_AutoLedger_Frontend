@@ -11,7 +11,7 @@ import { Select } from "@/components/base/select/select";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Badge } from "@/components/base/badges/badges";
-import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02 } from "@untitledui/icons";
+import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02, AlertCircle } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 import { InvoiceCodingInterface } from "@/components/documents/invoice-coding-interface";
 import { LinksTab, RawContentTab, ActivityTimeline } from "@/components/documents/shared-tabs";
@@ -109,6 +109,7 @@ export const DocumentDetailsPanel = ({
 }: DocumentDetailsPanelProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedDocument, setEditedDocument] = useState<Invoice | undefined>(document);
+    const [selectedVendor2, setSelectedVendor2] = useState<string | null>(null);
     
     // Refs for scroll delegation
     const panelRef = useRef<HTMLDivElement>(null);
@@ -600,6 +601,42 @@ export const DocumentDetailsPanel = ({
                                     onFocus={keyboardNav?.handleInputFocus}
                                     onBlur={keyboardNav?.handleInputBlur}
                                 />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Vendor 2</label>
+                                <Select
+                                    placeholder="Select vendor"
+                                    items={[
+                                        { id: "v1", label: "Acme Supplies", supportingText: "#100234" },
+                                        { id: "v2", label: "Beta Manufacturing", supportingText: "#100897" },
+                                        { id: "v3", label: "Cascade Logistics", supportingText: "#101122" },
+                                        { id: "v4", label: "Delta Office Goods", supportingText: "#101345" },
+                                        { id: "v5", label: "Evergreen Paper Co.", supportingText: "#101678" },
+                                        { id: "ezcm", label: "Select in EZCM", icon: AlertCircle }
+                                    ]}
+                                    selectedKey={selectedVendor2}
+                                    onSelectionChange={(key) => setSelectedVendor2(key as string)}
+                                    size="sm"
+                                    isDisabled={!canEdit}
+                                    popoverClassName="max-h-none"
+                                >
+                                    {(item) => (
+                                        <Select.Item 
+                                            key={item.id} 
+                                            id={item.id} 
+                                            supportingText={item.supportingText}
+                                            icon={item.icon}
+                                            className={item.id === 'ezcm' ? 'border-t border-border-secondary *:data-icon:text-warning-primary' : ''}
+                                        >
+                                            {item.label}
+                                        </Select.Item>
+                                    )}
+                                </Select>
+                                {selectedVendor2 === 'ezcm' && (
+                                    <p className="text-xs font-medium text-tertiary mt-1">
+                                        Temporary vendor assigned: "Unknown Supplier"
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </TabPanel>

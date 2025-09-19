@@ -459,15 +459,26 @@ export const DocumentDetailsPanel = ({
                 throw new Error('Failed to update vendor in Airtable');
             }
 
+            // Parse the response to get the updated record
+            const responseData = await response.json();
+            const updatedRecord = responseData.records?.[0];
+
             // Update the document locally to reflect the changes
             updateVendorName(editingVendorName.trim());
             
             // Clear vendor code since we're manually editing
             if (editedDocument) {
-                setEditedDocument({
+                const updatedDoc = {
                     ...editedDocument,
+                    vendorName: editingVendorName.trim(),
                     vendorCode: undefined,
-                });
+                };
+                setEditedDocument(updatedDoc);
+                
+                // Trigger parent component to refetch/reload the document data
+                if (onSave) {
+                    onSave(updatedDoc);
+                }
             }
             
             // Close modal and reset state

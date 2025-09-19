@@ -12,10 +12,11 @@ import { Select } from "@/components/base/select/select";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Badge } from "@/components/base/badges/badges";
-import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02, AlertCircle } from "@untitledui/icons";
+import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02 } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 import { InvoiceCodingInterface } from "@/components/documents/invoice-coding-interface";
 import { LinksTab, RawContentTab, ActivityTimeline } from "@/components/documents/shared-tabs";
+import { DialogTrigger, ModalOverlay, Modal, Dialog } from "@/components/application/modals/modal";
 import { useActivities, useTeams } from "@/lib/airtable";
 import { useInvoiceLinks } from "@/lib/airtable/linked-documents-hooks";
 import type { Invoice, DocumentLink } from "@/types/documents";
@@ -111,7 +112,9 @@ export const DocumentDetailsPanel = ({
 }: DocumentDetailsPanelProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedDocument, setEditedDocument] = useState<Invoice | undefined>(document);
-    const [selectedVendor2, setSelectedVendor2] = useState<string | null>(null);
+    const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+    const [editingVendorName, setEditingVendorName] = useState('');
+    const [isUpdatingVendor, setIsUpdatingVendor] = useState(false);
     
     // Refs for scroll delegation
     const panelRef = useRef<HTMLDivElement>(null);
@@ -424,6 +427,61 @@ export const DocumentDetailsPanel = ({
         }
     };
 
+    const handleVendorEdit = () => {
+        setEditingVendorName(currentDoc?.vendorName || '');
+        setIsVendorModalOpen(true);
+    };
+
+    const handleVendorSubmit = async () => {
+        if (!currentDoc || !editingVendorName.trim() || isUpdatingVendor) return;
+        
+        setIsUpdatingVendor(true);
+        
+        try {
+            // Update Airtable directly
+            const response = await fetch(`/api/airtable/Invoices`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    records: [{
+                        id: currentDoc.id,
+                        fields: {
+                            'Vendor Name': editingVendorName.trim(),
+                            'Vendor Code': null // Clear vendor code since we're manually editing
+                        }
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update vendor in Airtable');
+            }
+
+            // Update the document locally to reflect the changes
+            updateVendorName(editingVendorName.trim());
+            
+            // Clear vendor code since we're manually editing
+            if (editedDocument) {
+                setEditedDocument({
+                    ...editedDocument,
+                    vendorCode: undefined,
+                });
+            }
+            
+            // Close modal and reset state
+            setIsVendorModalOpen(false);
+            setEditingVendorName('');
+            
+        } catch (error) {
+            console.error('Error updating vendor:', error);
+            // TODO: Show error message to user
+        } finally {
+            setIsUpdatingVendor(false);
+        }
+    };
+
     const handleCodingChange = (invoiceCoding?: any, lineCoding?: any) => {
         if (editedDocument && invoiceCoding) {
             setEditedDocument({
@@ -573,14 +631,59 @@ export const DocumentDetailsPanel = ({
                             </div>
                             <div>
                                 <label className="text-xs font-medium text-tertiary mb-1 block">Vendor</label>
-                                <Input 
-                                    value={currentDoc?.vendorName || ''}
-                                    onChange={(value) => updateVendorName(value as string)}
+                                <Select
+                                    placeholder="Select vendor"
+                                    items={[
+                                        ...(currentDoc?.vendorName ? [{ 
+                                            id: "current", 
+                                            label: currentDoc.vendorCode 
+                                                ? `${currentDoc.vendorName} - ${currentDoc.vendorCode}`
+                                                : currentDoc.vendorName,
+                                            icon: !currentDoc.vendorCode ? (() => (
+                                                <svg
+                                                    className="animate-spin h-4 w-4 text-gray-400"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                    ></circle>
+                                                    <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
+                                                </svg>
+                                            )) : undefined
+                                        }] : []),
+                                        { 
+                                            id: "edit", 
+                                            label: "Edit vendor", 
+                                            icon: Edit03 
+                                        }
+                                    ]}
+                                    selectedKey={currentDoc?.vendorName ? "current" : null}
+                                    onSelectionChange={(key) => {
+                                        if (key === "edit") {
+                                            handleVendorEdit();
+                                        }
+                                        // Keep current vendor selected, don't change anything for now
+                                    }}
                                     size="sm"
                                     isDisabled={!canEdit}
-                                    onFocus={keyboardNav?.handleInputFocus}
-                                    onBlur={keyboardNav?.handleInputBlur}
-                                />
+                                >
+                                    {(item) => (
+                                        <Select.Item key={item.id} id={item.id} icon={item.icon}>
+                                            {item.label}
+                                        </Select.Item>
+                                    )}
+                                </Select>
                             </div>
                             <FormField label="Amount">
                                 <AmountInput
@@ -618,42 +721,6 @@ export const DocumentDetailsPanel = ({
                                     onFocus={keyboardNav?.handleInputFocus}
                                     onBlur={keyboardNav?.handleInputBlur}
                                 />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">Vendor 2</label>
-                                <Select
-                                    placeholder="Select vendor"
-                                    items={[
-                                        { id: "v1", label: "Acme Supplies", supportingText: "#100234" },
-                                        { id: "v2", label: "Beta Manufacturing", supportingText: "#100897" },
-                                        { id: "v3", label: "Cascade Logistics", supportingText: "#101122" },
-                                        { id: "v4", label: "Delta Office Goods", supportingText: "#101345" },
-                                        { id: "v5", label: "Evergreen Paper Co.", supportingText: "#101678" },
-                                        { id: "ezcm", label: "Select in EZCM", icon: AlertCircle }
-                                    ]}
-                                    selectedKey={selectedVendor2}
-                                    onSelectionChange={(key) => setSelectedVendor2(key as string)}
-                                    size="sm"
-                                    isDisabled={!canEdit}
-                                    popoverClassName="max-h-none"
-                                >
-                                    {(item) => (
-                                        <Select.Item 
-                                            key={item.id} 
-                                            id={item.id} 
-                                            supportingText={item.supportingText}
-                                            icon={item.icon}
-                                            className={item.id === 'ezcm' ? 'border-t border-border-secondary *:data-icon:text-warning-primary' : ''}
-                                        >
-                                            {item.label}
-                                        </Select.Item>
-                                    )}
-                                </Select>
-                                {selectedVendor2 === 'ezcm' && (
-                                    <p className="text-xs font-medium text-tertiary mt-1">
-                                        Temporary vendor assigned: "Unknown Supplier"
-                                    </p>
-                                )}
                             </div>
                         </div>
                     </TabPanel>
@@ -732,6 +799,65 @@ export const DocumentDetailsPanel = ({
                     </TabPanel>
                 </div>
             </Tabs>
+            
+            {/* Vendor Edit Modal */}
+            {isVendorModalOpen && (
+                <ModalOverlay isOpen={isVendorModalOpen} onOpenChange={setIsVendorModalOpen} isDismissable>
+                    <Modal className="max-w-md">
+                        <Dialog>
+                            <div className="bg-white rounded-lg p-6">
+                                {/* Modal Header */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-900">Edit Vendor</h2>
+                                    <Button
+                                        color="secondary"
+                                        size="sm"
+                                        onClick={() => setIsVendorModalOpen(false)}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        ×
+                                    </Button>
+                                </div>
+                                
+                                {/* Modal Content */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                            Vendor Name
+                                        </label>
+                                        <Input
+                                            value={editingVendorName}
+                                            onChange={(value) => setEditingVendorName(value as string)}
+                                            placeholder="Enter vendor name"
+                                            size="sm"
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {/* Modal Actions */}
+                                <div className="flex justify-end gap-3 mt-6">
+                                    <Button
+                                        color="secondary"
+                                        size="sm"
+                                        onClick={() => setIsVendorModalOpen(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={handleVendorSubmit}
+                                        isDisabled={!editingVendorName.trim() || isUpdatingVendor}
+                                        isLoading={isUpdatingVendor}
+                                    >
+                                        {isUpdatingVendor ? 'Updating...' : 'Update Vendor'}
+                                    </Button>
+                                </div>
+                            </div>
+                        </Dialog>
+                    </Modal>
+                </ModalOverlay>
+            )}
         </div>
     );
 };

@@ -7,13 +7,13 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAirtableRecords } from './hooks';
 import type { AirtableFile } from './files-hooks';
-import type { AirtableEmail } from './emails-hooks';
+
 
 const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
 
 export interface LinkedDocuments {
     files: AirtableFile[];
-    emails: AirtableEmail[];
+    emails: any[]; // Deprecated - emails functionality was removed
     invoices: any[]; // TODO: Import proper Invoice type
     loading: boolean;
     error: string | null;
@@ -42,9 +42,9 @@ function transformFileRecord(record: any): AirtableFile {
 }
 
 /**
- * Transform Airtable Email record to AirtableEmail for linked documents
+ * Transform Airtable Email record to any for linked documents
  */
-function transformEmailRecord(record: any): AirtableEmail {
+function transformEmailRecord(record: any): any {
     return {
         id: record.id,
         subject: record.fields['Subject'] || '',
@@ -92,14 +92,14 @@ function transformInvoiceRecord(record: any): any {
 /**
  * Hook to fetch linked documents for any document type (invoice, email, file)
  */
-export function useLinkedDocuments(documentId?: string, documentType?: 'invoice' | 'delivery-ticket' | 'email' | 'file'): LinkedDocuments {
+export function useLinkedDocuments(documentId?: string, documentType?: 'invoice' | 'delivery-ticket' | 'file'): LinkedDocuments {
     const [files, setFiles] = useState<AirtableFile[]>([]);
-    const [emails, setEmails] = useState<AirtableEmail[]>([]);
+    const [emails, setEmails] = useState<any[]>([]);
     const [invoices, setInvoices] = useState<any[]>([]); // TODO: Import proper Invoice type
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchLinkedDocuments = useCallback(async (id: string, docType: 'invoice' | 'delivery-ticket' | 'email' | 'file') => {
+    const fetchLinkedDocuments = useCallback(async (id: string, docType: 'invoice' | 'delivery-ticket' | 'file') => {
         setLoading(true);
         setError(null);
 
@@ -113,10 +113,11 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
                     currentDocResponse = await fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&pageSize=100`);
                     break;
                 case 'delivery-ticket':
-                    currentDocResponse = await fetch(`/api/airtable/Delivery%20Ticket?baseId=${BASE_ID}&pageSize=100`);
+                    currentDocResponse = await fetch(`/api/airtable/Delivery%20Tickets?baseId=${BASE_ID}&pageSize=100`);
                     break;
                 case 'email':
-                    currentDocResponse = await fetch(`/api/airtable/Emails?baseId=${BASE_ID}&pageSize=100`);
+                    // Emails table was removed - return empty response
+                    currentDocResponse = { ok: true, json: () => Promise.resolve({ records: [] }) };
                     break;
                 case 'file':
                     currentDocResponse = await fetch(`/api/airtable/Files?baseId=${BASE_ID}&pageSize=100`);
@@ -182,15 +183,8 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
                 promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
             }
 
-            // Fetch emails by ID if we have any
-            if (linkedEmailIds.length > 0) {
-                console.log(`Debug: Fetching emails for IDs:`, linkedEmailIds);
-                promises.push(
-                    fetch(`/api/airtable/Emails?baseId=${BASE_ID}&pageSize=100`)
-                );
-            } else {
-                promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
-            }
+            // Emails table was removed - always return empty response
+            promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
 
             // Fetch invoices by ID if we have any
             if (linkedInvoiceIds.length > 0) {
@@ -207,9 +201,7 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
             if (!filesResponse.ok) {
                 throw new Error(`Failed to fetch files: ${filesResponse.status}`);
             }
-            if (!emailsResponse.ok) {
-                throw new Error(`Failed to fetch emails: ${emailsResponse.status}`);
-            }
+            // Skip email response validation since emails were removed
             if (invoicesResponse && !invoicesResponse.ok) {
                 throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
             }
@@ -307,42 +299,18 @@ export function useLinkedFiles(invoiceIds: string[] = []) {
  * Hook to fetch Emails linked to multiple invoices (for bulk operations)
  */
 export function useLinkedEmails(invoiceIds: string[] = []) {
-    const filterFormula = useMemo(() => {
-        if (invoiceIds.length === 0) return '';
-        
-        if (invoiceIds.length === 1) {
-            return `SEARCH("${invoiceIds[0]}", ARRAYJOIN({Related Invoices}, ","))`;
-        }
-        
-        const conditions = invoiceIds.map(id => `SEARCH("${id}", ARRAYJOIN({Related Invoices}, ","))`);
-        return `OR(${conditions.join(', ')})`;
-    }, [invoiceIds]);
-
-    const { records: emailRecords, loading, error } = useAirtableRecords(
-        'Emails',
-        {
-            filterByFormula: filterFormula,
-            pageSize: 100,
-            sort: [{ field: 'Received', direction: 'desc' }]
-        },
-        {
-            baseId: BASE_ID,
-            autoFetch: invoiceIds.length > 0
-        }
-    );
-
-    const emails = useMemo(() => 
-        emailRecords.map(transformEmailRecord), 
-        [emailRecords]
-    );
-
-    return { emails, loading, error };
+    // Emails functionality was removed - return empty results
+    return { 
+        emails: [], 
+        loading: false, 
+        error: null 
+    };
 }
 
 /**
  * Combined hook for getting all document links for any document type (including transformed data for LinksTab)
  */
-export function useDocumentLinks(documentId?: string, documentType?: 'invoice' | 'delivery-ticket' | 'email' | 'file') {
+export function useDocumentLinks(documentId?: string, documentType?: 'invoice' | 'delivery-ticket' | 'file') {
     const { files, emails, invoices, loading, error } = useLinkedDocuments(documentId, documentType);
 
     const linkedItems = useMemo(() => {

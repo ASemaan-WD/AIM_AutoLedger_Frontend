@@ -7,13 +7,12 @@ import { Badge } from "@/components/base/badges/badges";
 import { AlertTriangle, CheckCircle, Trash01, RefreshCw05 } from "@untitledui/icons";
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components";
 import { cx } from "@/utils/cx";
-import { LinksTab, RawContentTab, ActivityTimeline } from "@/components/documents/shared-tabs";
+import { LinksTab, RawContentTab } from "@/components/documents/shared-tabs";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { BackgroundPattern } from "@/components/shared-assets/background-patterns";
 import { AlertFloating } from "@/components/application/alerts/alerts";
-import { useActivities } from "@/lib/airtable";
 // import { useFileLinks } from "@/lib/airtable/linked-documents-hooks"; // Temporarily disabled
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import type { AirtableFile } from "@/lib/airtable/files-hooks";
@@ -138,22 +137,13 @@ export const FileDetailsPanel = ({
     const panelRef = useRef<HTMLDivElement>(null);
     const contentAreaRef = useRef<HTMLDivElement>(null);
 
-    // Fetch activities for the current file
-    const { activities, loading: activitiesLoading, error: activitiesError } = useActivities({
-        documentId: file?.id, // Using documentId as generic field
-        autoFetch: true
-    });
-
-    // Fetch linked documents (invoices and emails) for the current file
-    // Temporarily disabled due to API issues - using fallback values
+    // Fetch linked documents (invoices) for the current file
+    // Using fallback values for now
     const linkedItems: Array<{id: string; name: string; type: string}> = [];
     const invoices: Array<{id: string; name: string}> = [];
-    const emails: Array<{id: string; name: string}> = [];
+    const emails: Array<any> = []; // Empty array since emails functionality was removed
     const linkedDocsLoading = false;
     const linkedDocsError = null;
-    
-    // TODO: Re-enable when API is working
-    // const { linkedItems, invoices, emails, loading: linkedDocsLoading, error: linkedDocsError } = useFileLinks(file?.id);
 
     // Keep panel state in sync with selected file
     useEffect(() => {
@@ -251,8 +241,7 @@ export const FileDetailsPanel = ({
     const tabs = [
         { id: "overview", label: "Overview" },
         { id: "links", label: "Links" },
-        { id: "raw", label: "Raw" },
-        { id: "activity", label: "Activity" }
+        { id: "raw", label: "Raw" }
     ];
 
     if (!file) {
@@ -421,16 +410,6 @@ export const FileDetailsPanel = ({
                                     'Pages': currentFile?.pages,
                                     'Upload Date': currentFile?.uploadDate?.toLocaleDateString()
                                 }}
-                            />
-                        </div>
-                    </TabPanel>
-
-                    <TabPanel id="activity">
-                        <div className="w-full max-w-full">
-                            <ActivityTimeline 
-                                activities={activities}
-                                loading={activitiesLoading}
-                                error={activitiesError || undefined}
                             />
                         </div>
                     </TabPanel>

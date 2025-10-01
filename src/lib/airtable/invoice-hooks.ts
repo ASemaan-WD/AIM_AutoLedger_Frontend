@@ -29,7 +29,7 @@ interface UseInvoicesResult {
 }
 
 /**
- * Hook for managing invoices with their lines in a single optimized request
+ * Hook for managing invoices
  */
 export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult {
   const { filter, sort, autoFetch = true } = options;
@@ -40,7 +40,7 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
   const [hasMore, setHasMore] = useState(false);
 
   // Memoize the fetch function to prevent infinite loops
-  const fetchInvoicesWithLines = useCallback(async () => {
+  const fetchInvoices = useCallback(async () => {
     if (loading) return; // Prevent concurrent requests
     
     setLoading(true);
@@ -69,33 +69,18 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
 
       queryParams.append('pageSize', '50');
 
-      // Fetch invoices and lines in parallel
-      const [invoicesResponse, linesResponse] = await Promise.all([
-        fetch(`/api/airtable/Invoices?${queryParams}`),
-        fetch(`/api/airtable/Invoice%20Lines?baseId=${BASE_ID}&pageSize=100&sort[0][field]=Line Number&sort[0][direction]=asc`)
-      ]);
+      // Fetch invoices only (invoice lines capability was removed)
+      const invoicesResponse = await fetch(`/api/airtable/Invoices?${queryParams}`);
 
       if (!invoicesResponse.ok) {
         throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
       }
-      if (!linesResponse.ok) {
-        throw new Error(`Failed to fetch invoice lines: ${linesResponse.status}`);
-      }
 
-      const [invoicesData, linesData] = await Promise.all([
-        invoicesResponse.json(),
-        linesResponse.json()
-      ]);
+      const invoicesData = await invoicesResponse.json();
 
-      // Transform and combine the data
+      // Transform the data (no longer need to combine with lines)
       const transformedInvoices = invoicesData.records.map((invoiceRecord: AirtableRecord) => {
-        // Find lines that belong to this invoice
-        const invoiceLines = linesData.records.filter((lineRecord: AirtableRecord) => {
-          const invoiceIds = lineRecord.fields['Invoice'] as string[] | undefined;
-          return invoiceIds && invoiceIds.includes(invoiceRecord.id);
-        });
-
-        return transformAirtableToInvoice(invoiceRecord, invoiceLines);
+        return transformAirtableToInvoice(invoiceRecord);
       });
 
       setInvoices(transformedInvoices);
@@ -108,12 +93,12 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
     } finally {
       setLoading(false);
     }
-  }, [filter, sort, loading]); // Dependencies memoized properly
+  }, [filter, sort]);
 
   // Auto-fetch only once when component mounts or key dependencies change
   useEffect(() => {
     if (autoFetch) {
-      fetchInvoicesWithLines();
+      fetchInvoices();
     }
   }, [autoFetch]); // Only depend on autoFetch, not the function itself
 
@@ -121,8 +106,8 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
    * Manual refresh function
    */
   const refresh = useCallback(async () => {
-    await fetchInvoicesWithLines();
-  }, [fetchInvoicesWithLines]);
+    await fetchInvoices();
+  }, [fetchInvoices]);
 
   /**
    * Fetch more invoices (pagination) - placeholder for now

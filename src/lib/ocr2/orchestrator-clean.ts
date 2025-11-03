@@ -28,6 +28,13 @@ let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
+    
+    console.log('🔑 Initializing OpenAI client...');
+    console.log(`   API Key exists: ${!!apiKey}`);
+    console.log(`   API Key length: ${apiKey?.length || 0}`);
+    console.log(`   API Key starts with sk-: ${apiKey?.startsWith('sk-')}`);
+    console.log(`   API Key preview: ${apiKey ? `${apiKey.substring(0, 7)}...${apiKey.substring(apiKey.length - 4)}` : 'MISSING'}`);
+    
     if (!apiKey) {
       throw new Error('OPENAI_API_KEY environment variable is not set');
     }
@@ -37,6 +44,8 @@ function getOpenAI(): OpenAI {
     _openai = new OpenAI({
       apiKey: apiKey,
     });
+    
+    console.log('✅ OpenAI client initialized successfully');
   }
   return _openai;
 }
@@ -446,7 +455,27 @@ async function extractTextFromChunk(chunk: ImageChunk): Promise<{ chunk: ImageCh
     
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error(`❌ [${chunk.id}] Vision API failed:`, error);
+    
+    // Log detailed error information
+    console.error(`❌ [${chunk.id}] Vision API failed:`);
+    console.error(`Error type: ${error?.constructor?.name || 'Unknown'}`);
+    console.error(`Error message:`, error instanceof Error ? error.message : String(error));
+    
+    // If it's an OpenAI API error, log all details
+    if (error && typeof error === 'object') {
+      const apiError = error as any;
+      if (apiError.status) console.error(`HTTP Status: ${apiError.status}`);
+      if (apiError.type) console.error(`Error Type: ${apiError.type}`);
+      if (apiError.code) console.error(`Error Code: ${apiError.code}`);
+      if (apiError.error) console.error(`Error Details:`, JSON.stringify(apiError.error, null, 2));
+      if (apiError.response) {
+        console.error(`Response Status: ${apiError.response.status}`);
+        console.error(`Response Data:`, JSON.stringify(apiError.response.data, null, 2));
+      }
+    }
+    
+    // Log the full error object for debugging
+    console.error(`Full error object:`, JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     
     return {
       chunk,

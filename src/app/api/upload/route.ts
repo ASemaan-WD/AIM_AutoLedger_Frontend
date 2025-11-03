@@ -24,31 +24,52 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
     };
     console.log(`📤 Request body:`, JSON.stringify(requestBody));
     
-    const ocrResponse = await fetch(ocrEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody)
-    });
+    let ocrResponse;
+    try {
+      console.log(`📞 Making fetch request...`);
+      ocrResponse = await fetch(ocrEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(55000) // 55 second timeout
+      });
+      console.log(`✅ Fetch completed`);
+    } catch (fetchError) {
+      console.error(`❌ Fetch failed:`, fetchError);
+      throw new Error(`Failed to call OCR API: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
+    }
 
     console.log(`📡 OCR API response status: ${ocrResponse.status}`);
     console.log(`📡 OCR API response status text: ${ocrResponse.statusText}`);
-    console.log(`📡 OCR API response headers:`, JSON.stringify(Object.fromEntries(ocrResponse.headers.entries())));
+    
+    try {
+      const headers = Object.fromEntries(ocrResponse.headers.entries());
+      console.log(`📡 OCR API response headers:`, JSON.stringify(headers));
+    } catch (e) {
+      console.log(`⚠️ Could not log headers`);
+    }
 
     // Try to read response body as text first
-    const responseText = await ocrResponse.text();
-    console.log(`📡 OCR API raw response body:`, responseText);
+    let responseText = '';
+    try {
+      console.log(`📖 Reading response body...`);
+      responseText = await ocrResponse.text();
+      console.log(`📡 OCR API raw response body (length ${responseText.length}):`, responseText.substring(0, 1000));
+    } catch (readError) {
+      console.error(`❌ Failed to read response body:`, readError);
+    }
 
     if (!ocrResponse.ok) {
-      let errorData = {};
+      let errorData: any = {};
       try {
         errorData = JSON.parse(responseText);
       } catch {
         errorData = { rawResponse: responseText };
       }
       console.error(`❌ OCR API error response:`, errorData);
-      throw new Error(`OCR API responded with ${ocrResponse.status}: ${errorData.error || errorData.rawResponse || 'Unknown error'}`);
+      throw new Error(`OCR API responded with ${ocrResponse.status}: ${JSON.stringify(errorData)}`);
     }
 
     const result = JSON.parse(responseText);
@@ -59,6 +80,9 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
     });
   } catch (error) {
     console.error(`❌ OCR processing failed for record ${recordId}:`, error);
+    console.error(`❌ Error type: ${error?.constructor?.name}`);
+    console.error(`❌ Error message: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`❌ Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
     throw error;
   }
 }

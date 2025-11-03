@@ -195,11 +195,22 @@ function handleProcessingError(error: unknown, recordId: string): ProcessFileRes
  */
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 OCR2 API called');
+    console.log(`📋 Request URL: ${request.url}`);
+    
     // Validate environment and settings
     try {
+      console.log('🔍 Validating OCR2 settings...');
       const settings = getOCR2Settings();
+      console.log(`   ✅ Settings loaded successfully`);
+      console.log(`   🔑 API Key preview: ${settings.openai.apiKey.substring(0, 7)}...${settings.openai.apiKey.substring(settings.openai.apiKey.length - 4)}`);
+      console.log(`   📏 API Key length: ${settings.openai.apiKey.length}`);
+      console.log(`   ✓ Starts with sk-: ${settings.openai.apiKey.startsWith('sk-')}`);
+      
       validateSettings(settings);
+      console.log('   ✅ Settings validation passed');
     } catch (configError) {
+      console.error('❌ OCR2 configuration error:', configError);
       logger.error('OCR2 configuration error', { error: configError });
       return NextResponse.json(
         { 

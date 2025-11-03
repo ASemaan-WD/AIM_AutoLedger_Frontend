@@ -8,8 +8,8 @@ import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 import OpenAI from 'openai';
 
 // Configuration (matches simple-test-v5)
+// NOTE: Don't read OPENAI_API_KEY at module init - read it lazily when needed
 const config = {
-  openaiApiKey: process.env.OPENAI_API_KEY!,
   model: 'gpt-4o',
   dpi: 300,                     // Increased from 150 for better source quality
   maxPages: 50,
@@ -27,11 +27,15 @@ const config = {
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!_openai) {
-    if (!config.openaiApiKey) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
       throw new Error('OPENAI_API_KEY environment variable is not set');
     }
+    if (!apiKey.startsWith('sk-')) {
+      throw new Error('OPENAI_API_KEY has invalid format (should start with sk-)');
+    }
     _openai = new OpenAI({
-      apiKey: config.openaiApiKey,
+      apiKey: apiKey,
     });
   }
   return _openai;

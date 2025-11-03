@@ -46,9 +46,9 @@ export interface OCR2Settings {
  * Get OCR2 settings from environment variables
  */
 export function getOCR2Settings(): OCR2Settings {
-  const openaiApiKey = process.env.OPENAI_API_KEY;
-  const airtableBaseId = process.env.AIRTABLE_BASE_ID;
-  const airtablePat = process.env.AIRTABLE_PAT;
+  const openaiApiKey = process.env.OPENAI_API_KEY?.trim();
+  const airtableBaseId = process.env.AIRTABLE_BASE_ID?.trim();
+  const airtablePat = process.env.AIRTABLE_PAT?.trim();
 
   if (!openaiApiKey) {
     throw new Error('OPENAI_API_KEY environment variable is required');

@@ -14,9 +14,13 @@ export async function GET() {
       OPENAI_API_KEY: {
         exists: !!process.env.OPENAI_API_KEY,
         length: process.env.OPENAI_API_KEY?.length || 0,
-        startsWithSk: process.env.OPENAI_API_KEY?.startsWith('sk-') || false,
+        trimmedLength: process.env.OPENAI_API_KEY?.trim().length || 0,
+        hasWhitespace: process.env.OPENAI_API_KEY ? 
+          process.env.OPENAI_API_KEY !== process.env.OPENAI_API_KEY.trim() : 
+          false,
+        startsWithSk: process.env.OPENAI_API_KEY?.trim().startsWith('sk-') || false,
         preview: process.env.OPENAI_API_KEY ? 
-          `${process.env.OPENAI_API_KEY.substring(0, 7)}...${process.env.OPENAI_API_KEY.substring(process.env.OPENAI_API_KEY.length - 4)}` : 
+          `${process.env.OPENAI_API_KEY.trim().substring(0, 7)}...${process.env.OPENAI_API_KEY.trim().substring(process.env.OPENAI_API_KEY.trim().length - 4)}` : 
           'NOT SET'
       },
       AIRTABLE_BASE_ID: {
@@ -51,9 +55,11 @@ export async function GET() {
     
     if (!envCheck.OPENAI_API_KEY.exists) {
       issues.push('OPENAI_API_KEY is not set');
+    } else if (envCheck.OPENAI_API_KEY.hasWhitespace) {
+      issues.push('OPENAI_API_KEY has leading/trailing whitespace - this will cause authentication errors');
     } else if (!envCheck.OPENAI_API_KEY.startsWithSk) {
       issues.push('OPENAI_API_KEY does not start with "sk-" - invalid format');
-    } else if (envCheck.OPENAI_API_KEY.length < 40) {
+    } else if (envCheck.OPENAI_API_KEY.trimmedLength < 40) {
       issues.push('OPENAI_API_KEY seems too short - might be invalid');
     }
     
@@ -75,7 +81,7 @@ export async function GET() {
       try {
         const OpenAI = (await import('openai')).default;
         const openai = new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
+          apiKey: process.env.OPENAI_API_KEY?.trim(),
         });
         
         // Simple API call to test authentication

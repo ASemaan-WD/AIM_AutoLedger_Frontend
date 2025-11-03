@@ -74,15 +74,16 @@ export {
   useInvoicesNeedingCoding,
   useInvoiceCounts,
 } from './invoice-hooks';
+export { useInvoiceDetails } from './invoice-details-hooks';
 
-// Delivery ticket-specific hooks and transforms
-export {
-  useDeliveryTickets,
-  useDeliveryTicketsByStatus,
-  usePendingDeliveryTickets,
-  useDeliveryTicketsNeedingCoding,
-  useDeliveryTicketCounts,
-} from './delivery-ticket-hooks';
+// DEPRECATED: Delivery tickets table no longer exists in new schema
+// export {
+//   useDeliveryTickets,
+//   useDeliveryTicketsByStatus,
+//   usePendingDeliveryTickets,
+//   useDeliveryTicketsNeedingCoding,
+//   useDeliveryTicketCounts,
+// } from './delivery-ticket-hooks';
 
 export {
   transformAirtableToInvoice,
@@ -166,6 +167,7 @@ export * from './config';
 export * from './hooks';
 export * from './transforms';
 export * from './invoice-hooks';
-export * from './delivery-ticket-hooks';
-export * from './teams-hooks';
+// DEPRECATED: Delivery tickets and teams tables no longer exist
+// export * from './delivery-ticket-hooks';
+// export * from './teams-hooks';
 export * from './utils';

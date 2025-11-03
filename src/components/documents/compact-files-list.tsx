@@ -23,7 +23,6 @@ interface CompactFilesListProps {
     onSelectionChange?: (fileId: string) => void;
     subView?: string;
     onSubViewChange?: (subView: string) => void;
-    keyboardNav?: any;
 }
 
 const FileItem = ({ value, className, ...otherProps }: ListBoxItemProps<AirtableFile>) => {
@@ -152,8 +151,7 @@ export const CompactFilesList = ({
     selectedFileId, 
     onSelectionChange,
     subView = 'all',
-    onSubViewChange,
-    keyboardNav
+    onSubViewChange
 }: CompactFilesListProps) => {
 
     const subViews = [

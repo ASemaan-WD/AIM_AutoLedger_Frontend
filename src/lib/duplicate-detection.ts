@@ -37,10 +37,11 @@ export async function checkFileHashDuplicate(
     const airtableClient = createAirtableClient(baseId);
     
     // Search for existing files with the same hash
+    // Note: Using new schema field names (FileHash, FileName, UploadDate)
     const response = await airtableClient.listRecords('Files', {
-      filterByFormula: `{File Hash} = "${fileHash}"`,
+      filterByFormula: `{FileHash} = "${fileHash}"`,
       maxRecords: 5, // Get up to 5 matches for analysis
-      fields: ['Name', 'Created At', 'File Hash', 'Status', 'Source']
+      fields: ['FileName', 'Created At', 'FileHash', 'Status', 'UploadDate']
     });
     
     if (response.records && response.records.length > 0) {
@@ -50,13 +51,13 @@ export async function checkFileHashDuplicate(
         isDuplicate: true,
         duplicateRecord: {
           id: duplicateRecord.id,
-          name: duplicateRecord.fields.Name || 'Unknown',
-          uploadDate: duplicateRecord.fields['Created At'], // Use Created At instead of Upload Date
+          name: duplicateRecord.fields.FileName || 'Unknown',
+          uploadDate: duplicateRecord.fields['Created At'] || duplicateRecord.fields['UploadDate'], // Try Created At, fallback to UploadDate
           createdTime: duplicateRecord.createdTime,
-          fileHash: duplicateRecord.fields['File Hash'] || ''
+          fileHash: duplicateRecord.fields['FileHash'] || ''
         },
         confidence: 1.0, // Hash match is 100% confidence
-        reason: `Exact file hash match found. Original file: "${duplicateRecord.fields.Name}"`
+        reason: `Exact file hash match found. Original file: "${duplicateRecord.fields.FileName}"`
       };
     }
     
@@ -122,7 +123,7 @@ export async function getFilesByHash(
     const airtableClient = createAirtableClient(baseId);
     
     const response = await airtableClient.listRecords('Files', {
-      filterByFormula: `{File Hash} = "${fileHash}"`,
+      filterByFormula: `{FileHash} = "${fileHash}"`,
       sort: [{ field: 'Created At', direction: 'asc' }]
     });
     
@@ -182,9 +183,10 @@ export async function generateDuplicateReport(baseId: string): Promise<{
     const airtableClient = createAirtableClient(baseId);
     
     // Get all files with hashes
+    // Note: Using new schema field names (FileHash, FileName, UploadDate)
     const response = await airtableClient.listRecords('Files', {
-      fields: ['Name', 'File Hash', 'Upload Date', 'Status', 'Source'],
-      filterByFormula: `{File Hash} != ""`
+      fields: ['FileName', 'FileHash', 'UploadDate', 'Status'],
+      filterByFormula: `{FileHash} != ""`
     });
     
     const files = response.records || [];
@@ -192,7 +194,7 @@ export async function generateDuplicateReport(baseId: string): Promise<{
     
     // Group files by hash
     files.forEach(file => {
-      const hash = file.fields['File Hash'];
+      const hash = file.fields['FileHash'];
       if (hash) {
         if (!hashGroups.has(hash)) {
           hashGroups.set(hash, []);

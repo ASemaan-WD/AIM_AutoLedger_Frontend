@@ -28,7 +28,7 @@ interface LinksTabProps {
     linkedItems: LinkedItem[];
     // Raw document data for proper viewing
     files?: AirtableFile[];
-    emails?: any[];
+    emails?: Array<{ id: string; [key: string]: unknown }>;
     invoices?: Invoice[];
     onViewItem?: (item: LinkedItem) => void;
     emptyStateMessage?: string;
@@ -196,7 +196,7 @@ export const LinksTab: React.FC<LinksTabProps> = ({
 }) => {
     
     // Helper function to find the actual document data for a linked item
-    const findDocumentData = (item: LinkedItem): Invoice | AirtableFile | any | undefined => {
+    const findDocumentData = (item: LinkedItem): Invoice | AirtableFile | Record<string, unknown> | undefined => {
         // Try to match by ID in files
         const file = files.find(f => f.id === item.id);
         if (file) return file;

@@ -6,7 +6,7 @@
  *
  * @typeParam T - The type of the ref value.
  */
-export function mergeRefs<T = any>(refs: Array<React.MutableRefObject<T> | React.LegacyRef<T> | undefined | null>): React.RefCallback<T> {
+export function mergeRefs<T = unknown>(refs: Array<React.MutableRefObject<T> | React.LegacyRef<T> | undefined | null>): React.RefCallback<T> {
     return (value) => {
         refs.forEach((ref) => {
             if (typeof ref === "function") {
@@ -26,7 +26,7 @@ export function mergeRefs<T = any>(refs: Array<React.MutableRefObject<T> | React
  *
  * @returns True if the values are deeply equal, otherwise false.
  */
-export const isDeepEqual = (obj1: any, obj2: any): boolean => {
+export const isDeepEqual = (obj1: unknown, obj2: unknown): boolean => {
     // Check if both are the same reference
     if (obj1 === obj2) return true;
 

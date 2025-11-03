@@ -77,8 +77,8 @@ export interface UseFileCountsResult {
  * Transform Airtable record to AirtableFile
  */
 function transformAirtableRecord(record: any): AirtableFile {
-    const relatedInvoices = record.fields['Invoices'] || []; // Updated field name
-    const relatedEmails = record.fields['Emails'] || []; // Updated field name
+    const relatedInvoices = record.fields['InvoiceHeaderID'] || record.fields['Invoices'] || []; // New field name
+    const relatedEmails = record.fields['Emails'] || []; 
     // Calculate isLinked based on non-email document links (invoices, POs, etc.)
     const isLinked = relatedInvoices.length > 0;
     
@@ -88,8 +88,8 @@ function transformAirtableRecord(record: any): AirtableFile {
     
     return {
         id: record.id,
-        name: record.fields['Name'] || '',
-        uploadDate: record.fields['Upload Date'] ? new Date(record.fields['Upload Date']) : undefined,
+        name: record.fields['FileName'] || record.fields['Name'] || '', // New field name is FileName
+        uploadDate: record.fields['UploadDate'] || record.fields['Upload Date'] ? new Date(record.fields['UploadDate'] || record.fields['Upload Date']) : undefined,
         source: record.fields['Source'] || 'Upload',
         status: record.fields['Status'] || 'Queued',
         pages: record.fields['Pages'] || undefined,
@@ -99,13 +99,13 @@ function transformAirtableRecord(record: any): AirtableFile {
         activity: record.fields['Activity'] || [],
         relatedEmails,
         attachments: record.fields['Attachments'] || [], // File attachments from Airtable
-        fileHash: record.fields['File Hash'] || undefined, // SHA-256 hash for duplicate detection
+        fileHash: record.fields['FileHash'] || record.fields['File Hash'] || undefined, // New field name is FileHash
         errorCode: errorCode,
         errorDescription: record.fields['Error Description'] || undefined,
         errorLink: record.fields['Error Link'] || undefined,
         isLinked,
         createdAt: record.createdTime ? new Date(record.createdTime) : undefined,
-        updatedAt: record.fields['Modified At'] ? new Date(record.fields['Modified At']) : undefined,
+        updatedAt: record.fields['Modified At'] || record.fields['ModifiedAt'] ? new Date(record.fields['Modified At'] || record.fields['ModifiedAt']) : undefined,
     };
 }
 
@@ -115,13 +115,16 @@ function transformAirtableRecord(record: any): AirtableFile {
 function transformToAirtableUpdate(file: Partial<AirtableFile>): any {
     const fields: any = {};
     
-    if (file.name !== undefined) fields['Name'] = file.name;
-    if (file.uploadDate !== undefined) fields['Upload Date'] = file.uploadDate?.toISOString().split('T')[0];
-    if (file.source !== undefined) fields['Source'] = file.source;
+    if (file.name !== undefined) fields['FileName'] = file.name; // New field name
+    if (file.uploadDate !== undefined) fields['UploadDate'] = file.uploadDate?.toISOString().split('T')[0]; // New field name
+    // Source field removed in new schema
+    // if (file.source !== undefined) fields['Source'] = file.source;
     if (file.status !== undefined) fields['Status'] = file.status;
     if (file.pages !== undefined) fields['Pages'] = file.pages;
-    if (file.isDuplicate !== undefined) fields['Is Duplicate'] = file.isDuplicate;
-    if (file.duplicateOf !== undefined) fields['Duplicate Of'] = file.duplicateOf;
+    // Is Duplicate is controlled by Error Code, so we don't set it directly
+    // if (file.isDuplicate !== undefined) fields['Is Duplicate'] = file.isDuplicate;
+    // Duplicate Of field was removed
+    // if (file.duplicateOf !== undefined) fields['Duplicate Of'] = file.duplicateOf;
     
     return { fields };
 }
@@ -189,7 +192,7 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
         try {
             const queryParams = new URLSearchParams({
                 baseId: BASE_ID,
-                'sort[0][field]': 'Name',
+                'sort[0][field]': 'FileName', // New field name
                 'sort[0][direction]': 'asc',
                 pageSize: '100'
             });

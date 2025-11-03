@@ -4,8 +4,8 @@ import type { ComponentProps, ComponentPropsWithRef } from "react";
 import { useId, useRef, useState } from "react";
 import type { FileIcon } from "@untitledui/file-icons";
 import { FileIcon as FileTypeIcon } from "@untitledui/file-icons";
-import { AlertTriangle, CheckCircle, Copy01, Trash01, UploadCloud02, XCircle } from "@untitledui/icons";
-import { getErrorCodeDefinition, getErrorDisplayName, getErrorIcon, getErrorDescription } from "@/lib/error-codes";
+import { CheckCircle, Trash01, UploadCloud02, XCircle } from "@untitledui/icons";
+import { getErrorDisplayName, getErrorIcon, getErrorDescription } from "@/lib/error-codes";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
@@ -268,7 +268,7 @@ export interface FileListItemProps {
     onRetry?: () => void;
 }
 
-export const FileListItemProgressBar = ({ name, size, progress, failed, isDuplicate, errorCode, errorDescription, errorLink, type, fileIconVariant, onDelete, onRetry, className }: FileListItemProps) => {
+export const FileListItemProgressBar = ({ name, size, progress, failed, isDuplicate, errorCode, errorDescription, type, fileIconVariant, onDelete, onRetry, className }: FileListItemProps) => {
     const isComplete = progress === 100;
 
     return (

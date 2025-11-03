@@ -12,7 +12,7 @@ import OpenAI from 'openai';
 const config = {
   openaiApiKey: process.env.OPENAI_API_KEY!,
   model: 'gpt-4o',
-  dpi: 150,
+  dpi: 300,                     // Increased from 150 for better source quality
   maxPages: 5,
 };
 

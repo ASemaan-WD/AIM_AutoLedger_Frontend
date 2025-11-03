@@ -11,16 +11,16 @@ import OpenAI from 'openai';
 const config = {
   openaiApiKey: process.env.OPENAI_API_KEY!,
   model: 'gpt-4o',
-  dpi: 150,
+  dpi: 300,                     // Increased from 150 for better source quality
   maxPages: 50,
   
   // Chunking parameters (from original OCR/config.py)
-  longSideMaxPx: 2048,      // LONG_SIDE_MAX_PX
-  aspectTrigger: 2.7,       // ASPECT_TRIGGER - when to split horizontally vs vertically
-  overlapPct: 0.05,         // OVERLAP_PCT - 5% overlap between chunks
+  longSideMaxPx: 2048,          // LONG_SIDE_MAX_PX - Vision API maximum
+  aspectTrigger: 2.7,           // ASPECT_TRIGGER - when to split horizontally vs vertically
+  overlapPct: 0.05,             // OVERLAP_PCT - 5% overlap between chunks
   
   // Parallel processing
-  maxParallelCalls: 5,      // MAX_PARALLEL_VISION_CALLS
+  maxParallelCalls: 5,          // MAX_PARALLEL_VISION_CALLS
 };
 
 // Initialize OpenAI client
@@ -152,12 +152,29 @@ async function pdfToImages(pdfBuffer: Buffer): Promise<Buffer[]> {
     execSync(command, { stdio: 'pipe' });
     
     // Find generated images
+    // pdftoppm generates files with different naming patterns:
+    // - For small PDFs: basename-1.png, basename-2.png
+    // - For large PDFs: basename-01.png, basename-02.png, or basename-001.png (with zero-padding)
     const images: Buffer[] = [];
     
     for (let page = 1; page <= config.maxPages; page++) {
-      const imagePath = `${tempDir}/${baseName}-${page}.png`;
+      let imagePath: string | null = null;
       
-      if (existsSync(imagePath)) {
+      // Try different padding patterns: no padding, 2-digit, 3-digit
+      const patterns = [
+        `${tempDir}/${baseName}-${page}.png`,                    // No padding: -1.png
+        `${tempDir}/${baseName}-${String(page).padStart(2, '0')}.png`,  // 2-digit: -01.png
+        `${tempDir}/${baseName}-${String(page).padStart(3, '0')}.png`,  // 3-digit: -001.png
+      ];
+      
+      for (const pattern of patterns) {
+        if (existsSync(pattern)) {
+          imagePath = pattern;
+          break;
+        }
+      }
+      
+      if (imagePath) {
         const imageBuffer = readFileSync(imagePath);
         images.push(imageBuffer);
         console.log(`✅ Page ${page}: ${Math.round(imageBuffer.length / 1024)}KB`);

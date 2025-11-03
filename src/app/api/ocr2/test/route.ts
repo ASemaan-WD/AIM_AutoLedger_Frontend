@@ -101,7 +101,7 @@ async function checkSharpInstalled() {
       installed: true,
       version: sharp.default.versions.sharp
     };
-  } catch (error) {
+  } catch {
     return {
       installed: false,
       error: 'Sharp module not found. Run: npm install sharp'
@@ -118,7 +118,7 @@ async function checkOpenAIInstalled() {
     return {
       installed: true
     };
-  } catch (error) {
+  } catch {
     return {
       installed: false,
       error: 'OpenAI module not found. Run: npm install openai'

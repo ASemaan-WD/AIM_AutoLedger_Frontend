@@ -21,15 +21,15 @@ interface WebhookPayload {
   changedTablesById: Record<string, {
     changedRecordsById: Record<string, {
       current?: {
-        cellValuesByFieldId: Record<string, any>;
+        cellValuesByFieldId: Record<string, unknown>;
         createdTime: string;
       };
       previous?: {
-        cellValuesByFieldId: Record<string, any>;
+        cellValuesByFieldId: Record<string, unknown>;
         createdTime: string;
       };
     }>;
-    createdRecordsById: Record<string, any>;
+    createdRecordsById: Record<string, Record<string, unknown>>;
     destroyedRecordIds: string[];
   }>;
 }
@@ -129,7 +129,7 @@ async function processWebhookChanges(payload: WebhookPayload): Promise<void> {
 /**
  * Handle record creation events
  */
-async function handleRecordCreated(tableId: string, recordId: string, recordData: any): Promise<void> {
+async function handleRecordCreated(tableId: string, recordId: string, _recordData: Record<string, unknown>): Promise<void> {
   console.log(`Record created in table ${tableId}:`, recordId);
   
   // TODO: Implement your logic here
@@ -146,7 +146,7 @@ async function handleRecordCreated(tableId: string, recordId: string, recordData
 async function handleRecordChanged(
   tableId: string,
   recordId: string,
-  changeData: { current?: any; previous?: any }
+  _changeData: { current?: Record<string, unknown>; previous?: Record<string, unknown> }
 ): Promise<void> {
   console.log(`Record changed in table ${tableId}:`, recordId);
   
@@ -208,114 +208,5 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.message : 'Failed to process webhook',
       500
     );
-  }
-}
-
-/**
- * Helper functions for webhook management
- */
-class WebhookManager {
-  private client: ReturnType<typeof createAirtableClient>;
-  private baseId: string;
-
-  constructor(baseId: string) {
-    this.baseId = baseId;
-    this.client = createAirtableClient(baseId);
-  }
-
-  /**
-   * Create a new webhook subscription
-   */
-  async createWebhook(config: {
-    notificationUrl: string;
-    specification: {
-      options: {
-        filters: {
-          dataTypes: ('tableData' | 'tableSchema')[];
-          recordChangeScope?: 'tblXXXXXXXXXXXXXX' | 'viwXXXXXXXXXXXXXX';
-          watchDataInFieldIds?: string[];
-        };
-      };
-    };
-    includePreviousCellValues?: boolean;
-    includeCreatedTime?: boolean;
-  }): Promise<WebhookSubscription> {
-    const url = `https://api.airtable.com/v0/bases/${this.baseId}/webhooks`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.AIRTABLE_PAT}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(config),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Failed to create webhook: ${error.error?.message}`);
-    }
-
-    return response.json();
-  }
-
-  /**
-   * List existing webhooks
-   */
-  async listWebhooks(): Promise<{ webhooks: WebhookSubscription[] }> {
-    const url = `https://api.airtable.com/v0/bases/${this.baseId}/webhooks`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${process.env.AIRTABLE_PAT}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Failed to list webhooks: ${error.error?.message}`);
-    }
-
-    return response.json();
-  }
-
-  /**
-   * Delete a webhook
-   */
-  async deleteWebhook(webhookId: string): Promise<void> {
-    const url = `https://api.airtable.com/v0/bases/${this.baseId}/webhooks/${webhookId}`;
-    
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${process.env.AIRTABLE_PAT}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Failed to delete webhook: ${error.error?.message}`);
-    }
-  }
-
-  /**
-   * Refresh a webhook (extends expiration time)
-   */
-  async refreshWebhook(webhookId: string): Promise<WebhookSubscription> {
-    const url = `https://api.airtable.com/v0/bases/${this.baseId}/webhooks/${webhookId}/refresh`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.AIRTABLE_PAT}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Failed to refresh webhook: ${error.error?.message}`);
-    }
-
-    return response.json();
   }
 }

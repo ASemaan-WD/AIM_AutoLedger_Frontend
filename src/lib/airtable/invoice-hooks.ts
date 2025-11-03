@@ -70,7 +70,7 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
       queryParams.append('pageSize', '50');
 
       // Fetch invoices only (invoice lines capability was removed)
-      const invoicesResponse = await fetch(`/api/airtable/Invoices?${queryParams}`);
+      const invoicesResponse = await fetch(`/api/airtable/InvoiceHeaders?${queryParams}`);
 
       if (!invoicesResponse.ok) {
         throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
@@ -124,7 +124,7 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
     try {
       const airtableFields = transformInvoiceToAirtable(updates);
       
-      const response = await fetch(`/api/airtable/Invoices`, {
+      const response = await fetch(`/api/airtable/InvoiceHeaders`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -157,7 +157,7 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
     try {
       const airtableFields = transformInvoiceToAirtable(invoice);
       
-      const response = await fetch(`/api/airtable/Invoices`, {
+      const response = await fetch(`/api/airtable/InvoiceHeaders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: airtableFields }),
@@ -233,7 +233,7 @@ export function useInvoiceCounts() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&fields=Status`);
+      const response = await fetch(`/api/airtable/InvoiceHeaders?baseId=${BASE_ID}&fields=Status`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -242,26 +242,29 @@ export function useInvoiceCounts() {
       const data = await response.json();
       const statusCounts: Record<string, number> = {};
 
-      // Count by status
+      // Count by status (handle new capitalized status values)
       data.records.forEach((record: AirtableRecord) => {
-        const status = record.fields.Status || 'open';
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
+        const status = record.fields.Status || 'Pending';
+        // Normalize to lowercase for counting
+        const normalizedStatus = status.toLowerCase();
+        statusCounts[normalizedStatus] = (statusCounts[normalizedStatus] || 0) + 1;
       });
 
       // Calculate derived counts
       const total = data.records.length;
       const needsCoding = data.records.filter((record: AirtableRecord) => {
         const fields = record.fields;
-        return !fields['ERP Attribute 1'] || !fields['ERP Attribute 2'] || !fields['ERP Attribute 3'] || !fields['GL Account'];
+        // Check if key fields are missing
+        return !fields['Vendor Name'] || !fields['AP-Invoice-Number'] || !fields['Total-Invoice-Amount'];
       }).length;
 
       setCounts({
         total,
-        open: statusCounts.open || 0,
-        reviewed: statusCounts.reviewed || 0, // NEW status
         pending: statusCounts.pending || 0,
-        approved: statusCounts.approved || 0,
-        rejected: statusCounts.rejected || 0,
+        open: statusCounts.pending || 0, // Map pending to open for backward compatibility
+        reviewed: statusCounts.reviewed || statusCounts.matched || 0,
+        approved: statusCounts.reviewed || 0, // Map reviewed to approved for backward compatibility
+        rejected: statusCounts.error || 0, // Map error to rejected
         exported: statusCounts.exported || 0,
         needsCoding
       });

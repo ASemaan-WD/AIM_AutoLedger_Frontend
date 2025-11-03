@@ -35,9 +35,9 @@ Content-Type: application/json
 
 ## What It Does
 1. Downloads PDF from URL
-2. Converts to images (150 DPI)
-3. Intelligently chunks large images (2048px max, 5% overlap)
-4. Processes up to 5 chunks in parallel with OpenAI Vision
+2. Converts to images (300 DPI for optimal quality)
+3. Intelligently chunks large images (2048px max, shortest side 768px, 5% overlap)
+4. Processes up to 5 chunks in parallel with OpenAI Vision (high detail mode)
 5. Returns complete text with page breaks
 
 ## Features

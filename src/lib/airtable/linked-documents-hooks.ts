@@ -22,23 +22,28 @@ export interface LinkedDocuments {
 
 /**
  * Transform Airtable File record to AirtableFile for linked documents
+ * Updated for new schema field names
  */
 function transformFileRecord(record: any): AirtableFile {
     return {
         id: record.id,
-        name: record.fields['Name'] || '',
-        uploadDate: record.fields['Upload Date'] ? new Date(record.fields['Upload Date']) : undefined,
+        name: record.fields['FileName'] || record.fields['Name'] || '', // New field name
+        uploadDate: record.fields['UploadDate'] || record.fields['Upload Date'] ? new Date(record.fields['UploadDate'] || record.fields['Upload Date']) : undefined,
         source: record.fields['Source'] || 'Upload',
         status: record.fields['Status'] || 'Queued',
         pages: record.fields['Pages'] || undefined,
-        isDuplicate: record.fields['Is Duplicate'] || false,
-        duplicateOf: record.fields['Duplicate Of'] || [],
-        relatedInvoices: record.fields['Related Invoices'] || [],
+        isDuplicate: (record.fields['Error Code'] === 'DUPLICATE_FILE') || record.fields['Is Duplicate'] || false,
+        duplicateOf: [], // This field was removed from schema
+        relatedInvoices: record.fields['InvoiceHeaderID'] || record.fields['Invoices'] || [], // New field name
         activity: record.fields['Activity'] || [],
-        relatedEmails: record.fields['Related Emails'] || [],
-        isLinked: (record.fields['Related Invoices'] || []).length > 0,
+        relatedEmails: [], // Emails no longer exist
+        fileHash: record.fields['FileHash'] || record.fields['File Hash'],
+        errorCode: record.fields['Error Code'],
+        errorDescription: record.fields['Error Description'],
+        errorLink: record.fields['Error Link'],
+        isLinked: (record.fields['InvoiceHeaderID'] || record.fields['Invoices'] || []).length > 0,
         createdAt: record.createdTime ? new Date(record.createdTime) : undefined,
-        updatedAt: record.fields['Last Modified'] ? new Date(record.fields['Last Modified']) : undefined,
+        updatedAt: record.fields['Modified At'] || record.fields['ModifiedAt'] ? new Date(record.fields['Modified At'] || record.fields['ModifiedAt']) : undefined,
     };
 }
 
@@ -91,22 +96,21 @@ function transformDeliveryTicketRecord(record: any): any {
 
 /**
  * Transform Airtable Invoice record for linked documents
+ * Updated for new InvoiceHeaders table field names
  */
 function transformInvoiceRecord(record: any): any {
     return {
         id: record.id,
-        invoiceNumber: record.fields['Invoice Number'] || '',
-        vendorName: record.fields['Vendor'] || '',
-        vendorCode: record.fields['Vendor Code'] || '',
-        amount: record.fields['Amount'] || 0,
-        invoiceDate: record.fields['Date'] ? new Date(record.fields['Date']) : new Date(),
-        status: record.fields['Status'] || 'New',
-        project: record.fields['Project (ISBN)'] || undefined,
-        task: record.fields['Task'] || undefined,
-        costCenter: record.fields['Cost Center'] || undefined,
-        glAccount: record.fields['GL Account'] || undefined,
+        invoiceNumber: record.fields['AP-Invoice-Number'] || record.fields['Invoice Number'] || '',
+        vendorName: record.fields['Vendor Name'] || '',
+        vendorCode: record.fields['VendId'] || record.fields['Vendor Code'] || '',
+        amount: record.fields['Total-Invoice-Amount'] || record.fields['Amount'] || 0,
+        invoiceDate: record.fields['Invoice-Date'] || record.fields['Date'] ? new Date(record.fields['Invoice-Date'] || record.fields['Date']) : new Date(),
+        status: record.fields['Status'] || 'Pending',
+        // GL Account moved to InvoiceDetails (line items)
+        glAccount: undefined,
         createdAt: record.createdTime ? new Date(record.createdTime) : undefined,
-        updatedAt: record.fields['Last Modified'] ? new Date(record.fields['Last Modified']) : undefined,
+        updatedAt: record.fields['Modified At'] ? new Date(record.fields['Modified At']) : undefined,
     };
 }
 
@@ -132,10 +136,12 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
             
             switch (docType) {
                 case 'invoice':
-                    currentDocResponse = await fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&pageSize=100`);
+                    currentDocResponse = await fetch(`/api/airtable/InvoiceHeaders?baseId=${BASE_ID}&pageSize=100`);
                     break;
                 case 'delivery-ticket':
-                    currentDocResponse = await fetch(`/api/airtable/Delivery%20Tickets?baseId=${BASE_ID}&pageSize=100`);
+                    // DEPRECATED: Delivery Tickets table no longer exists - treat as invoice
+                    console.warn('Delivery Tickets table deprecated, treating as InvoiceHeaders');
+                    currentDocResponse = await fetch(`/api/airtable/InvoiceHeaders?baseId=${BASE_ID}&pageSize=100`);
                     break;
                 case 'file':
                     currentDocResponse = await fetch(`/api/airtable/Files?baseId=${BASE_ID}&pageSize=100`);
@@ -169,20 +175,23 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
 
             switch (docType) {
                 case 'invoice':
-                    // For invoices: get IDs from Files and Emails fields
+                    // For invoices: get IDs from Files field (updated field name)
                     linkedFileIds = fields['Files'] || [];
-                    linkedEmailIds = fields['Emails'] || [];
+                    // Emails field no longer exists
+                    linkedEmailIds = [];
                     break;
                 case 'delivery-ticket':
-                    // For delivery tickets: get IDs from Files and Emails fields
+                    // DEPRECATED: Delivery tickets no longer exist
                     linkedFileIds = fields['Files'] || [];
-                    linkedEmailIds = fields['Emails'] || [];
+                    linkedEmailIds = [];
                     break;
                 case 'file':
-                    // For files: get IDs from Invoices, Delivery Tickets and Emails fields
-                    linkedInvoiceIds = fields['Invoices'] || [];
-                    linkedDeliveryTicketIds = fields['Delivery Tickets'] || [];
-                    linkedEmailIds = fields['Emails'] || [];
+                    // For files: get IDs from InvoiceHeaderID field (updated field name)
+                    linkedInvoiceIds = fields['InvoiceHeaderID'] || fields['Invoices'] || [];
+                    // Delivery Tickets no longer exist
+                    linkedDeliveryTicketIds = [];
+                    // Emails field no longer exists
+                    linkedEmailIds = [];
                     break;
             }
 
@@ -207,25 +216,18 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
             // Emails table was removed - always return empty response
             promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
 
-            // Fetch invoices by ID if we have any
+            // Fetch invoices by ID if we have any (using InvoiceHeaders table)
             if (linkedInvoiceIds.length > 0) {
                 console.log(`Debug: Fetching invoices for IDs:`, linkedInvoiceIds);
                 promises.push(
-                    fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&pageSize=100`)
+                    fetch(`/api/airtable/InvoiceHeaders?baseId=${BASE_ID}&pageSize=100`)
                 );
             } else {
                 promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
             }
 
-            // Fetch delivery tickets by ID if we have any
-            if (linkedDeliveryTicketIds.length > 0) {
-                console.log(`Debug: Fetching delivery tickets for IDs:`, linkedDeliveryTicketIds);
-                promises.push(
-                    fetch(`/api/airtable/Delivery%20Tickets?baseId=${BASE_ID}&pageSize=100`)
-                );
-            } else {
-                promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
-            }
+            // DEPRECATED: Delivery tickets no longer exist - always return empty
+            promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
 
             const [filesResponse, emailsResponse, invoicesResponse, deliveryTicketsResponse] = await Promise.all(promises);
 
@@ -236,9 +238,7 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
             if (invoicesResponse && 'status' in invoicesResponse && !invoicesResponse.ok) {
                 throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
             }
-            if (deliveryTicketsResponse && 'status' in deliveryTicketsResponse && !deliveryTicketsResponse.ok) {
-                throw new Error(`Failed to fetch delivery tickets: ${deliveryTicketsResponse.status}`);
-            }
+            // Skip delivery tickets validation since they were removed
 
             const [filesData, emailsData, invoicesData, deliveryTicketsData] = await Promise.all([
                 filesResponse.json(),

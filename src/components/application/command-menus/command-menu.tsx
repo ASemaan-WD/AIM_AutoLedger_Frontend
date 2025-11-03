@@ -179,7 +179,10 @@ export const CommandDialog = ({ className, children, ...comboboxProps }: Command
     );
 };
 
-interface CommandMenuListProps extends Omit<ListBoxProps<CommandMenuGroupType>, "items"> {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface CommandMenuListProps extends Omit<ListBoxProps<CommandMenuGroupType>, "items"> {
+    // Empty interface that extends ListBoxProps
+}
 
 export const CommandMenuList = ({ className, selectionMode = "single", ...props }: CommandMenuListProps) => {
     const { hasFooter, emptyState, ...listBoxProps } = useContext(CommandMenuContext);

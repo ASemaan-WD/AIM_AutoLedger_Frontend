@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createAirtableClient } from '@/lib/airtable/client';
-import { buildFilter } from '@/lib/airtable/formula';
 import type {
   AirtableListParams,
   AirtableCreateParams,

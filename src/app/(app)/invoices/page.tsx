@@ -7,9 +7,6 @@ import { PDFViewer } from "@/components/documents/pdf-viewer";
 import { DocumentDetailsPanel } from "@/components/documents/document-details-panel";
 import { useInvoices } from "@/lib/airtable";
 // Activity logging removed - Activities table no longer exists
-import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
-import { KeyboardShortcutsHelp } from "@/components/keyboard-shortcuts-help";
-import { cx } from "@/utils/cx";
 import { hasBlockingIssues, sortInvoicesByPriority, validateInvoice, getMissingFieldsMessage } from "@/utils/invoice-validation";
 import type { Invoice } from "@/types/documents";
 
@@ -67,46 +64,19 @@ export default function InvoicesPage() {
         })
     ) as Invoice[]; // Cast since we know these are all invoices
 
-    // Handle save action - save the current edited document
-    const handleKeyboardSave = () => {
-        if (selectedInvoice) {
-            handleInvoiceUpdate(selectedInvoice);
-        }
-    };
-
-    // Keyboard navigation system - use filtered invoices so navigation matches what's visible
-    const keyboardNav = useKeyboardNavigation({
-        invoices: filteredInvoices,
-        selectedInvoiceId,
-        onSelectionChange: updateSelectedInvoiceId,
-        activeTab,
-        onTabChange: setActiveTab,
-        onSave: handleKeyboardSave,
-    });
-
     // Set initial selection when invoices load - use filtered invoices
     useEffect(() => {
         if (filteredInvoices.length > 0 && !selectedInvoiceId) {
             updateSelectedInvoiceId(filteredInvoices[0].id);
         }
-    }, [filteredInvoices, selectedInvoiceId]);
+    }, [filteredInvoices, selectedInvoiceId, updateSelectedInvoiceId]);
 
     const handleInvoiceUpdate = async (updatedInvoice: Invoice) => {
         try {
-            const originalInvoice = invoices.find(inv => inv.id === updatedInvoice.id);
-            
             await updateInvoice(updatedInvoice.id, updatedInvoice);
             
-            // Log field edits (non-status changes)
-            if (originalInvoice) {
-                const fieldsToCheck = [
-                    'vendorName', 'invoiceNumber', 'amount', 'invoiceDate',
-                    'project', 'task', 'costCenter', 'glAccount', 'isMultilineCoding'
-                ];
-                
-                // Activity logging removed - Activities table no longer exists
-                // Field changes are tracked through updatedAt timestamps
-            }
+            // Activity logging removed - Activities table no longer exists
+            // Field changes are tracked through updatedAt timestamps
         } catch (err) {
             console.error('Failed to update invoice:', err);
             // You could add a toast notification here
@@ -213,7 +183,6 @@ export default function InvoicesPage() {
                     onSelectionChange={updateSelectedInvoiceId}
                     subView={subView}
                     onSubViewChange={setSubView}
-                    keyboardNav={keyboardNav}
                 />
             </div>
 
@@ -221,7 +190,6 @@ export default function InvoicesPage() {
             <div className="flex-1 min-w-0 overflow-hidden h-full">
                 <PDFViewer 
                     document={selectedInvoice} 
-                    keyboardNav={keyboardNav}
                 />
             </div>
 
@@ -237,12 +205,8 @@ export default function InvoicesPage() {
                     onReopen={handleReopen}
                     activeTab={activeTab}
                     onTabChange={setActiveTab}
-                    keyboardNav={keyboardNav}
                 />
             </div>
-
-            {/* Keyboard Shortcuts Help */}
-            <KeyboardShortcutsHelp />
         </div>
     );
 }

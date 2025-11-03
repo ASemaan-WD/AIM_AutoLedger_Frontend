@@ -90,6 +90,7 @@ const DropdownItem = ({ label, children, addon, icon: Icon, unstyled, ...props }
     );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface DropdownMenuProps<T extends object> extends AriaMenuProps<T> {}
 
 const DropdownMenu = <T extends object>(props: DropdownMenuProps<T>) => {
@@ -105,6 +106,7 @@ const DropdownMenu = <T extends object>(props: DropdownMenuProps<T>) => {
     );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface DropdownPopoverProps extends AriaPopoverProps {}
 
 const DropdownPopover = (props: DropdownPopoverProps) => {

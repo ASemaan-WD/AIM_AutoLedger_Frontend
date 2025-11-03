@@ -74,12 +74,12 @@ export function getOCR2Settings(): OCR2Settings {
     },
 
     pdf: {
-      dpi: parseInt(process.env.PDF_DPI || '150'),
+      dpi: parseInt(process.env.PDF_DPI || '300'),
       maxPagesPerDoc: parseInt(process.env.MAX_PAGES_PER_DOC || '50'),
     },
 
     chunking: {
-      shortSidePx: parseInt(process.env.SHORT_SIDE_PX || '512'),
+      shortSidePx: parseInt(process.env.SHORT_SIDE_PX || '768'),
       longSideMaxPx: parseInt(process.env.LONG_SIDE_MAX_PX || '2048'),
       aspectTrigger: parseFloat(process.env.ASPECT_TRIGGER || '2.7'),
       overlapPct: parseFloat(process.env.OVERLAP_PCT || '0.05'),

@@ -98,6 +98,7 @@ export const Tooltip = ({
     );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface TooltipTriggerProps extends AriaButtonProps {}
 
 export const TooltipTrigger = ({ children, className, ...buttonProps }: TooltipTriggerProps) => {

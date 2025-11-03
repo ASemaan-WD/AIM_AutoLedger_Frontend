@@ -111,8 +111,9 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Helper function to get field type information
+ * Helper function to get field type information (currently unused but kept for reference)
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getFieldTypeInfo(fieldType: string) {
   const typeMapping: Record<string, { 
     category: string; 

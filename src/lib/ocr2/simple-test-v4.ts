@@ -12,13 +12,13 @@ import OpenAI from 'openai';
 const config = {
   openaiApiKey: process.env.OPENAI_API_KEY!,
   model: 'gpt-4o',
-  dpi: 150,
+  dpi: 300,                     // Increased from 150 for better source quality
   maxPages: 5,
   
   // Chunking parameters (from original OCR/config.py)
-  longSideMaxPx: 2048,      // LONG_SIDE_MAX_PX
-  aspectTrigger: 2.7,       // ASPECT_TRIGGER - when to split horizontally vs vertically
-  overlapPct: 0.05,         // OVERLAP_PCT - 5% overlap between chunks
+  longSideMaxPx: 2048,          // LONG_SIDE_MAX_PX - Vision API maximum
+  aspectTrigger: 2.7,           // ASPECT_TRIGGER - when to split horizontally vs vertically
+  overlapPct: 0.05,             // OVERLAP_PCT - 5% overlap between chunks
 };
 
 // Initialize OpenAI client

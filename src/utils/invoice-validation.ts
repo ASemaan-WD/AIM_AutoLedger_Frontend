@@ -56,16 +56,8 @@ export function getRequiredFields(invoice: Invoice | DeliveryTicket): Array<{key
         { key: 'invoiceDate', label: 'Date', value: invoice.invoiceDate },
     ];
 
-    // Add team field for both invoices and delivery tickets
-    // Team is now the standard field (Store Number is deprecated)
-    baseFields.push({ key: 'team', label: 'Team', value: invoice.team && invoice.team.length > 0 ? invoice.team : null });
-
-    // GL Account is no longer required per new requirements
-    // if (!isMultiLineMode(invoice)) {
-    //     baseFields.push(
-    //         { key: 'glAccount', label: 'GL Account', value: invoice.glAccount || '' }
-    //     );
-    // }
+    // Team field is deprecated - no longer required
+    // GL Account is also no longer required per new requirements
 
     return baseFields;
 }

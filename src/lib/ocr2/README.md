@@ -43,10 +43,10 @@ MAX_VISION_RETRIES=1
 RETRY_BACKOFF_SECONDS=2
 
 # Optional: Processing Configuration
-PDF_DPI=150
+PDF_DPI=300                      # Increased for better source quality (was 150)
 MAX_PAGES_PER_DOC=50
-SHORT_SIDE_PX=512
-LONG_SIDE_MAX_PX=2048
+SHORT_SIDE_PX=768                # Optimized for Vision API high detail mode (was 512)
+LONG_SIDE_MAX_PX=2048            # Vision API maximum
 ASPECT_TRIGGER=2.7
 OVERLAP_PCT=0.05
 MAX_PARALLEL_VISION_CALLS=5
@@ -227,6 +227,16 @@ try {
 - Automatic resizing for Vision API limits
 - Overlap handling to prevent text loss
 
+### OpenAI Vision API Optimization
+The default settings are optimized for OpenAI's Vision API "high" detail mode:
+- **PDF_DPI=300**: Higher DPI (300 vs 150) provides better source image quality for OCR
+- **SHORT_SIDE_PX=768**: Vision API resizes images so the shortest side is 768px for optimal tile processing
+- **LONG_SIDE_MAX_PX=2048**: Vision API maximum dimension (images are scaled to fit 2048×2048 frame)
+- After resizing, Vision API divides images into 512×512 pixel tiles for analysis
+- Maximum file size supported: 20 MB per image
+
+These settings ensure maximum accuracy by providing the highest quality input within Vision API constraints.
+
 ### Memory Management
 - Streaming processing for large files
 - Automatic cleanup of temporary resources
@@ -251,7 +261,8 @@ try {
 
 **"Vision API timeout"**
 - Increase `OPENAI_TIMEOUT_SECONDS` (default: 90)
-- Reduce image quality with lower `PDF_DPI`
+- Reduce image quality with lower `PDF_DPI` (try 200 or 150 instead of 300)
+- Reduce `MAX_PAGES_PER_DOC` for large documents
 
 ### Debug Mode
 

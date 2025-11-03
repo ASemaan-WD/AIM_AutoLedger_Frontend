@@ -1,55 +1,17 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import { Edit05, PhoneCall01, SearchLg, Menu01 } from "@untitledui/icons";
+import { useState } from "react";
+import Link from "next/link";
+import { Edit05, SearchLg, Menu01 } from "@untitledui/icons";
 import { ListBox, ListBoxItem, type ListBoxItemProps } from "react-aria-components";
 import { NavItemButton } from "@/components/application/app-navigation/base-components/nav-item-button";
-import { HeaderNavigationBase } from "@/components/application/app-navigation/header-navigation";
 import { UntitledLogo } from "@/components/foundations/logo/untitledui-logo";
 import { NavItemBase } from "@/components/application/app-navigation/base-components/nav-item";
-import { ContentDivider } from "@/components/application/content-divider/content-divider";
-import { MessageActionTextarea } from "@/components/application/messaging/message-action.demo";
-import type { Message } from "@/components/application/messaging/messaging";
-import { MessageItem } from "@/components/application/messaging/messaging";
 import { TableRowActionsDropdown } from "@/components/application/table/table";
-import { Avatar } from "@/components/base/avatar/avatar";
-import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
-import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
+import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
-import { Dot } from "@/components/foundations/dot-icon";
 import { cx } from "@/utils/cx";
-
-// Helper function for formatting relative time
-const formatRelativeTime = (timestamp: number): string => {
-    const now = Date.now();
-    const diffInMinutes = Math.floor((now - timestamp) / (1000 * 60));
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-
-    if (diffInMinutes < 1) {
-        return "Just now";
-    } else if (diffInMinutes < 60) {
-        return `${diffInMinutes} mins ago`;
-    } else if (diffInHours < 24) {
-        return `${diffInHours} hour${diffInHours === 1 ? "" : "s"} ago`;
-    } else if (diffInDays === 1) {
-        // Yesterday - show time
-        const date = new Date(timestamp);
-        const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-
-        return `Yesterday ${time.toLowerCase()}`;
-    } else if (diffInDays <= 7) {
-        // Within a week - show day and time
-        const date = new Date(timestamp);
-        const dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long" });
-        const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-
-        return `${dayOfWeek} ${time.toLowerCase()}`;
-    } else {
-        return `${diffInDays} day${diffInDays === 1 ? "" : "s"} ago`;
-    }
-};
 
 type InvoiceProps = {
     id: string;
@@ -123,100 +85,12 @@ const invoices: InvoiceProps[] = [
     },
 ];
 
-const messageGroups: Array<Array<Omit<Message, "sentAt"> & { sentAt: number }>> = [
-    [
-        {
-            id: "msg-0",
-            sentAt: new Date(2025, 6, 31, 11, 39).getTime(),
-            user: {
-                name: "Andi Lane",
-                avatarUrl: "https://www.untitledui.com/images/avatars/andi-lane?fm=webp&q=80",
-                status: "online",
-            },
-            text: "Thanks Olivia! Almost there. I'll work on making those changes you suggested and will shoot it over.",
-        },
-        {
-            id: "msg-1",
-            sentAt: new Date(2025, 6, 31, 11, 40).getTime(),
-            user: {
-                name: "Andi Lane",
-                avatarUrl: "https://www.untitledui.com/images/avatars/andi-lane?fm=webp&q=80",
-                status: "online",
-            },
-            text: "Hey Olivia, I've finished with the requirements doc! I made some notes in the gdoc as well for Phoenix to look over.",
-        },
-        {
-            id: "msg-1.2",
-            sentAt: new Date(2025, 6, 31, 11, 40).getTime(),
-            user: {
-                name: "Andi Lane",
-                avatarUrl: "https://www.untitledui.com/images/avatars/andi-lane?fm=webp&q=80",
-                status: "online",
-            },
-            attachment: {
-                type: "pdf",
-                name: "Tech requirements.pdf",
-                size: "1.2 MB",
-            },
-        },
-        {
-            id: "msg-2",
-            sentAt: new Date(2025, 6, 31, 11, 41).getTime(),
-            user: {
-                me: true,
-            },
-            text: "Awesome! Thanks. I'll look at this today.",
-        },
-        {
-            id: "msg-3",
-            sentAt: new Date(2025, 6, 31, 11, 44).getTime(),
-            user: {
-                name: "Andi Lane",
-                avatarUrl: "https://www.untitledui.com/images/avatars/andi-lane?fm=webp&q=80",
-                status: "online",
-            },
-            text: "No rush though—we still have to wait for Lana's designs.",
-        },
-    ],
-    [
-        {
-            id: "msg-4",
-            sentAt: new Date(2025, 6, 31, 11, 44).getTime(),
-            user: {
-                name: "Andi Lane",
-                avatarUrl: "https://www.untitledui.com/images/avatars/andi-lane?fm=webp&q=80",
-                status: "online",
-            },
-            text: "Hey Olivia, can you please review the latest design when you can?",
-        },
-        {
-            id: "msg-5",
-            sentAt: Date.now() - 30 * 1000,
-            user: {
-                me: true,
-            },
-            text: "Sure thing, I'll have a look today. They're looking great!",
-            reactions: [
-                { content: "❤️‍🔥", count: 1 },
-                { content: "👌", count: 1 },
-            ],
-        },
-    ],
-];
-
 const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<InvoiceProps>) => {
     if (!value) return null;
 
-    const getStatusColor = (status: InvoiceProps['status']): "gray" => {
+    const getStatusColor = (): "gray" => {
         // For now, we'll use gray for all statuses to match the Badge type constraints
         return 'gray';
-    };
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(amount);
     };
 
     const formatDate = (date: Date) => {
@@ -249,7 +123,7 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-semibold text-primary truncate">{value.vendorName}</span>
-                            <Badge size="sm" color={getStatusColor(value.status)} type="color">
+                            <Badge size="sm" color={getStatusColor()} type="color">
                                 {value.status}
                             </Badge>
                         </div>
@@ -257,7 +131,7 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
                     </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                    <div className="text-sm font-medium text-primary">{new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value.amount)}</div>
+                    <div className="text-sm font-medium text-primary">{new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value.amount)}</div>
                     <div className="text-xs text-tertiary">Due {formatDate(value.dueDate)}</div>
                 </div>
             </div>
@@ -278,13 +152,13 @@ export const Informational11 = () => {
                 <section className="flex h-16 w-full items-center justify-center bg-primary border-b border-secondary md:h-18">
                     <div className="flex w-full justify-between pr-3 pl-4">
                         <div className="flex flex-1 items-center gap-4">
-                            <a
+                            <Link
                                 aria-label="Go to homepage"
                                 href="/"
                                 className="rounded-xs outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
                             >
                                 <UntitledLogo className="h-12" />
-                            </a>
+                            </Link>
 
                             <nav>
                                 <ul className="flex items-center gap-0.5">

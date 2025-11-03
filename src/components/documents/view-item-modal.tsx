@@ -25,12 +25,12 @@ interface ViewItemModalProps {
 }
 
 // Type guards to determine document type
-const isInvoice = (doc: any): doc is Invoice => {
-    return doc && 'invoiceNumber' in doc && 'vendorName' in doc;
+const isInvoice = (doc: unknown): doc is Invoice => {
+    return !!doc && typeof doc === 'object' && 'invoiceNumber' in doc && 'vendorName' in doc;
 };
 
-const isFile = (doc: any): doc is AirtableFile => {
-    return doc && 'name' in doc && 'uploadDate' in doc;
+const isFile = (doc: unknown): doc is AirtableFile => {
+    return !!doc && typeof doc === 'object' && 'name' in doc && 'uploadDate' in doc;
 };
 
 export const ViewItemModal = ({ item, documentData, trigger, className }: ViewItemModalProps) => {

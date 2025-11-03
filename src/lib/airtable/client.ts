@@ -135,7 +135,7 @@ export class AirtableClient {
   /**
    * Build URL with query parameters
    */
-  private buildUrl(table: string, params?: Record<string, any>): string {
+  private buildUrl(table: string, params?: Record<string, unknown>): string {
     const baseUrl = `${this.config.apiUrl}/${this.config.baseId}/${encodeURIComponent(table)}`;
     
     if (!params) return baseUrl;

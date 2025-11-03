@@ -8,94 +8,121 @@
 
 export const FIELD_IDS = {
   FILES: {
-    NAME: 'fld871fmYBmxf8xYU',
-    SOURCE: 'fld5bJlx5WszQ4c1u',
-    STATUS: 'fld9ouHowI4sch0n0',
-    INVOICES: 'fldkuHPgcgEa3m7rN',
-    ERROR_CODE: 'fldIBUz1V67JDnoqk',
-    ATTACHMENTS: 'fldLR6Gc6IaN2ltR5',
-    CREATED_AT: 'fldwsCB3B85GpPmLc',
-    MODIFIED_AT: 'fldOl0pJW9KWx7xCX',
-    ERROR_DESCRIPTION: 'fldSePddKTGeqabXg',
-    ERROR_LINK: 'fldAKXH81jZde4kwj',
-    DELIVERY_TICKETS: 'fldfHlzm4Y2llPWmI',
-    STORE_RECEIVERS: 'fldY4KUJ2Ab1WLPkz',
-    RAW_TEXT: 'fldqYhVrJ09KBnVLk',
-    FILE_HASH: 'fldbYXg99PG8IVk0c',
+    FILEID: 'fldvv1P403ZBW5bzD',
+    INVOICEHEADERID: 'fldfWuCdkpNQj9Ldk',
+    FILEURL: 'fldMOyx6UwMi6bEBe',
+    FILEHASH: 'fld4ul9KRJUSKaUWS',
+    FILENAME: 'fldIGVTS5FNOBGa6R',
+    UPLOADDATE: 'fldNiceCZo3dSbvaD',
+    STATUS: 'flduvY2bmQosJsn7n',
+    PARSEDAT: 'fldtidSYAqPRmoW3e',
+    ATTACHMENTS: 'fld3draNU7mkLeGqI',
+    RAW_TEXT: 'fld1lL5zRXtTbt0A3',
+    ERROR_CODE: 'flddPRt8iRsl1YYZM',
+    ERROR_DESCRIPTION: 'flddfs5LMqSRF4gXO',
+    ERROR_LINK: 'fldO1mNxkXBkp9hiC',
+    CREATED_AT: 'fldPaMbKTIR1J6gAn',
+    MODIFIED_AT: 'fldTqso4wgmGyPkUj',
+    INVOICEHEADERS: 'fld8fYyXVZiKhNeDv',
   },
-  INVOICES: {
-    INVOICE_NUMBER: 'fldip2afk1iwBXqIH',
-    STATUS: 'fld7KzLACPWK7YE5S',
-    CREATED_AT: 'fld2pRPhrSTtl4ANV',
-    UPDATED_AT: 'fldoRVUbO4liVHf9b',
-    VENDOR_NAME: 'fldwXyrC93rysGzrJ',
-    VENDOR_CODE: 'fldPWCklYpVUfiwAz',
-    INVOICE_DATE: 'fldFd1vxXxxThsdAk',
-    AMOUNT: 'fldPiog487BPfs1gE',
-    GL_ACCOUNT: 'fld4VwvAkOW77XhR4',
-    DOCUMENT_RAW_TEXT: 'fldutbLwPpnXBAzlP',
-    REJECTION_CODE: 'fldR4mbqWDgdGS3hL',
-    REJECTION_REASON: 'fld6a8zvQYCVprrpl',
-    FILES: 'fldu797dxWoXqGxU0',
-    ATTACHMENTS: 'fld5LeydwwVmVufs4',
-    TEAM: 'fldG2o6HeG4ZgsG2U',
-    MISSING_FIELDS: 'fldbrygcHSus5OnmN',
-    FILE_RAW_TEXT: 'fldVSJ6uKdHTbqZT6',
+  INVOICEHEADERS: {
+    RECORDID: 'fldKuzxRLh9ebfwQ6',
+    COMPANY_CODE: 'fldTxznaohx3570gT',
+    STATUS: 'fldQG5aLrzWuybUGl',
+    VENDID: 'fldHqAuDgGiFwEbNu',
+    VENDOR_NAME: 'fldoQDBbjtB45u8Y0',
+    INVOICE_DETAILS: 'fldDtXpleyIIKomex',
+    AP_INVOICE_NUMBER: 'fldeLVE34jFJIZ4mt',
+    INVOICE_DATE: 'fld965jyW6vfHSzve',
+    TERMSID: 'fldEfXJh4GLbPWnQ4',
+    DUE_DATE: 'fldaToVmDpqv9ONaF',
+    REMIT_NAME: 'fldnqlfWxfsldK9bw',
+    TOTAL_INVOICE_AMOUNT: 'fldCm1wXZcP8By64B',
+    FREIGHT_CHARGE: 'fldlY0X5bukPwEL8m',
+    MISCELLANEOUS_CHARGE: 'fldliitVmX1mosV3v',
+    DISCOUNT_AMOUNT: 'fldVMtTKXIqwZwxyp',
+    DISCOUNT_DATE: 'fldUUPq044MMnF5oJ',
+    TAXID00: 'fld99Me7yA3uT9Dlg',
+    TAXID01: 'fld9qJ9C83aOV5oni',
+    TAXID02: 'fld679IZrwMt4R9BZ',
+    TAXID03: 'fld5Ey8H28MnPLope',
+    TAXTOT00: 'fldj76RPNLhY1tPb1',
+    TAXTOT01: 'fldGaxViKpt3yFjyT',
+    TAXTOT02: 'fldjZeRIq4fMGiEod',
+    TAXTOT03: 'fldwC86weaUTWnVhS',
+    TXBLTOT00: 'fldSts2L2SzKyUJ7J',
+    TXBLTOT01: 'fldqpZlraRgJxdK6Z',
+    TXBLTOT02: 'fldBAyP5RVW801lCB',
+    TXBLTOT03: 'fldspyoZi8utbSIkL',
+    CURYID: 'fldc59eW74gdn78Q4',
+    PO_NUMBER_SEQ_TYPE: 'fldn5JONpJqhBHbyS',
+    PO_NUMBER: 'fld2DoiZs6t3sq3ru',
+    TYPE: 'fld8m7237dBbsJyZp',
+    UPDATE_YN: 'fldsFz9XdZA7E5V2V',
+    BALANCE_EXCEPTION_YN: 'fld9JKT03Uq60oBzX',
+    APACCT: 'fldqTd1R4rlXq1zXN',
+    APSUB: 'fldAiBcZrN7C4fFS8',
+    CURYMULTDIV: 'fldGZcx5ypXYPKjpS',
+    CURYRATE: 'fldPgqTjWKAb5Z9T5',
+    CURYRATETYPE: 'fld17OblRg1DcLGV3',
+    SURCHARGE: 'fld7hsHTZGxv2psSg',
+    DOCUMENTATTACHMENT: 'flddZj4GmYKTIKa5p',
+    MATCHPAYLOADJSON: 'fldyFJ0B6tyrfZOHc',
+    ERRORCODE: 'flddH7m8XIlXZLvkR',
+    EXPORTEDAT: 'fldKz7xwIQb7aWQxc',
+    FILES: 'fldmyaFCTdFTJ1fnf',
+    DOCUMENT_RAW_TEXT: 'fldDGh2zVJXjpoTvX',
+    MISSING_FIELDS: 'fldb3JaRCNHzQ61gp',
+    ATTACHMENTS: 'fldMXV69XZLdIfE6Q',
+    FILE_RAW_TEXT: 'fldn6ThK0bCyWO8wR',
+    ERROR_REASON: 'fldCc76xkxbUe2GEY',
+    CREATED_AT: 'fldTOi6cp2tzLromy',
+    MODIFIED_AT: 'fld7UTUCBIDIP8bw4',
   },
-  DELIVERY_TICKETS: {
-    DELIVERY_TICKET_ID: 'fldR0NiDhDkBj2wVL',
-    INVOICE_NUMBER: 'flddCGUlcJGHTqfDC',
-    STATUS: 'fld2XdvGuxkVprt0N',
-    CREATED_AT: 'fldXCvznjAhEDxpIQ',
-    UPDATED_AT: 'fldj4zEhGMJtda446',
-    VENDOR_NAME: 'fldracbI1LPJK9omE',
-    VENDOR_CODE: 'fldK9g4rQ7j5xLlvu',
-    INVOICE_DATE: 'fldAqFfDPfV4zV2vf',
-    AMOUNT: 'fldKv20a0PZ0xVQbz',
-    GL_ACCOUNT: 'fldZ8afGcwkipq6MZ',
-    RAW_TEXT_OCR: 'fldpGPvCH7L8T3ogK',
-    REJECTION_CODE: 'fldMh0VwOlEoYlScG',
-    REJECTION_REASON: 'fld1nMjBIG06HUgkg',
-    FILES: 'fldpkNRjpEM8I9mPV',
-    ATTACHMENTS: 'fld0YSijoejxdX4nZ',
-    TEAM: 'fldBf2QN6osayVvXP',
-    HAS_MISSING_FIELDS: 'fld6Ec0izASDnhchI',
-    FILE_RAW_TEXT: 'fldhR2TiIe1her9dC',
-  },
-  STORE_RECEIVERS: {
-    DOCUMENT_NUMBER: 'fldAncD0ffthUYpTC',
-    INVOICE_NUMBER: 'fldWZ5fIalPnum8Bt',
-    STATUS: 'fldLkCQ3s9tB0nmYE',
-    CREATED_AT: 'fldGZUUKhcqketiGH',
-    UPDATED_AT: 'fld2rYZEEoS9O6X2X',
-    VENDOR_NAME: 'fldaxBw5ZnYpl5hkv',
-    VENDOR_CODE: 'fldtwFpOOJsL8Hetl',
-    INVOICE_DATE: 'fldjN4A0NR4KaRVt6',
-    AMOUNT: 'fldtSrlxYr8G8RJ9q',
-    GL_ACCOUNT: 'fldIvzA3a8tY0mZKQ',
-    DOCUMENT_RAW_TEXT: 'fld83eQZFJUOuZheB',
-    REJECTION_CODE: 'fldvEpgTMXN4zhLax',
-    REJECTION_REASON: 'fldKKbEYGi9MiQ9i7',
-    FILES: 'fld8HccGngVOj5fNM',
-    ATTACHMENTS: 'fldJlhDGmQsdOTXlQ',
-    TEAM: 'fldkCrba40BQ9RoVG',
-    HAS_MISSING_FIELDS: 'fldP1BlFxc1jYd5fz',
-    FILE_RAW_TEXT: 'fldaTlXt33Y9PHS8r',
-  },
-  TEAMS: {
-    NAME: 'fldl9LGWidcveLU0S',
-    FULL_NAME: 'fldHmIuDRJ9wNdnzf',
-    INVOICES: 'fldErw23zpptCI1Uu',
-    DELIVERY_TICKETS: 'fldzEaM9r7NEUbQPp',
-    STORE_RECEIVERS: 'fldi1z7wpJWkv7JNg',
+  INVOICEDETAILS: {
+    RECORDID: 'flddeN1uf4flGhHNS',
+    COMPANY_CODE: 'fldaagXjpyrRtsy8e',
+    VENDID: 'fldKjuYXhgwv8fcLs',
+    AP_INVOICE_NUMBER: 'fld4i5XGZJi4sYyDV',
+    LINE_NUMBER: 'fld3sdHL8z7RxoZTn',
+    ITEM_NO: 'fldMeG51leLehcgNa',
+    ITEM_DESCRIPTION: 'fld7iTo1UUNAjRAK4',
+    INVOICE_PRICE: 'fldzRKqDHlSo168I5',
+    INVOICE_PRICING_QTY: 'fldm3JJHqefoSzkY0',
+    QUANTITY_INVOICED: 'fldyMWOPBZ0VSFS6Z',
+    LINE_AMOUNT: 'fldogLboVcfjTq9M8',
+    PO_NUMBER_SEQ_TYPE: 'fld8WcpVpCxKXXZMT',
+    PO_NUMBER: 'fldCGNWvybCS5wLh0',
+    PO_RELEASE_NUMBER: 'fldziXj8Hn4MSPvNc',
+    PO_LINE_NUMBER: 'fldaRbB9j71w8TL9S',
+    VENDOR_SHIP_NUMBER: 'fldlgZS1vfjADumtA',
+    DATE_RECEIVED: 'fldvsBVEoR4wvpU4q',
+    QUANTITY_RECEIVED: 'fldhbGZ18orSgmF9X',
+    QUANTITY_ACCEPTED: 'fldmC8tCkMds0r1ss',
+    PURCHASE_PRICE: 'fldOyoAVTjukUffi2',
+    PRICING_QUANTITY: 'fldeEcQ2ZAupVq8h4',
+    ALREADY_INVOICED_QTY: 'flduobfDtNnBX1FIF',
+    EXPACCT: 'fldmYAfYSSYynpSf4',
+    EXPSUB: 'fldCdFXPWyEMMZtbr',
+    TAXID00: 'fldqkgiosIR3wJiiM',
+    TAXAMT00: 'fldkOB2fQTWqOL3VI',
+    TXBLAMT00: 'fldyxHWBYVhrICaED',
+    PO_UOM: 'fldtC4OeorogNCBzW',
+    INVOICED_IN_FULL_YN: 'fldTMFNrthWOMqwmt',
+    GL_EXCEPTION_YN: 'fld3sBjJzVeqTA7p7',
+    STATE: 'fld3c6QiWMYO8fUrO',
+    FROM_FIELD_INVOICE_DETAILS: 'fldqaF4JwoyDondtz',
+    INVOICEHEADERS: 'fldS39vWDismMUvfC',
   },
 } as const;
 
-// Status value constants
+// Status value constants for InvoiceHeaders (new schema uses capitalized values)
 export const INVOICE_STATUS = {
-  OPEN: 'open',
-  REVIEWED: 'reviewed', 
-  EXPORTED: 'exported'
+  PENDING: 'Pending',
+  MATCHED: 'Matched',
+  REVIEWED: 'Reviewed',
+  EXPORTED: 'Exported',
+  ERROR: 'Error'
 } as const;
 
 export const FILE_STATUS = {
@@ -108,10 +135,8 @@ export const FILE_STATUS = {
 // Table names
 export const TABLE_NAMES = {
   FILES: 'Files',
-  INVOICES: 'Invoices',
-  DELIVERY_TICKETS: 'Delivery Tickets',
-  STORE_RECEIVERS: 'Store Receivers',
-  TEAMS: 'Teams',
+  INVOICEHEADERS: 'InvoiceHeaders',
+  INVOICEDETAILS: 'InvoiceDetails',
 } as const;
 
 // Airtable attachment type
@@ -129,176 +154,222 @@ export interface AirtableAttachment {
 }
 
 export interface FilesFields {
-  name?: string;
-  source?: string;
+  fileID: number;
+  invoiceHeaderID?: string[];
+  fileURL?: string;
+  fileHash?: string;
+  fileName?: string;
+  uploadDate?: string;
   status?: string;
-  invoices?: string[];
-  errorCode?: string;
+  parsedAt?: string;
   attachments?: AirtableAttachment[];
-  createdAt: string;
-  modifiedAt?: string;
+  rawText?: string;
+  errorCode?: string;
   errorDescription?: string;
   errorLink?: string;
-  deliveryTickets?: string[];
-  storeReceivers?: string[];
-  rawText?: string;
-  fileHash?: string;
+  createdAt: string;
+  modifiedAt?: string;
+  invoiceHeaders?: string;
 }
 
-export interface InvoicesFields {
-  invoiceNumber?: string;
+export interface InvoiceHeadersFields {
+  recordID: number;
+  companyCode?: string;
   status?: string;
-  createdAt: string;
-  updatedAt?: string;
+  vendId?: string;
   vendorName?: string;
-  vendorCode?: string;
+  invoiceDetails?: string[];
+  aPInvoiceNumber?: string;
   invoiceDate?: string;
-  amount?: number;
-  gLAccount?: string;
-  documentRawText?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
+  termsId?: string;
+  dueDate?: string;
+  remitName?: string;
+  totalInvoiceAmount?: number;
+  freightCharge?: number;
+  miscellaneousCharge?: number;
+  discountAmount?: number;
+  discountDate?: string;
+  taxID00?: string;
+  taxID01?: string;
+  taxID02?: string;
+  taxID03?: string;
+  taxTot00?: number;
+  taxTot01?: number;
+  taxTot02?: number;
+  taxTot03?: number;
+  txblTot00?: number;
+  txblTot01?: number;
+  txblTot02?: number;
+  txblTot03?: number;
+  curyId?: string;
+  pONumberSeqType?: string;
+  pONumber?: string;
+  type?: string;
+  updateYN?: boolean;
+  balanceExceptionYN?: boolean;
+  aPAcct?: string;
+  aPSub?: string;
+  curymultdiv?: boolean;
+  curyRate?: number;
+  curyratetype?: string;
+  surcharge?: number;
+  documentAttachment?: string;
+  matchPayloadJSON?: string;
+  errorCode?: string;
+  exportedAt?: string;
   files?: string[];
-  attachments?: any;
-  team?: string[];
+  documentRawText?: string;
   missingFields?: any;
-  fileRawText?: any;
-}
-
-export interface DeliveryTicketsFields {
-  deliveryTicketID: number;
-  invoiceNumber?: string;
-  status?: string;
-  createdAt: string;
-  updatedAt?: string;
-  vendorName?: string;
-  vendorCode?: string;
-  invoiceDate?: string;
-  amount?: number;
-  gLAccount?: string;
-  rawTextOCR?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  files?: string[];
   attachments?: any;
-  team?: string[];
-  hasMissingFields?: any;
   fileRawText?: any;
-}
-
-export interface StoreReceiversFields {
-  documentNumber?: string;
-  invoiceNumber?: string;
-  status?: string;
+  errorReason?: string;
   createdAt: string;
-  updatedAt?: string;
-  vendorName?: string;
-  vendorCode?: string;
-  invoiceDate?: string;
-  amount?: number;
-  gLAccount?: string;
-  documentRawText?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  files?: string[];
-  attachments?: any;
-  team?: string[];
-  hasMissingFields?: any;
-  fileRawText?: any;
+  modifiedAt?: string;
 }
 
-export interface TeamsFields {
-  name?: string;
-  fullName?: string;
-  invoices?: string[];
-  deliveryTickets?: string[];
-  storeReceivers?: string[];
+export interface InvoiceDetailsFields {
+  recordID: number;
+  companyCode?: string;
+  vendId?: string;
+  aPInvoiceNumber?: string;
+  lineNumber?: string;
+  itemNo?: string;
+  itemDescription?: string;
+  invoicePrice?: number;
+  invoicePricingQty?: number;
+  quantityInvoiced?: number;
+  lineAmount?: number;
+  pONumberSeqType?: string;
+  pONumber?: string;
+  pOReleaseNumber?: string;
+  pOLineNumber?: string;
+  vendorShipNumber?: string;
+  dateReceived?: string;
+  quantityReceived?: number;
+  quantityAccepted?: number;
+  purchasePrice?: number;
+  pricingQuantity?: number;
+  alreadyInvoicedQty?: number;
+  expacct?: string;
+  expsub?: string;
+  taxID00?: string;
+  taxAmt00?: number;
+  txblAmt00?: number;
+  pOUOM?: string;
+  invoicedInFullYN?: boolean;
+  gLExceptionYN?: boolean;
+  state?: string;
+  fromFieldInvoiceDetails?: string;
+  invoiceHeaders?: string[];
 }
 
 export interface FilesRecord {
-  name?: string;
-  source?: string;
+  fileID: number;
+  invoiceHeaderID?: string[];
+  fileURL?: string;
+  fileHash?: string;
+  fileName?: string;
+  uploadDate?: string;
   status?: string;
-  invoices?: string[];
-  errorCode?: string;
+  parsedAt?: string;
   attachments?: AirtableAttachment[];
-  createdAt: string;
-  modifiedAt?: string;
+  rawText?: string;
+  errorCode?: string;
   errorDescription?: string;
   errorLink?: string;
-  deliveryTickets?: string[];
-  storeReceivers?: string[];
-  rawText?: string;
-  fileHash?: string;
+  createdAt: string;
+  modifiedAt?: string;
+  invoiceHeaders?: string;
 }
 
-export interface InvoicesRecord {
-  invoiceNumber?: string;
+export interface InvoiceHeadersRecord {
+  recordID: number;
+  companyCode?: string;
   status?: string;
-  createdAt: string;
-  updatedAt?: string;
+  vendId?: string;
   vendorName?: string;
-  vendorCode?: string;
+  invoiceDetails?: string[];
+  aPInvoiceNumber?: string;
   invoiceDate?: string;
-  amount?: number;
-  gLAccount?: string;
-  documentRawText?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
+  termsId?: string;
+  dueDate?: string;
+  remitName?: string;
+  totalInvoiceAmount?: number;
+  freightCharge?: number;
+  miscellaneousCharge?: number;
+  discountAmount?: number;
+  discountDate?: string;
+  taxID00?: string;
+  taxID01?: string;
+  taxID02?: string;
+  taxID03?: string;
+  taxTot00?: number;
+  taxTot01?: number;
+  taxTot02?: number;
+  taxTot03?: number;
+  txblTot00?: number;
+  txblTot01?: number;
+  txblTot02?: number;
+  txblTot03?: number;
+  curyId?: string;
+  pONumberSeqType?: string;
+  pONumber?: string;
+  type?: string;
+  updateYN?: boolean;
+  balanceExceptionYN?: boolean;
+  aPAcct?: string;
+  aPSub?: string;
+  curymultdiv?: boolean;
+  curyRate?: number;
+  curyratetype?: string;
+  surcharge?: number;
+  documentAttachment?: string;
+  matchPayloadJSON?: string;
+  errorCode?: string;
+  exportedAt?: string;
   files?: string[];
-  attachments?: any;
-  team?: string[];
+  documentRawText?: string;
   missingFields?: any;
-  fileRawText?: any;
-}
-
-export interface DeliveryTicketsRecord {
-  deliveryTicketID: number;
-  invoiceNumber?: string;
-  status?: string;
-  createdAt: string;
-  updatedAt?: string;
-  vendorName?: string;
-  vendorCode?: string;
-  invoiceDate?: string;
-  amount?: number;
-  gLAccount?: string;
-  rawTextOCR?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  files?: string[];
   attachments?: any;
-  team?: string[];
-  hasMissingFields?: any;
   fileRawText?: any;
-}
-
-export interface StoreReceiversRecord {
-  documentNumber?: string;
-  invoiceNumber?: string;
-  status?: string;
+  errorReason?: string;
   createdAt: string;
-  updatedAt?: string;
-  vendorName?: string;
-  vendorCode?: string;
-  invoiceDate?: string;
-  amount?: number;
-  gLAccount?: string;
-  documentRawText?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  files?: string[];
-  attachments?: any;
-  team?: string[];
-  hasMissingFields?: any;
-  fileRawText?: any;
+  modifiedAt?: string;
 }
 
-export interface TeamsRecord {
-  name?: string;
-  fullName?: string;
-  invoices?: string[];
-  deliveryTickets?: string[];
-  storeReceivers?: string[];
+export interface InvoiceDetailsRecord {
+  recordID: number;
+  companyCode?: string;
+  vendId?: string;
+  aPInvoiceNumber?: string;
+  lineNumber?: string;
+  itemNo?: string;
+  itemDescription?: string;
+  invoicePrice?: number;
+  invoicePricingQty?: number;
+  quantityInvoiced?: number;
+  lineAmount?: number;
+  pONumberSeqType?: string;
+  pONumber?: string;
+  pOReleaseNumber?: string;
+  pOLineNumber?: string;
+  vendorShipNumber?: string;
+  dateReceived?: string;
+  quantityReceived?: number;
+  quantityAccepted?: number;
+  purchasePrice?: number;
+  pricingQuantity?: number;
+  alreadyInvoicedQty?: number;
+  expacct?: string;
+  expsub?: string;
+  taxID00?: string;
+  taxAmt00?: number;
+  txblAmt00?: number;
+  pOUOM?: string;
+  invoicedInFullYN?: boolean;
+  gLExceptionYN?: boolean;
+  state?: string;
+  fromFieldInvoiceDetails?: string;
+  invoiceHeaders?: string[];
 }
 

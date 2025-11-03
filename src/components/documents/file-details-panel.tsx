@@ -398,7 +398,7 @@ export const FileDetailsPanel = ({
                             <LinksTab 
                                 linkedItems={linkedItems}
                                 files={linkedFiles}
-                                invoices={invoices as any}
+                                invoices={invoices as Array<{ id: string; [key: string]: unknown }>}
                                 emails={emails}
                                 emptyStateMessage="No documents linked to this file"
                             />

@@ -9,14 +9,19 @@
 module.exports = {
   // PDF Processing
   pdf: {
-    dpi: 150,                    // Image resolution (higher = better quality, larger files)
+    dpi: 300,                    // Image resolution (higher = better quality, larger files)
+                                 // 300 DPI ensures high-quality source for Vision API
     maxPagesPerDoc: 50,          // Maximum pages to process per document
   },
 
   // Image Chunking
+  // Optimized for OpenAI Vision API "high" detail mode:
+  // - Images scaled to fit 2048x2048 frame
+  // - Shortest side scaled to 768px for optimal tile processing
+  // - Divided into 512x512 tiles
   chunking: {
-    shortSidePx: 512,            // Short side pixel size for chunking
-    longSideMaxPx: 2048,         // Maximum long side pixel size
+    shortSidePx: 768,            // Short side pixel size - optimized for Vision API high detail mode
+    longSideMaxPx: 2048,         // Maximum long side pixel size - Vision API limit
     aspectTrigger: 2.7,          // Aspect ratio trigger for horizontal vs vertical split
     overlapPct: 0.05,            // 5% overlap between chunks to prevent text loss
   },

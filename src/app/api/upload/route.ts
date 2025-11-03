@@ -50,8 +50,9 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
 }
 
 /**
- * Update file record status in Airtable
+ * Update file record status in Airtable (currently unused but kept for future use)
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function updateRecordStatus(recordId: string, status: 'Queued' | 'Processed' | 'Attention'): Promise<void> {
   try {
     const baseId = process.env.AIRTABLE_BASE_ID;
@@ -186,11 +187,13 @@ export async function POST(request: NextRequest) {
       const airtableClient = createAirtableClient(baseId);
       
       // Create record in Files table with attachment
-      const recordFields: any = {
-        'Name': file.name,
-        'Source': 'Upload',
+      // Note: Using new schema field names after database migration
+      const recordFields: Record<string, unknown> = {
+        'FileName': file.name, // Changed from 'Name' to 'FileName'
+        // 'Source' field removed in new schema
         'Status': isDuplicateFile ? 'Attention' : 'Queued',
-        'File Hash': fileHash, // Store file hash for duplicate detection
+        'FileHash': fileHash, // Changed from 'File Hash' to 'FileHash' (no space)
+        'UploadDate': new Date().toISOString().split('T')[0], // Add upload date
         'Attachments': [
           {
             url: blob.url,

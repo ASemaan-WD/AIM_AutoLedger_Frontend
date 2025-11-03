@@ -8,17 +8,16 @@ import type { AirtableFile } from "@/lib/airtable/files-hooks";
 import { AttachmentViewer } from "./attachment-viewer";
 import type { AirtableAttachment } from "@/lib/airtable/types";
 
-type ViewerDocument = Invoice | AirtableFile | any;
+type ViewerDocument = Invoice | AirtableFile | Record<string, unknown>;
 
 interface PDFViewerProps {
     document?: ViewerDocument;
     className?: string;
-    keyboardNav?: any;
 }
 
 // Simplified PDF viewer - only shows attachments from Airtable
 
-export const PDFViewer = ({ document, className, keyboardNav }: PDFViewerProps) => {
+export const PDFViewer = ({ document, className }: PDFViewerProps) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
 
     // Get attachments from the document

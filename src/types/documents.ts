@@ -36,6 +36,7 @@ export interface Invoice extends BaseDocument {
     attachments?: AirtableAttachment[];
     files?: string[];
     team?: string[];
+    invoiceDetails?: string[]; // Linked InvoiceDetails record IDs
 }
 
 // Purchase Order Document

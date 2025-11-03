@@ -17,9 +17,52 @@ export const runtime = 'nodejs';
 const logger = createLogger('OCR2-API');
 
 /**
+ * Trigger post-OCR processing (document parsing and Airtable record creation)
+ */
+async function triggerPostOCRProcessing(recordId: string, request: NextRequest): Promise<void> {
+  try {
+    const baseUrl = new URL(request.url).origin;
+    const postOcrEndpoint = `${baseUrl}/api/post-ocr/process`;
+    
+    logger.info('Triggering post-OCR processing', { 
+      recordId, 
+      endpoint: postOcrEndpoint 
+    });
+    
+    const response = await fetch(postOcrEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file_record_id: recordId,
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Post-OCR API error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    logger.info('Post-OCR processing completed', {
+      recordId,
+      success: result.success,
+      documentsCreated: result.documentsCreated
+    });
+  } catch (error) {
+    logger.error('Failed to trigger post-OCR processing', {
+      recordId,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
+}
+
+/**
  * Validate request payload
  */
-function validateRequest(body: any): { isValid: boolean; error?: string; data?: ProcessFileRequest } {
+function validateRequest(body: Record<string, unknown>): { isValid: boolean; error?: string; data?: ProcessFileRequest } {
   if (!body) {
     return { isValid: false, error: 'No request body provided' };
   }
@@ -36,7 +79,7 @@ function validateRequest(body: any): { isValid: boolean; error?: string; data?: 
 
   return {
     isValid: true,
-    data: { file_url, record_id, options }
+    data: { file_url, record_id, options: options as Record<string, unknown> | undefined }
   };
 }
 
@@ -96,7 +139,7 @@ async function updateAirtableRecord(
 /**
  * Handle OCR processing errors
  */
-function handleProcessingError(error: any, recordId: string): ProcessFileResponse {
+function handleProcessingError(error: unknown, recordId: string): ProcessFileResponse {
   logger.error('OCR processing failed', {
     recordId,
     error: error instanceof Error ? error.message : String(error),
@@ -237,6 +280,17 @@ export async function POST(request: NextRequest) {
         textLength: extractedText.length,
         airtableUpdated
       });
+
+      // Trigger post-OCR processing (document parsing and record creation)
+      // Fire-and-forget - don't wait for completion
+      if (airtableUpdated) {
+        triggerPostOCRProcessing(record_id, request).catch((error) => {
+          logger.error('Post-OCR processing failed', {
+            recordId: record_id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        });
+      }
 
       return NextResponse.json(response);
 

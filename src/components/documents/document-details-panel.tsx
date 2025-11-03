@@ -14,8 +14,10 @@ import { Badge } from "@/components/base/badges/badges";
 import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02 } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 import { LinksTab, RawContentTab } from "@/components/documents/shared-tabs";
+import { InvoiceCodingInterface } from "@/components/documents/invoice-coding-interface";
 import { DialogTrigger, ModalOverlay, Modal, Dialog } from "@/components/application/modals/modal";
-import { useTeams } from "@/lib/airtable";
+// DEPRECATED: Teams table no longer exists in new schema
+// import { useTeams } from "@/lib/airtable";
 import { useDocumentLinks } from "@/lib/airtable/linked-documents-hooks";
 import type { Invoice, DeliveryTicket, DocumentLink, StoreReceiver } from "@/types/documents";
 import { INVOICE_STATUS } from "@/lib/airtable/schema-types";
@@ -37,7 +39,6 @@ interface DocumentDetailsPanelProps {
     onDelete?: (document: Invoice | DeliveryTicket) => void;
     activeTab?: string;
     onTabChange?: (tab: string) => void;
-    keyboardNav?: any;
 }
 
 const CompletenessChecker = ({ document }: { document?: Invoice }) => {
@@ -105,8 +106,7 @@ export const DocumentDetailsPanel = ({
     onViewInOracle,
     onDelete,
     activeTab = "extracted",
-    onTabChange,
-    keyboardNav
+    onTabChange
 }: DocumentDetailsPanelProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedDocument, setEditedDocument] = useState<Invoice | DeliveryTicket | undefined>(document);
@@ -117,22 +117,12 @@ export const DocumentDetailsPanel = ({
     // Refs for scroll delegation
     const panelRef = useRef<HTMLDivElement>(null);
     const contentAreaRef = useRef<HTMLDivElement>(null);
-    
-    // Connect the keyboard navigation ref to our content area
-    useEffect(() => {
-        if (keyboardNav?.detailsContainerRef && contentAreaRef.current) {
-            keyboardNav.detailsContainerRef.current = contentAreaRef.current;
-        }
-    }, [keyboardNav]);
 
 
     // Fetch linked documents (files and emails) for the current document
     // Determine document type and use appropriate hook
     const documentType = document?.type === 'delivery-tickets' ? 'delivery-ticket' : 'invoice';
     const { linkedItems, files, emails, loading: linkedDocsLoading, error: linkedDocsError } = useDocumentLinks(document?.id, documentType);
-
-    // Fetch teams data for store number dropdown
-    const { teams, loading: teamsLoading, error: teamsError } = useTeams();
 
     // Keep panel state in sync with selected document
     useEffect(() => {
@@ -183,22 +173,25 @@ export const DocumentDetailsPanel = ({
     // Status display helpers
     const getStatusColor = (status: Invoice['status']) => {
         switch (status) {
-            case 'approved': return 'success';
-            case 'rejected': return 'error';
-            case 'exported': return 'brand';
-            case 'pending': return 'warning';
-            case 'open': return 'gray';
+            case 'reviewed': return 'success';   // Reviewed (locked, green)
+            case 'approved': return 'success';   // Also maps to Reviewed
+            case 'rejected': return 'error';     // Error (red)
+            case 'exported': return 'brand';     // Exported (blue/purple)
+            case 'pending': return 'warning';    // Pending (yellow/orange)
+            case 'open': return 'blue-light';    // Matched - editable (light blue)
             default: return 'gray';
         }
     };
 
     const getStatusDisplayName = (status: Invoice['status']) => {
+        // Display names should match Airtable exactly
         switch (status) {
-            case 'open': return 'Open';
-            case 'pending': return 'Pending';
-            case 'approved': return 'Approved';
-            case 'rejected': return 'Rejected';
-            case 'exported': return 'Exported';
+            case 'open': return 'Matched';      // Editable state
+            case 'pending': return 'Pending';   // Locked, missing fields
+            case 'reviewed': return 'Reviewed'; // Locked, ready to export
+            case 'approved': return 'Reviewed'; // Also maps to Reviewed
+            case 'rejected': return 'Error';    // Has errors
+            case 'exported': return 'Exported'; // Already exported
             default: return status;
         }
     };
@@ -415,7 +408,7 @@ export const DocumentDetailsPanel = ({
         }
     };
 
-    const updateField = (field: keyof Invoice, value: any) => {
+    const updateField = (field: keyof Invoice, value: string | number | Date | boolean | null) => {
         if (editedDocument) {
             setEditedDocument({
                 ...editedDocument,
@@ -502,8 +495,9 @@ export const DocumentDetailsPanel = ({
     };
 
 
-    const tabs = keyboardNav?.tabs || [
+    const tabs = [
         { id: "extracted", label: "Header" },
+        { id: "coding", label: "Details" },
         { id: "raw", label: "Raw" },
         { id: "links", label: "Links" }
     ];
@@ -514,43 +508,8 @@ export const DocumentDetailsPanel = ({
         return currentDoc ? validateInvoice(currentDoc) : { canMarkAsReviewed: false, isValid: false, issues: [] };
     }, [currentDoc]);
 
-    // Transform teams data for the store number dropdown
-    const teamsSelectItems = useMemo(() => {
-        return teams
-            .map(team => ({
-                id: team.id, // Use Airtable record ID for unique keys
-                label: team.fullName ? `${team.name} - ${team.fullName}` : team.name, // Team name with dash and full name
-                name: team.name // Keep original name for sorting
-            }))
-            .sort((a, b) => {
-                // Sort by name as integer (1, 2, 3, ..., 10) instead of string sorting
-                const aNum = parseInt(a.name, 10);
-                const bNum = parseInt(b.name, 10);
-                
-                // If both are valid numbers, sort numerically
-                if (!isNaN(aNum) && !isNaN(bNum)) {
-                    return aNum - bNum;
-                }
-                
-                // If one or both are not numbers, fall back to string sorting
-                return a.name.localeCompare(b.name);
-            });
-    }, [teams]);
-
-    // Find the selected team ID based on the current team field (array of team IDs)
-    const selectedTeamId = useMemo(() => {
-        // team is an array of team record IDs, get the first one
-        const teamId = currentDoc?.team?.[0];
-        return teamId || null;
-    }, [currentDoc?.team]);
-
-    // Handle team selection - update team field with selected team ID
-    const handleTeamSelection = (key: Key | null) => {
-        if (key) {
-            // Update the team field with an array containing the selected team ID
-            updateField('team', [key as string]);
-        }
-    };
+    // Ensure activeTab is valid - default to "extracted" if invalid
+    const validActiveTab = tabs.some(tab => tab.id === activeTab) ? activeTab : "extracted";
 
     if (!document) {
         return (
@@ -563,7 +522,8 @@ export const DocumentDetailsPanel = ({
             </div>
         );
     }
-    const canEdit = currentDoc?.status === INVOICE_STATUS.OPEN || currentDoc?.status === INVOICE_STATUS.REJECTED;
+    // Only allow editing when status is 'open' (displays as "Matched" in Airtable)
+    const canEdit = currentDoc?.status === 'open';
 
     return (
         <div ref={panelRef} className={cx("border-l border-secondary bg-primary flex flex-col h-full overflow-hidden", className)} style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}>
@@ -598,7 +558,9 @@ export const DocumentDetailsPanel = ({
 
             {/* Tabs */}
             <Tabs 
-                selectedKey={activeTab}
+                key={`tabs-${document?.id || 'no-doc'}`}
+                defaultSelectedKey="extracted"
+                selectedKey={validActiveTab}
                 onSelectionChange={(key) => onTabChange?.(key as string)}
                 className="flex-1 flex flex-col overflow-hidden"
             >
@@ -617,21 +579,22 @@ export const DocumentDetailsPanel = ({
                 <div ref={contentAreaRef} className="flex-1 overflow-y-auto min-h-0 w-full" style={{ padding: '18px' }} data-keyboard-nav-container>
                     <TabPanel id="extracted" className="space-y-4">
                             <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">Store Number</label>
-                                <Select
-                                    placeholder={teamsLoading ? "Loading teams..." : "Select store"}
-                                    items={teamsSelectItems}
-                                    selectedKey={selectedTeamId}
-                                    onSelectionChange={handleTeamSelection}
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Amount</label>
+                                <Input 
+                                    value={currentDoc?.amount != null ? `$${currentDoc.amount.toFixed(2)}` : ''}
+                                    onChange={(value) => {
+                                        // Remove dollar sign and parse as float
+                                        const numericValue = value.toString().replace(/[$,]/g, '');
+                                        const parsedValue = parseFloat(numericValue);
+                                        if (!isNaN(parsedValue)) {
+                                            updateField('amount', parsedValue);
+                                        } else if (numericValue === '') {
+                                            updateField('amount', 0);
+                                        }
+                                    }}
                                     size="sm"
-                                    isDisabled={!canEdit || teamsLoading}
-                                >
-                                    {(item) => (
-                                        <Select.Item key={item.id} id={item.id}>
-                                            <span className="font-normal">{item.label}</span>
-                                        </Select.Item>
-                                    )}
-                                </Select>
+                                    isDisabled={!canEdit}
+                                />
                             </div>
                             <div>
                                 <label className="text-xs font-medium text-tertiary mb-1 block">Vendor</label>
@@ -696,8 +659,6 @@ export const DocumentDetailsPanel = ({
                                     onChange={(value) => updateField('invoiceNumber', value)}
                                     size="sm"
                                     isDisabled={!canEdit}
-                                    onFocus={keyboardNav?.handleInputFocus}
-                                    onBlur={keyboardNav?.handleInputBlur}
                                 />
                             </div>
                             <div>
@@ -713,24 +674,27 @@ export const DocumentDetailsPanel = ({
                                         }
                                     }}
                                     isDisabled={!canEdit}
-                                    onFocus={keyboardNav?.handleInputFocus}
-                                    onBlur={keyboardNav?.handleInputBlur}
                                 />
                             </div>
-                            <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">GL Account</label>
-                                <Input 
-                                    placeholder="000000"
-                                    value={currentDoc?.glAccount || ''}
-                                    onChange={(value) => updateField('glAccount', value)}
-                                    size="sm"
-                                    maxLength={6}
-                                    pattern="[0-9]{6}"
-                                    isDisabled={!canEdit}
-                                    onFocus={keyboardNav?.handleInputFocus}
-                                    onBlur={keyboardNav?.handleInputBlur}
-                                />
+                    </TabPanel>
+
+                    <TabPanel id="coding" className="space-y-4">
+                        {currentDoc?.type === 'invoices' ? (
+                            <InvoiceCodingInterface 
+                                invoice={currentDoc as Invoice}
+                                onCodingChange={(invoiceCoding) => {
+                                    // Update the invoice with new coding data
+                                    if (invoiceCoding.glAccount !== undefined) {
+                                        updateField('glAccount', invoiceCoding.glAccount);
+                                    }
+                                }}
+                                disabled={!canEdit}
+                            />
+                        ) : (
+                            <div className="text-center py-8 text-tertiary">
+                                <p>Coding interface not available for this document type</p>
                             </div>
+                        )}
                     </TabPanel>
 
                     <TabPanel id="raw">
@@ -742,7 +706,7 @@ export const DocumentDetailsPanel = ({
                                 icon={Copy01}
                                 tooltip="Copy raw text"
                                 onClick={() => {
-                                    const rawText = `DELIVERY TICKET\nTicket #: ${currentDoc?.invoiceNumber || ''}\nDate: ${currentDoc?.invoiceDate?.toLocaleDateString() || ''}\nFrom: ${currentDoc?.vendorName || ''}${currentDoc?.lines?.map((line) => `\n• ${line.description}`).join('') || ''}`;
+                                    const rawText = currentDoc?.rawTextOcr || '';
                                     navigator.clipboard.writeText(rawText);
                                 }}
                                 className="flex-shrink-0 ml-2"
@@ -750,23 +714,8 @@ export const DocumentDetailsPanel = ({
                         </div>
                         <div className="text-xs text-tertiary font-mono bg-tertiary rounded p-3 overflow-y-auto overflow-x-hidden">
                             <div className="space-y-2 overflow-hidden">
-                                {currentDoc?.invoiceNumber && (
-                                    <p className="break-all overflow-hidden">
-                                        <strong className="break-normal">Ticket #:</strong> {currentDoc.invoiceNumber}
-                                    </p>
-                                )}
-                                {currentDoc?.invoiceDate && (
-                                    <p className="break-all overflow-hidden">
-                                        <strong className="break-normal">Date:</strong> {currentDoc.invoiceDate.toLocaleDateString()}
-                                    </p>
-                                )}
-                                {currentDoc?.vendorName && (
-                                    <p className="break-all overflow-hidden">
-                                        <strong className="break-normal">From:</strong> {currentDoc.vendorName}
-                                    </p>
-                                )}
                                 <div className="whitespace-pre-wrap break-words overflow-hidden">
-                                    {`DELIVERY TICKET\nTicket #: ${currentDoc?.invoiceNumber || ''}\nDate: ${currentDoc?.invoiceDate?.toLocaleDateString() || ''}\nFrom: ${currentDoc?.vendorName || ''}${currentDoc?.lines?.map((line) => `\n• ${line.description}`).join('') || ''}`}
+                                    {currentDoc?.rawTextOcr || 'No raw text available'}
                                 </div>
                             </div>
                         </div>

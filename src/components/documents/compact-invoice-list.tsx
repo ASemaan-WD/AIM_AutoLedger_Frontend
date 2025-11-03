@@ -17,7 +17,6 @@ interface CompactInvoiceListProps {
     onSelectionChange?: (invoiceId: string) => void;
     subView?: string;
     onSubViewChange?: (subView: string) => void;
-    keyboardNav?: any;
 }
 
 const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoice>) => {
@@ -25,24 +24,25 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
 
     const getStatusColor = (status: Invoice['status']) => {
         switch (status) {
-            case 'approved': return 'success';
-            case 'rejected': return 'error';
-            case 'reviewed': return 'success';
-            case 'exported': return 'brand';
-            case 'pending': return 'warning';
-            case 'open': return 'gray';
+            case 'reviewed': return 'success';   // Reviewed (locked, green)
+            case 'approved': return 'success';   // Also maps to Reviewed
+            case 'rejected': return 'error';     // Error (red)
+            case 'exported': return 'brand';     // Exported (blue/purple)
+            case 'pending': return 'warning';    // Pending (yellow/orange)
+            case 'open': return 'blue-light';    // Matched - editable (light blue)
             default: return 'gray';
         }
     };
 
     const getStatusDisplayName = (status: Invoice['status']) => {
+        // Display names should match Airtable exactly
         switch (status) {
-            case 'open': return 'Open';
-            case 'pending': return 'Pending';
-            case 'reviewed': return 'Reviewed';
-            case 'approved': return 'Approved';
-            case 'rejected': return 'Rejected';
-            case 'exported': return 'Exported';
+            case 'open': return 'Matched';      // Editable state
+            case 'pending': return 'Pending';   // No edits, missing fields
+            case 'reviewed': return 'Reviewed'; // Locked, ready to export
+            case 'approved': return 'Reviewed'; // Also maps to Reviewed
+            case 'rejected': return 'Error';    // Has errors
+            case 'exported': return 'Exported'; // Already exported
             default: return status;
         }
     };
@@ -51,8 +51,8 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency || 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
         }).format(amount);
     };
 
@@ -89,7 +89,7 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
                     {value.vendorName}
                 </span>
                 <span className="text-sm font-medium text-primary flex-shrink-0">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value.amount)}
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value.amount)}
                 </span>
             </div>
 
@@ -118,11 +118,10 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
 export const CompactInvoiceList = ({ 
     invoices, 
     filteredInvoices: propFilteredInvoices,
-    selectedInvoiceId, 
+    selectedInvoiceId,
     onSelectionChange,
     subView = 'all',
-    onSubViewChange,
-    keyboardNav
+    onSubViewChange
 }: CompactInvoiceListProps) => {
 
     const subViews = [

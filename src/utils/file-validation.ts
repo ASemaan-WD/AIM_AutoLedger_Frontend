@@ -157,3 +157,8 @@ export async function validateFile(file: File): Promise<FileValidationResult> {
   return { isValid: true };
 }
 
+
+
+
+
+

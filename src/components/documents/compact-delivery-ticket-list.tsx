@@ -17,7 +17,6 @@ interface CompactDeliveryTicketListProps {
     onSelectionChange?: (ticketId: string) => void;
     subView?: string;
     onSubViewChange?: (subView: string) => void;
-    keyboardNav?: any;
 }
 
 const DeliveryTicketItem = ({ value, className, ...otherProps }: ListBoxItemProps<DeliveryTicket>) => {
@@ -51,8 +50,8 @@ const DeliveryTicketItem = ({ value, className, ...otherProps }: ListBoxItemProp
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency || 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
         }).format(amount);
     };
 
@@ -133,8 +132,7 @@ export const CompactDeliveryTicketList = ({
     selectedTicketId,
     onSelectionChange,
     subView = 'all',
-    onSubViewChange,
-    keyboardNav
+    onSubViewChange
 }: CompactDeliveryTicketListProps) => {
     
     // Create sub-views with counts

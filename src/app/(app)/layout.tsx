@@ -6,7 +6,7 @@ import { NavItemButton } from "@/components/application/app-navigation/base-comp
 
 import { cx } from "@/utils/cx";
 import type { DocumentType } from "@/types/documents";
-import { useInvoiceCounts, useDeliveryTicketCounts } from "@/lib/airtable";
+import { useInvoiceCounts } from "@/lib/airtable";
 import { useFileCounts } from "@/lib/airtable/files-hooks";
 
 
@@ -17,13 +17,15 @@ export default function AppLayout({
 }) {
     // Get counts from Airtable
     const { counts: invoiceCounts, loading: invoiceCountsLoading } = useInvoiceCounts();
-    const { counts: deliveryTicketCounts, loading: deliveryTicketCountsLoading } = useDeliveryTicketCounts();
+    // DEPRECATED: Delivery Tickets table no longer exists
+    // const { counts: deliveryTicketCounts, loading: deliveryTicketCountsLoading } = useDeliveryTicketCounts();
     const { counts: fileCounts, loading: fileCountsLoading } = useFileCounts();
     
     const documentTypes = [
         { id: 'invoices', label: 'Invoices', badge: invoiceCountsLoading ? '...' : (invoiceCounts.total || 0) },
-        { id: 'store-receivers', label: 'Store Receivers', badge: 5 }, // TODO: Implement counts when store receivers integration is added
-        { id: 'delivery-tickets', label: 'Delivery Tickets', badge: deliveryTicketCountsLoading ? '...' : (deliveryTicketCounts.total || 0) },
+        // DEPRECATED: Store Receivers and Delivery Tickets tables removed
+        // { id: 'store-receivers', label: 'Store Receivers', badge: 5 },
+        // { id: 'delivery-tickets', label: 'Delivery Tickets', badge: deliveryTicketCountsLoading ? '...' : (deliveryTicketCounts.total || 0) },
         { id: 'files', label: 'Files', badge: fileCountsLoading ? '...' : (fileCounts.total || 0) },
     ];
     const pathname = usePathname();
@@ -59,7 +61,7 @@ export default function AppLayout({
                         <div className="flex items-center gap-6">
                             {/* Primary Document Types */}
                             <div className="flex items-center gap-3">
-                                {documentTypes.slice(0, 3).map((item) => (
+                                {documentTypes.slice(0, 1).map((item) => (
                                     <button
                                         key={item.id}
                                         onClick={() => handleDocumentTypeChange(item.id as DocumentType)}
@@ -78,9 +80,9 @@ export default function AppLayout({
                             {/* Divider */}
                             <div className="h-6 w-px bg-border-secondary"></div>
                             
-                            {/* Communication Types */}
+                            {/* Files */}
                             <div className="flex items-center gap-3">
-                                {documentTypes.slice(3).map((item) => (
+                                {documentTypes.slice(1).map((item) => (
                                     <button
                                         key={item.id}
                                         onClick={() => handleDocumentTypeChange(item.id as DocumentType)}

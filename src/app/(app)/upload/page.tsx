@@ -14,7 +14,7 @@ interface UploadedFile {
     failed?: boolean;
     type?: string;
     isDuplicate?: boolean;
-    duplicateInfo?: any;
+    duplicateInfo?: Record<string, unknown>;
     errorCode?: string;
     errorDescription?: string;
     errorLink?: string;

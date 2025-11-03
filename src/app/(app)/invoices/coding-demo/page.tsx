@@ -30,7 +30,7 @@ export default function CodingDemoPage() {
     supportingText: `$${invoice.amount.toFixed(2)}`,
   }));
 
-  const handleCodingChange = async (invoiceCoding?: any, lineCoding?: any) => {
+  const handleCodingChange = async (invoiceCoding?: Record<string, unknown>, lineCoding?: Record<string, unknown>) => {
     if (!selectedInvoice) return;
     
     try {
@@ -38,7 +38,7 @@ export default function CodingDemoPage() {
       const updates: Partial<Invoice> = {};
       
       if (invoiceCoding) {
-        if (invoiceCoding.glAccount !== undefined) updates.glAccount = invoiceCoding.glAccount;
+        if (invoiceCoding.glAccount !== undefined) updates.glAccount = invoiceCoding.glAccount as string;
       }
       
       await updateInvoice(selectedInvoice.id, updates);
@@ -172,8 +172,8 @@ export default function CodingDemoPage() {
           <h4 className="font-medium text-secondary mb-2">How to Test:</h4>
           <ul className="text-sm text-tertiary space-y-1">
             <li>• Select different invoices to see single-line vs multi-line behavior</li>
-            <li>• Toggle between "Invoice" and "Lines" modes using the switch</li>
-            <li>• In Lines mode, use ← → buttons to navigate between line items</li>
+            <li>&bull; Toggle between &quot;Invoice&quot; and &quot;Lines&quot; modes using the switch</li>
+            <li>&bull; In Lines mode, use ← → buttons to navigate between line items</li>
             <li>• Notice how each line can have different coding values</li>
             <li>• Check the browser console to see coding data changes</li>
           </ul>

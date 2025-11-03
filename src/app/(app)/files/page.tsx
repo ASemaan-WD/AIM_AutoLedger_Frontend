@@ -7,7 +7,6 @@ import { PDFViewer } from "@/components/documents/pdf-viewer";
 import { FileDetailsPanel } from "@/components/documents/file-details-panel";
 import { useFiles } from "@/lib/airtable/files-hooks";
 // Activity logging removed - Activities table no longer exists
-import { cx } from "@/utils/cx";
 import type { AirtableFile } from "@/lib/airtable/files-hooks";
 
 export default function FilesPage() {
@@ -19,7 +18,7 @@ export default function FilesPage() {
     const [activeTab, setActiveTab] = useState('overview');
     
     // Use Airtable hook for files
-    const { files, loading, error, updateFile, createFile, deleteFile, archiveFile } = useFiles({
+    const { files, loading, error, updateFile, deleteFile, archiveFile } = useFiles({
         autoFetch: true
     });
 
@@ -102,28 +101,11 @@ export default function FilesPage() {
         if (filteredFiles.length > 0 && !selectedFileId) {
             updateSelectedFileId(filteredFiles[0].id);
         }
-    }, [filteredFiles, selectedFileId]);
+    }, [filteredFiles, selectedFileId, updateSelectedFileId]);
 
     const handleFileUpdate = async (updatedFile: AirtableFile) => {
         try {
-            const originalFile = files.find(file => file.id === updatedFile.id);
-            
             await updateFile(updatedFile.id, updatedFile);
-            
-            // Log field edits (non-status changes)
-            if (originalFile) {
-                const fieldsToCheck = [
-                    'name', 'type', 'vendor', 'documentDate', 'amount', 'source', 'pages'
-                ];
-                
-                for (const field of fieldsToCheck) {
-                    const oldValue = originalFile[field as keyof AirtableFile];
-                    const newValue = updatedFile[field as keyof AirtableFile];
-                    
-                    if (oldValue !== newValue) {
-                    }
-                }
-            }
         } catch (err) {
             console.error('Failed to update file:', err);
             // You could add a toast notification here
@@ -133,7 +115,6 @@ export default function FilesPage() {
     // Status change handlers
     const handleMarkAsLinked = async (file: AirtableFile) => {
         try {
-            const oldStatus = file.status;
             await updateFile(file.id, { status: 'Processed' });
             
             // Log the activity
@@ -144,7 +125,6 @@ export default function FilesPage() {
 
     const handleMarkAsNeedsAttention = async (file: AirtableFile) => {
         try {
-            const oldStatus = file.status;
             await updateFile(file.id, { status: 'Attention' });
             
             // Log the activity

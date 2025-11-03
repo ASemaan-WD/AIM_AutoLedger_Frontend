@@ -18,26 +18,40 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
     const ocrEndpoint = `${baseUrl}/api/ocr2/process`;
     console.log(`📍 OCR endpoint: ${ocrEndpoint}`);
     
+    const requestBody = {
+      record_id: recordId,
+      file_url: fileUrl
+    };
+    console.log(`📤 Request body:`, JSON.stringify(requestBody));
+    
     const ocrResponse = await fetch(ocrEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        record_id: recordId,
-        file_url: fileUrl
-      })
+      body: JSON.stringify(requestBody)
     });
 
     console.log(`📡 OCR API response status: ${ocrResponse.status}`);
+    console.log(`📡 OCR API response status text: ${ocrResponse.statusText}`);
+    console.log(`📡 OCR API response headers:`, JSON.stringify(Object.fromEntries(ocrResponse.headers.entries())));
+
+    // Try to read response body as text first
+    const responseText = await ocrResponse.text();
+    console.log(`📡 OCR API raw response body:`, responseText);
 
     if (!ocrResponse.ok) {
-      const errorData = await ocrResponse.json().catch(() => ({}));
+      let errorData = {};
+      try {
+        errorData = JSON.parse(responseText);
+      } catch {
+        errorData = { rawResponse: responseText };
+      }
       console.error(`❌ OCR API error response:`, errorData);
-      throw new Error(`OCR API responded with ${ocrResponse.status}: ${errorData.error || 'Unknown error'}`);
+      throw new Error(`OCR API responded with ${ocrResponse.status}: ${errorData.error || errorData.rawResponse || 'Unknown error'}`);
     }
 
-    const result = await ocrResponse.json();
+    const result = JSON.parse(responseText);
     console.log(`✅ OCR processing completed for record ${recordId}:`, {
       textLength: result.extracted_text_length,
       airtableUpdated: result.airtable_updated,

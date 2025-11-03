@@ -49,3 +49,6 @@ quarantine/
 
 # Bun lockfile (optional - uncomment if you don't want to commit it)
 # bun.lockb
+
+# Archive files
+*.zip

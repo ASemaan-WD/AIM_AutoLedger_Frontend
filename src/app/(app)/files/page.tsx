@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CompactFilesList } from "@/components/documents/compact-files-list";
 import { PDFViewer } from "@/components/documents/pdf-viewer";
@@ -9,7 +9,7 @@ import { useFiles } from "@/lib/airtable/files-hooks";
 // Activity logging removed - Activities table no longer exists
 import type { AirtableFile } from "@/lib/airtable/files-hooks";
 
-export default function FilesPage() {
+function FilesPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     
@@ -244,5 +244,20 @@ export default function FilesPage() {
                 </div>
             </div>
         );
+}
+
+export default function FilesPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-full w-full items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading...</p>
+                </div>
+            </div>
+        }>
+            <FilesPageContent />
+        </Suspense>
+    );
 }
 

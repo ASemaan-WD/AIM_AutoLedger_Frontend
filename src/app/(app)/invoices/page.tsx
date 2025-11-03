@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CompactInvoiceList } from "@/components/documents/compact-invoice-list";
 import { PDFViewer } from "@/components/documents/pdf-viewer";
@@ -10,7 +10,7 @@ import { useInvoices } from "@/lib/airtable";
 import { hasBlockingIssues, sortInvoicesByPriority, validateInvoice, getMissingFieldsMessage } from "@/utils/invoice-validation";
 import type { Invoice } from "@/types/documents";
 
-export default function InvoicesPage() {
+function InvoicesPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     
@@ -208,5 +208,20 @@ export default function InvoicesPage() {
                 />
             </div>
         </div>
+    );
+}
+
+export default function InvoicesPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-full w-full items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading...</p>
+                </div>
+            </div>
+        }>
+            <InvoicesPageContent />
+        </Suspense>
     );
 }

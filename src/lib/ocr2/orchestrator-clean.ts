@@ -252,30 +252,155 @@ async function pdfToImagesSystem(pdfBuffer: Buffer): Promise<Buffer[]> {
 }
 
 /**
+ * Minimal polyfills for DOMMatrix, ImageData, Path2D when canvas is unavailable
+ */
+function createPolyfills() {
+  // DOMMatrix polyfill
+  if (typeof (global as any).DOMMatrix === 'undefined') {
+    (global as any).DOMMatrix = class DOMMatrix {
+      a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+      constructor(init?: string | number[]) {
+        if (init) {
+          if (typeof init === 'string') {
+            const matrix = init.match(/matrix\(([^)]+)\)/);
+            if (matrix) {
+              const values = matrix[1].split(',').map(v => parseFloat(v.trim()));
+              if (values.length === 6) {
+                this.a = values[0]; this.b = values[1]; this.c = values[2];
+                this.d = values[3]; this.e = values[4]; this.f = values[5];
+              }
+            }
+          }
+        }
+      }
+      multiply(other: any) {
+        const result = new (global as any).DOMMatrix();
+        result.a = this.a * other.a + this.c * other.b;
+        result.b = this.b * other.a + this.d * other.b;
+        result.c = this.c * other.d + this.a * other.c;
+        result.d = this.b * other.d + this.d * other.d;
+        result.e = this.e + this.a * other.e + this.c * other.f;
+        result.f = this.f + this.b * other.e + this.d * other.f;
+        return result;
+      }
+      translate(x: number, y: number) {
+        const result = new (global as any).DOMMatrix();
+        result.e = this.e + x * this.a + y * this.c;
+        result.f = this.f + x * this.b + y * this.d;
+        result.a = this.a; result.b = this.b; result.c = this.c; result.d = this.d;
+        return result;
+      }
+      scale(x: number, y: number = x) {
+        const result = new (global as any).DOMMatrix();
+        result.a = this.a * x;
+        result.b = this.b * x;
+        result.c = this.c * y;
+        result.d = this.d * y;
+        result.e = this.e;
+        result.f = this.f;
+        return result;
+      }
+    };
+  }
+
+  // ImageData polyfill
+  if (typeof (global as any).ImageData === 'undefined') {
+    (global as any).ImageData = class ImageData {
+      width: number;
+      height: number;
+      data: Uint8ClampedArray;
+      constructor(dataOrWidth: Uint8ClampedArray | number, widthOrHeight?: number, height?: number) {
+        if (dataOrWidth instanceof Uint8ClampedArray) {
+          this.data = dataOrWidth;
+          this.width = widthOrHeight || 0;
+          this.height = height || 0;
+        } else {
+          this.width = dataOrWidth;
+          this.height = widthOrHeight || 0;
+          this.data = new Uint8ClampedArray(this.width * this.height * 4);
+        }
+      }
+    };
+  }
+
+  // Path2D polyfill (minimal implementation)
+  if (typeof (global as any).Path2D === 'undefined') {
+    (global as any).Path2D = class Path2D {
+      _commands: any[] = [];
+      addPath(path: any) { this._commands.push(['addPath', path]); }
+      arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean) {
+        this._commands.push(['arc', x, y, radius, startAngle, endAngle, anticlockwise]);
+      }
+      arcTo(x1: number, y1: number, x2: number, y2: number, radius: number) {
+        this._commands.push(['arcTo', x1, y1, x2, y2, radius]);
+      }
+      bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+        this._commands.push(['bezierCurveTo', cp1x, cp1y, cp2x, cp2y, x, y]);
+      }
+      closePath() { this._commands.push(['closePath']); }
+      ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean) {
+        this._commands.push(['ellipse', x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise]);
+      }
+      lineTo(x: number, y: number) { this._commands.push(['lineTo', x, y]); }
+      moveTo(x: number, y: number) { this._commands.push(['moveTo', x, y]); }
+      quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {
+        this._commands.push(['quadraticCurveTo', cpx, cpy, x, y]);
+      }
+      rect(x: number, y: number, w: number, h: number) {
+        this._commands.push(['rect', x, y, w, h]);
+      }
+    };
+  }
+}
+
+/**
  * Vercel-compatible PDF conversion using pdf.js
  */
 async function pdfToImagesVercel(pdfBuffer: Buffer): Promise<Buffer[]> {
   try {
     console.log(`📄 Converting PDF using pdf.js (serverless-compatible)`);
     
-    // Import pdfjs-dist and canvas
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    const canvas = await import('@napi-rs/canvas');
-    const { createCanvas, Image: CanvasImage, DOMMatrix, ImageData, Path2D } = canvas;
+    // CRITICAL: Set up polyfills FIRST, before importing pdf.js
+    // because pdf.js may use DOMMatrix during import/initialization
+    createPolyfills();
     
-    // Polyfill globals for pdfjs (required for embedded images and rendering)
-    if (typeof (global as any).Image === 'undefined') {
-      (global as any).Image = CanvasImage;
+    // Try to import @napi-rs/canvas
+    let createCanvas: any;
+    let CanvasImage: any;
+    
+    try {
+      const canvas = await import('@napi-rs/canvas');
+      createCanvas = canvas.createCanvas;
+      CanvasImage = canvas.Image;
+      
+      // Polyfill globals for pdfjs (required for embedded images and rendering)
+      if (typeof (global as any).Image === 'undefined') {
+        (global as any).Image = CanvasImage;
+      }
+      
+      // Use canvas's built-in DOMMatrix, ImageData, Path2D if available (these are better than our polyfills)
+      if (canvas.DOMMatrix) {
+        (global as any).DOMMatrix = canvas.DOMMatrix;
+      }
+      if (canvas.ImageData) {
+        (global as any).ImageData = canvas.ImageData;
+      }
+      if (canvas.Path2D) {
+        (global as any).Path2D = canvas.Path2D;
+      }
+      
+      console.log(`✅ @napi-rs/canvas loaded successfully`);
+    } catch (canvasError) {
+      console.warn(`Warning: Cannot load "@napi-rs/canvas" package: "${canvasError instanceof Error ? canvasError.message : String(canvasError)}"`);
+      console.warn(`Warning: Using fallback polyfills for DOMMatrix, ImageData, Path2D`);
+      
+      // Polyfills are already set up above, but we still need createCanvas
+      // Without canvas, we cannot render PDFs, so throw an error
+      throw new Error('Canvas library (@napi-rs/canvas) is required but could not be loaded. This may be due to missing native dependencies on the serverless environment. Please ensure @napi-rs/canvas is installed and buildable for your platform.');
     }
-    if (typeof (global as any).DOMMatrix === 'undefined') {
-      (global as any).DOMMatrix = DOMMatrix;
-    }
-    if (typeof (global as any).ImageData === 'undefined') {
-      (global as any).ImageData = ImageData;
-    }
-    if (typeof (global as any).Path2D === 'undefined') {
-      (global as any).Path2D = Path2D;
-    }
+    
+    // Now import pdfjs-dist (polyfills are already in place)
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
     
     // Setup canvas polyfill for pdfjs (required for node.js environment)
     const NodeCanvasFactory = class {

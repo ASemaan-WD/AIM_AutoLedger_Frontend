@@ -1,15 +1,27 @@
 # OCR2 AI Usage Guide
 
+## ⚠️ DEPRECATED - See NATIVE_PDF_IMPLEMENTATION.md
+
+**This guide describes the old v1.0 image-based implementation.**  
+**For the new v2.0 native PDF implementation, see: `NATIVE_PDF_IMPLEMENTATION.md`**
+
+---
+
 ## Purpose
 Extract text from PDF documents using OpenAI Vision API with intelligent chunking and parallel processing.
 
-## Core Function
+## Core Function (DEPRECATED - Use Native Implementation)
 ```typescript
+// ❌ OLD (deprecated, moved to quarantine)
 import { processPDFFromURL } from '@/lib/ocr2/orchestrator-clean';
+
+// ✅ NEW (recommended)
+import { processPDFFromURL } from '@/lib/ocr2/orchestrator-native';
 
 // Input: PDF URL (HTTP, data URI, or file://)
 // Output: Extracted text as string
-const text = await processPDFFromURL(url);
+const result = await processPDFFromURL(url);
+const text = result.extractedText;
 ```
 
 ## API Endpoints

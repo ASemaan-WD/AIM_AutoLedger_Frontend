@@ -9,6 +9,10 @@ import { setRecordError } from '@/lib/airtable/error-handler';
 // Force this route to use Node.js runtime for server-side operations
 export const runtime = 'nodejs';
 
+// Set maximum execution time to 60 seconds for file upload and initial processing
+// The actual OCR processing happens in a separate API call
+export const maxDuration = 60;
+
 /**
  * Trigger OCR processing for a file
  */

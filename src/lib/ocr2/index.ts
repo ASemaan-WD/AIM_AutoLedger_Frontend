@@ -31,31 +31,27 @@ export type {
   AirtableUpdateError,
 } from './types';
 
-// PDF processing utilities
+// PDF processing utilities (native only)
 export {
-  pdfToImagesFallback,
-  extractPDFText,
-  hasPDFText,
-} from './pdf-processor';
+  downloadPDF,
+  getPDFPageCount,
+  validatePDF,
+} from './pdf-processor-native';
 
-// Image chunking utilities
+// Vision API client (native PDF support)
 export {
-  resizeImageForVision,
-  imageChunkToDataURI,
-  getOptimalChunkSize,
-} from './image-chunker';
-
-// Vision API client
-export {
-  testVisionAPI,
+  extractTextFromPDF,
+  extractTextFromPDFWithRetry,
+  testPDFSupport,
   getAPIUsageStats,
-} from './vision-client';
+} from './vision-client-native';
 
-// Main orchestrator (clean version)
+// Main orchestrator (native PDF support)
 export {
   processPDFFromURL,
-  processDocument,
-} from './orchestrator-clean';
+  processPDFForRawText,
+  getProcessingStats,
+} from './orchestrator-native';
 
 // Logging utilities
 export {
@@ -71,24 +67,37 @@ export {
  */
 export const OCR2_INFO = {
   name: 'OCR2',
-  version: '1.0.0',
-  description: 'TypeScript-based OCR processing for Next.js applications',
+  version: '2.0.0-native',
+  description: 'Native PDF processing with OpenAI GPT-4o Vision',
   features: [
-    'PDF text extraction',
-    'OCR processing with GPT-4o Vision',
-    'Image chunking for large documents',
-    'Parallel processing with concurrency control',
+    'Native PDF processing (no image conversion)',
+    'Single API call per document',
+    'OpenAI GPT-4o Vision with PDF support',
+    'Up to 100 pages per document',
+    'Up to 32MB file size',
+    'Automatic retry logic',
     'Airtable integration',
     'Comprehensive error handling',
     'Structured logging',
     'Performance monitoring',
+    'Works on Vercel/serverless',
+  ],
+  improvements: [
+    'Much faster processing',
+    'Lower token usage',
+    'No external dependencies (pdftoppm, pdf-poppler)',
+    'Better accuracy',
+    'Simpler codebase',
+    'Serverless compatible',
   ],
   compatibility: {
-    runtime: 'Node.js',
+    runtime: 'Node.js / Edge',
     framework: 'Next.js',
     typescript: true,
     serverComponents: true,
     apiRoutes: true,
+    vercel: true,
+    serverless: true,
   },
 } as const;
 
@@ -97,11 +106,11 @@ export const OCR2_INFO = {
  */
 export const quickStart = {
   /**
-   * Process a PDF file and return extracted text
+   * Process a PDF file and return extracted text (native PDF support)
    */
   async extractText(fileUrl: string): Promise<string> {
-    const { processPDFFromURL } = await import('./orchestrator-clean');
-    return processPDFFromURL(fileUrl);
+    const { processPDFForRawText } = await import('./orchestrator-native');
+    return processPDFForRawText(fileUrl);
   },
 
   /**
@@ -110,12 +119,12 @@ export const quickStart = {
   async testConfiguration(): Promise<boolean> {
     try {
       const { getOCR2Settings, validateSettings } = await import('./config');
-      const { testVisionAPI } = await import('./vision-client');
+      const { testPDFSupport } = await import('./vision-client-native');
       
       const settings = getOCR2Settings();
       validateSettings(settings);
       
-      return await testVisionAPI();
+      return await testPDFSupport();
     } catch {
       return false;
     }
@@ -126,8 +135,8 @@ export const quickStart = {
    */
   async getHealth() {
     const { getOCR2Settings } = await import('./config');
-    const { getProcessingStats } = await import('./orchestrator-v2');
-    const { getAPIUsageStats } = await import('./vision-client');
+    const { getProcessingStats } = await import('./orchestrator-native');
+    const { getAPIUsageStats } = await import('./vision-client-native');
     
     try {
       const settings = getOCR2Settings();
@@ -136,10 +145,12 @@ export const quickStart = {
       
       return {
         status: 'healthy',
+        version: '2.0.0-native',
         configuration: {
           model: settings.openai.model,
-          maxPages: settings.pdf.maxPagesPerDoc,
-          maxConcurrency: settings.concurrency.maxParallelVisionCalls,
+          maxFileSize: '32MB',
+          maxPages: 100,
+          nativePDFSupport: true,
         },
         stats: {
           processing: processingStats,

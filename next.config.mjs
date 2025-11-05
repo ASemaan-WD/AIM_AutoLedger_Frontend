@@ -15,16 +15,8 @@ const nextConfig = {
     experimental: {
         optimizePackageImports: ["@untitledui/icons"],
     },
-    // Externalize native modules for serverless
-    webpack: (config, { isServer }) => {
-        if (isServer) {
-            config.externals.push({
-                '@napi-rs/canvas': 'commonjs @napi-rs/canvas',
-                'canvas': 'commonjs canvas',
-            });
-        }
-        return config;
-    },
+    // Note: serverComponentsExternalPackages was removed in Next.js 15
+    // The OpenAI SDK works fine in serverless without this config
 };
 
 export default nextConfig;

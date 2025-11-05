@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createAirtableClient } from '@/lib/airtable/client';
-import { processPDFFromURL } from '@/lib/ocr2/orchestrator-clean';
+import { processPDFFromURL } from '@/lib/ocr2/orchestrator-native';
 import { getOCR2Settings, validateSettings } from '@/lib/ocr2/config';
 import { createLogger } from '@/lib/ocr2/logger';
 import { ProcessFileRequest, ProcessFileResponse, AirtableUpdateError } from '@/lib/ocr2/types';
@@ -13,6 +13,11 @@ import { setRecordError } from '@/lib/airtable/error-handler';
 
 // Force Node.js runtime for server-side processing
 export const runtime = 'nodejs';
+
+// Set maximum execution time to 300 seconds (5 minutes) for OCR processing
+// Note: Requires Vercel Pro plan or higher. Hobby plan is limited to 10s.
+// If you're on Hobby plan, reduce OpenAI_TIMEOUT_SECONDS in your .env to 8 seconds
+export const maxDuration = 300;
 
 const logger = createLogger('OCR2-API');
 
@@ -243,10 +248,10 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-      // Process the PDF file using the clean orchestrator
-      const extractedText = await processPDFFromURL(file_url);
+      // Process the PDF file using native PDF support (no image conversion!)
+      const result = await processPDFFromURL(file_url, options as any);
 
-      if (!extractedText || extractedText.trim().length === 0) {
+      if (!result.extractedText || result.extractedText.trim().length === 0) {
         logger.warn('No text extracted from file', { recordId: record_id, fileUrl: file_url });
         return NextResponse.json(handleProcessingError(
           new Error('No text could be extracted from the file'),
@@ -257,12 +262,16 @@ export async function POST(request: NextRequest) {
       // Update Airtable record
       let airtableUpdated = false;
       try {
-        airtableUpdated = await updateAirtableRecord(record_id, extractedText, 0);
+        airtableUpdated = await updateAirtableRecord(
+          record_id, 
+          result.extractedText, 
+          result.processingTime
+        );
       } catch (airtableError) {
         // File was processed successfully, but Airtable update failed
         logger.warn('File processed but Airtable update failed', {
           recordId: record_id,
-          textLength: extractedText.length,
+          textLength: result.extractedText.length,
           airtableError: airtableError instanceof Error ? airtableError.message : String(airtableError)
         });
       }
@@ -271,15 +280,9 @@ export async function POST(request: NextRequest) {
         status: 'success',
         record_id,
         file_url,
-        extracted_text_length: extractedText.length,
+        extracted_text_length: result.extractedText.length,
         airtable_updated: airtableUpdated,
-        processing_summary: {
-          totalTokensUsed: 0, // Would need full processing result for this
-          totalProcessingTime: 0, // Handled internally by orchestrator
-          averageChunksPerPage: 0,
-          successRate: 100,
-          errors: []
-        }
+        processing_summary: result.summary
       };
 
       if (!airtableUpdated) {
@@ -288,7 +291,9 @@ export async function POST(request: NextRequest) {
 
       logger.info('OCR processing completed successfully', {
         recordId: record_id,
-        textLength: extractedText.length,
+        textLength: result.extractedText.length,
+        tokensUsed: result.summary.totalTokensUsed,
+        processingTime: `${result.processingTime}ms`,
         airtableUpdated
       });
 
@@ -340,19 +345,22 @@ export async function GET() {
     return NextResponse.json({
       status: 'healthy',
       service: 'OCR2',
-      version: '1.0.0',
+      version: '2.0.0-native',
       features: [
-        'PDF text extraction',
-        'OCR processing',
+        'Native PDF processing (no image conversion)',
+        'OpenAI GPT-4o Vision with PDF support',
+        'Single API call per document',
+        'Automatic retry logic',
         'Airtable integration',
-        'Parallel processing',
-        'Error recovery'
+        'Error recovery',
+        'Works on Vercel/serverless'
       ],
       configuration: {
-        maxPagesPerDoc: settings.pdf.maxPagesPerDoc,
-        maxConcurrency: settings.concurrency.maxParallelVisionCalls,
+        maxFileSize: '32MB',
+        maxPages: 100,
         model: settings.openai.model,
-        airtableTable: settings.airtable.tableName
+        airtableTable: settings.airtable.tableName,
+        nativePDFSupport: true
       }
     });
 

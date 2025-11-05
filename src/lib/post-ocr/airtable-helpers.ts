@@ -37,10 +37,20 @@ export async function getFileRecord(fileRecordId: string): Promise<any> {
   // Debug: Log the record structure to understand what fields are available
   console.log('🔍 File record fields available:', Object.keys(record.fields || {}));
   console.log('🔍 Looking for Raw Text field ID:', FIELD_IDS.FILES.RAW_TEXT);
-  console.log('🔍 Raw Text present:', record.fields?.[FIELD_IDS.FILES.RAW_TEXT] ? 'YES' : 'NO');
-  if (record.fields?.[FIELD_IDS.FILES.RAW_TEXT]) {
-    console.log('🔍 Raw Text length:', record.fields[FIELD_IDS.FILES.RAW_TEXT].length);
-    console.log('🔍 Raw Text preview:', record.fields[FIELD_IDS.FILES.RAW_TEXT].substring(0, 100) + '...');
+  
+  // Check both field ID and field name (the actual code uses field name)
+  const rawTextById = record.fields?.[FIELD_IDS.FILES.RAW_TEXT];
+  const rawTextByName = record.fields?.['Raw Text'];
+  const hasRawText = !!(rawTextById || rawTextByName);
+  
+  console.log('🔍 Raw Text present (by ID):', rawTextById ? 'YES' : 'NO');
+  console.log('🔍 Raw Text present (by name):', rawTextByName ? 'YES' : 'NO');
+  console.log('🔍 Raw Text present (either):', hasRawText ? 'YES' : 'NO');
+  
+  if (hasRawText) {
+    const rawText = rawTextById || rawTextByName;
+    console.log('🔍 Raw Text length:', rawText.length);
+    console.log('🔍 Raw Text preview:', rawText.substring(0, 100) + '...');
   }
   
   return record;

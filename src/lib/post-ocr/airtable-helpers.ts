@@ -5,22 +5,22 @@
 import { FIELD_IDS, TABLE_NAMES } from '../airtable/schema-types';
 import type { ParsedDocument } from '../llm/schemas';
 
-function getBaseId(): string {
-  const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
-  if (!BASE_ID) {
-    throw new Error('Airtable BASE_ID is not configured');
-  }
-  return BASE_ID;
-}
-
+const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_TOKEN = process.env.AIRTABLE_PAT;
+
+if (!BASE_ID) {
+  throw new Error('Airtable BASE_ID is not configured');
+}
 
 /**
  * Fetch a file record from Airtable using the existing API endpoint
  */
 export async function getFileRecord(fileRecordId: string): Promise<any> {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const url = `${baseUrl}/api/airtable/${TABLE_NAMES.FILES}/${fileRecordId}?baseId=${getBaseId()}`;
+  // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
+  const url = `${baseUrl}/api/airtable/${TABLE_NAMES.FILES}/${fileRecordId}?baseId=${BASE_ID}`;
   
   const response = await fetch(url, {
     headers: {
@@ -75,7 +75,7 @@ export async function findTeamByName(teamName: string): Promise<string | null> {
 
   try {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const url = `${baseUrl}/api/airtable/${TABLE_NAMES.TEAMS}?baseId=${getBaseId()}&maxRecords=50`;
+    const url = `${baseUrl}/api/airtable/${TABLE_NAMES.TEAMS}?baseId=${BASE_ID}&maxRecords=50`;
 
     const response = await fetch(url, {
       headers: {
@@ -248,8 +248,11 @@ export async function createDocumentRecord(
   });
   
   // Create the record using the existing API
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const url = `${baseUrl}/api/airtable/${encodeURIComponent(config.tableName)}?baseId=${getBaseId()}`;
+  // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
+  const url = `${baseUrl}/api/airtable/${encodeURIComponent(config.tableName)}?baseId=${BASE_ID}`;
   
   const response = await fetch(url, {
     method: 'POST',
@@ -291,8 +294,11 @@ export async function linkDocumentsToFile(
     return;
   }
   
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const url = `${baseUrl}/api/airtable/Files?baseId=${getBaseId()}`;
+  // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
+  const url = `${baseUrl}/api/airtable/Files?baseId=${BASE_ID}`;
   
   const response = await fetch(url, {
     method: 'PATCH',
@@ -332,8 +338,11 @@ export async function createInvoiceDetails(
 
   console.log(`\n📋 Creating ${doc.line_items.length} invoice detail record(s)...`);
   
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const url = `${baseUrl}/api/airtable/InvoiceDetails?baseId=${getBaseId()}`;
+  // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
+  const url = `${baseUrl}/api/airtable/InvoiceDetails?baseId=${BASE_ID}`;
   
   const createdDetailIds: string[] = [];
   

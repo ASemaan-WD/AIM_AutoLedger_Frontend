@@ -11,11 +11,12 @@ import { Select } from "@/components/base/select/select";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Badge } from "@/components/base/badges/badges";
-import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02 } from "@untitledui/icons";
+import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02, HelpCircle } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 import { LinksTab, RawContentTab } from "@/components/documents/shared-tabs";
 import { InvoiceCodingInterface } from "@/components/documents/invoice-coding-interface";
 import { DialogTrigger, ModalOverlay, Modal, Dialog } from "@/components/application/modals/modal";
+import { PendingStateIndicator, BalanceAlert, QueuedIndicator, ErrorAlert, ExportedIndicator } from "@/components/documents/invoice-state-indicators";
 // DEPRECATED: Teams table no longer exists in new schema
 // import { useTeams } from "@/lib/airtable";
 import { useDocumentLinks } from "@/lib/airtable/linked-documents-hooks";
@@ -44,6 +45,11 @@ interface DocumentDetailsPanelProps {
 const CompletenessChecker = ({ document }: { document?: Invoice }) => {
     if (!document) return null;
 
+    // Don't show completeness checker for Pending state - use PendingStateIndicator instead
+    if (document.status === INVOICE_STATUS.PENDING) {
+        return null;
+    }
+
     // Use server-side validation from Airtable
     const issueMessage = getMissingFieldsMessage(document);
 
@@ -70,28 +76,7 @@ const CompletenessChecker = ({ document }: { document?: Invoice }) => {
     );
 };
 
-const RejectionReasonBanner = ({ document }: { document?: Invoice }) => {
-    if (!document || document.status !== INVOICE_STATUS.REJECTED || !document.rejectionReason) {
-        return null;
-    }
-
-    return (
-        <div className={cx(
-            "rounded-lg border p-3 mb-4",
-            "border-error bg-error-25 text-error-700"
-        )}>
-            <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-error-primary" />
-                <span className="text-sm font-medium">
-                    Invoice Rejected
-                </span>
-            </div>
-            <p className="text-xs">
-                {document.rejectionReason}
-            </p>
-        </div>
-    );
-};
+// RejectionReasonBanner removed - now using ErrorAlert component from invoice-state-indicators
 
 export const DocumentDetailsPanel = ({ 
     document, 
@@ -113,6 +98,7 @@ export const DocumentDetailsPanel = ({
     const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
     const [editingVendorName, setEditingVendorName] = useState('');
     const [isUpdatingVendor, setIsUpdatingVendor] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     
     // Refs for scroll delegation
     const panelRef = useRef<HTMLDivElement>(null);
@@ -173,8 +159,9 @@ export const DocumentDetailsPanel = ({
     // Status display helpers
     const getStatusColor = (status: Invoice['status']) => {
         switch (status) {
-            case 'reviewed': return 'success';   // Reviewed (locked, green)
-            case 'approved': return 'success';   // Also maps to Reviewed
+            case 'reviewed': return 'success';   // Queued (locked, green)
+            case 'queued': return 'success';     // Queued (locked, green)
+            case 'approved': return 'success';   // Also maps to Queued
             case 'rejected': return 'error';     // Error (red)
             case 'exported': return 'brand';     // Exported (blue/purple)
             case 'pending': return 'warning';    // Pending (yellow/orange)
@@ -188,8 +175,9 @@ export const DocumentDetailsPanel = ({
         switch (status) {
             case 'open': return 'Matched';      // Editable state
             case 'pending': return 'Pending';   // Locked, missing fields
-            case 'reviewed': return 'Reviewed'; // Locked, ready to export
-            case 'approved': return 'Reviewed'; // Also maps to Reviewed
+            case 'reviewed': return 'Queued';   // Locked, ready for export
+            case 'queued': return 'Queued';     // Queued state
+            case 'approved': return 'Queued';   // Also maps to Queued
             case 'rejected': return 'Error';    // Has errors
             case 'exported': return 'Exported'; // Already exported
             default: return status;
@@ -202,7 +190,7 @@ export const DocumentDetailsPanel = ({
         
         // Check all editable fields
         const fieldsToCheck: (keyof (Invoice | DeliveryTicket))[] = [
-            "vendorName", "invoiceNumber", "invoiceDate", "glAccount", "team"
+            "vendorName", "invoiceNumber", "invoiceDate", "amount", "freightCharge", "surcharge", "glAccount", "team"
         ];
         
         // Check top-level fields
@@ -263,10 +251,53 @@ export const DocumentDetailsPanel = ({
         return topLevelChanged || linesChanged;
     }, [document, editedDocument]);
 
-    const handleSave = () => {
-        if (editedDocument && onSave) {
-            onSave(editedDocument);
+    const handleSave = async () => {
+        if (!editedDocument || !onSave || isSaving || !isDirty) return;
+        
+        setIsSaving(true);
+        try {
+            await onSave(editedDocument);
             setIsEditing(false);
+            // The parent component will update the document prop after saving,
+            // which will trigger the useEffect to sync editedDocument
+        } catch (error) {
+            console.error('Failed to save invoice:', error);
+            // TODO: Show error toast/notification to user
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Render state-specific indicators
+    const renderStateIndicator = () => {
+        if (!currentDoc) return null;
+
+        const status = currentDoc.status;
+
+        switch (status) {
+            case INVOICE_STATUS.PENDING:
+                return <PendingStateIndicator />;
+
+            case INVOICE_STATUS.OPEN:
+                // Show balance alert if balance exists
+                if (currentDoc.balance !== undefined && currentDoc.balance !== null && currentDoc.balance !== 0) {
+                    return <BalanceAlert balance={currentDoc.balance} explanation={currentDoc.balanceExplanation} />;
+                }
+                return null;
+
+            case INVOICE_STATUS.REVIEWED:
+            case INVOICE_STATUS.QUEUED:
+            case INVOICE_STATUS.APPROVED:
+                return <QueuedIndicator />;
+
+            case INVOICE_STATUS.EXPORTED:
+                return <ExportedIndicator />;
+
+            case INVOICE_STATUS.REJECTED:
+                return <ErrorAlert errorCode={currentDoc.errorCode} errorMessage={currentDoc.errorMessage} />;
+
+            default:
+                return null;
         }
     };
 
@@ -278,107 +309,105 @@ export const DocumentDetailsPanel = ({
         const validation = validateInvoice(currentDoc);
 
         switch (status) {
-            case 'open':
+            case INVOICE_STATUS.PENDING: // Pending - processing
                 return (
                     <div className="flex items-center gap-2">
-                        <Button 
-                            size="sm" 
-                            color="primary"
-                            className="flex-1"
-                            onClick={() => onSendForApproval?.(currentDoc)}
-                            isDisabled={!validation.canMarkAsReviewed}
-                        >
-                            Mark as Reviewed
-                        </Button>
-                        <Button 
-                            size="sm" 
-                            color="secondary"
-                            className="flex-1"
-                            onClick={handleSave}
-                            isDisabled={!isDirty}
-                        >
-                            Save
-                        </Button>
                         <Button 
                             size="sm" 
                             color="secondary"
                             iconLeading={Trash01}
                             onClick={() => onDelete?.(currentDoc)}
-                            aria-label="Delete"
-                        />
+                            className="flex-1"
+                        >
+                            Delete
+                        </Button>
                     </div>
                 );
 
-            case 'pending':
+            case INVOICE_STATUS.OPEN: // Matched - editable
                 return (
                     <div className="flex items-center gap-2">
                         <Button 
                             size="sm" 
                             color="primary"
                             className="flex-1"
-                            onClick={() => onApprove?.(currentDoc)}
+                            onClick={() => {
+                                // Export = Save + Export
+                                if (isDirty) {
+                                    handleSave();
+                                }
+                                onSendForApproval?.(currentDoc);
+                            }}
+                            isDisabled={!validation.canMarkAsReviewed}
                         >
-                            Approve
-                        </Button>
-                        <Button 
-                            size="sm" 
-                            color="secondary"
-                            className="flex-1"
-                            onClick={() => onReject?.(currentDoc)}
-                        >
-                            Reject
-                        </Button>
-                    </div>
-                );
-
-            case 'rejected': // Rejected
-                return (
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            size="sm" 
-                            color="primary"
-                            className="flex-1"
-                            onClick={() => onResendForApproval?.(currentDoc)}
-                        >
-                            Re-mark as Reviewed
+                            Export
                         </Button>
                         <Button 
                             size="sm" 
                             color="secondary"
                             className="flex-1"
                             onClick={handleSave}
-                            isDisabled={!isDirty}
+                            isDisabled={!isDirty || isSaving}
+                            isLoading={isSaving}
                         >
                             Save
                         </Button>
+                        <ButtonUtility 
+                            size="sm" 
+                            color="secondary"
+                            icon={Trash01}
+                            onClick={() => onDelete?.(currentDoc)}
+                            tooltip="Delete"
+                        />
                     </div>
                 );
 
-            case 'approved': // Approved
+            case INVOICE_STATUS.REVIEWED: // Queued - waiting for export
+            case INVOICE_STATUS.QUEUED: // Queued - waiting for export
+            case INVOICE_STATUS.APPROVED: // Also maps to Queued
+                return null; // No action buttons for queued state
+
+            case INVOICE_STATUS.EXPORTED: // Exported
                 return (
                     <div className="flex items-center gap-2">
                         <Button 
                             size="sm" 
                             color="primary"
                             className="flex-1"
-                            onClick={() => onReopen?.(currentDoc)}
-                        >
-                            Reopen
-                        </Button>
-                    </div>
-                );
-
-            case 'exported': // Exported
-                return (
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            size="sm" 
-                            color="primary"
-                            className="flex-1"
+                            iconLeading={LinkExternal01}
                             onClick={() => onViewInOracle?.(currentDoc)}
                         >
-                            View in Oracle
+                            View in AIM Vision
                         </Button>
+                    </div>
+                );
+
+            case INVOICE_STATUS.REJECTED: // Error state
+                return (
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                            <Button 
+                                size="sm" 
+                                color="secondary"
+                                iconLeading={Trash01}
+                                onClick={() => onDelete?.(currentDoc)}
+                                className="flex-1"
+                            >
+                                Delete
+                            </Button>
+                            <Button 
+                                size="sm" 
+                                color="secondary"
+                                iconLeading={HelpCircle}
+                                onClick={() => {
+                                    // Open help/support - could be a modal or external link
+                                    window.open('mailto:support@example.com?subject=Invoice%20Error%20Help', '_blank');
+                                }}
+                                className="flex-1"
+                            >
+                                Need Help
+                            </Button>
+                        </div>
                     </div>
                 );
 
@@ -389,14 +418,6 @@ export const DocumentDetailsPanel = ({
                         <Button 
                             size="sm" 
                             color="primary"
-                            className="flex-1"
-                            isDisabled={!validation.canMarkAsReviewed}
-                        >
-                            Mark Reviewed
-                        </Button>
-                        <Button 
-                            size="sm" 
-                            color="secondary"
                             className="flex-1"
                             onClick={handleSave}
                             isDisabled={!isDirty}
@@ -523,12 +544,12 @@ export const DocumentDetailsPanel = ({
         );
     }
     // Only allow editing when status is 'open' (displays as "Matched" in Airtable)
-    const canEdit = currentDoc?.status === 'open';
+    const canEdit = currentDoc?.status === INVOICE_STATUS.OPEN;
 
     return (
         <div ref={panelRef} className={cx("border-l border-secondary bg-primary flex flex-col h-full overflow-hidden", className)} style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}>
             {/* Header */}
-            <div className="px-6 py-4 border-b border-secondary flex-shrink-0">
+            <div className="px-[18px] pt-[18px] pb-[18px] border-b border-secondary flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-primary">
                         Details
@@ -549,8 +570,11 @@ export const DocumentDetailsPanel = ({
                     </div>
                 </div>
 
+                {/* State-specific indicators */}
+                {renderStateIndicator()}
+                
+                {/* Completeness checker (not shown for Pending state) */}
                 <CompletenessChecker document={currentDoc} />
-                <RejectionReasonBanner document={currentDoc} />
                 
                 {/* Primary Actions */}
                 {renderActionButtons()}
@@ -569,9 +593,9 @@ export const DocumentDetailsPanel = ({
                         items={tabs}
                         type="underline"
                         size="sm"
-                        className="px-6 pt-2 w-full flex justify-between"
+                        className="px-[18px] pt-2 w-full justify-evenly"
                     >
-                        {(item) => <Tab key={item.id} id={item.id} label={item.label} className="flex-1 text-center" />}
+                        {(item) => <Tab key={item.id} id={item.id} label={item.label} />}
                     </TabList>
                 </div>
 
@@ -597,60 +621,14 @@ export const DocumentDetailsPanel = ({
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">Vendor</label>
-                                <Select
-                                    placeholder="Select vendor"
-                                    items={[
-                                        ...(currentDoc?.vendorName ? [{ 
-                                            id: "current", 
-                                            label: currentDoc.vendorCode 
-                                                ? `${currentDoc.vendorName} - ${currentDoc.vendorCode}`
-                                                : currentDoc.vendorName,
-                                            icon: !currentDoc.vendorCode ? (() => (
-                                                <svg
-                                                    className="animate-spin h-4 w-4 text-gray-400"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <circle
-                                                        className="opacity-25"
-                                                        cx="12"
-                                                        cy="12"
-                                                        r="10"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                    ></circle>
-                                                    <path
-                                                        className="opacity-75"
-                                                        fill="currentColor"
-                                                        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                    ></path>
-                                                </svg>
-                                            )) : undefined
-                                        }] : []),
-                                        { 
-                                            id: "edit", 
-                                            label: "Edit vendor", 
-                                            icon: Edit03 
-                                        }
-                                    ]}
-                                    selectedKey={currentDoc?.vendorName ? "current" : null}
-                                    onSelectionChange={(key) => {
-                                        if (key === "edit") {
-                                            handleVendorEdit();
-                                        }
-                                        // Keep current vendor selected, don't change anything for now
-                                    }}
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Vendor Name</label>
+                                <Input 
+                                    value={currentDoc?.vendorName || ''}
+                                    onChange={(value) => updateField('vendorName', value)}
                                     size="sm"
+                                    placeholder="Enter vendor name"
                                     isDisabled={!canEdit}
-                                >
-                                    {(item) => (
-                                        <Select.Item key={item.id} id={item.id} icon={item.icon}>
-                                            {item.label}
-                                        </Select.Item>
-                                    )}
-                                </Select>
+                                />
                             </div>
                             <div>
                                 <label className="text-xs font-medium text-tertiary mb-1 block">Invoice Number</label>
@@ -673,6 +651,44 @@ export const DocumentDetailsPanel = ({
                                             updateField('invoiceDate', date);
                                         }
                                     }}
+                                    isDisabled={!canEdit}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Freight Charge</label>
+                                <Input 
+                                    value={currentDoc?.freightCharge != null ? `$${currentDoc.freightCharge.toFixed(2)}` : ''}
+                                    onChange={(value) => {
+                                        // Remove dollar sign and parse as float
+                                        const numericValue = value.toString().replace(/[$,]/g, '');
+                                        const parsedValue = parseFloat(numericValue);
+                                        if (!isNaN(parsedValue)) {
+                                            updateField('freightCharge', parsedValue);
+                                        } else if (numericValue === '') {
+                                            updateField('freightCharge', undefined);
+                                        }
+                                    }}
+                                    size="sm"
+                                    placeholder="0.00"
+                                    isDisabled={!canEdit}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-tertiary mb-1 block">Surcharge</label>
+                                <Input 
+                                    value={currentDoc?.surcharge != null ? `$${currentDoc.surcharge.toFixed(2)}` : ''}
+                                    onChange={(value) => {
+                                        // Remove dollar sign and parse as float
+                                        const numericValue = value.toString().replace(/[$,]/g, '');
+                                        const parsedValue = parseFloat(numericValue);
+                                        if (!isNaN(parsedValue)) {
+                                            updateField('surcharge', parsedValue);
+                                        } else if (numericValue === '') {
+                                            updateField('surcharge', undefined);
+                                        }
+                                    }}
+                                    size="sm"
+                                    placeholder="0.00"
                                     isDisabled={!canEdit}
                                 />
                             </div>

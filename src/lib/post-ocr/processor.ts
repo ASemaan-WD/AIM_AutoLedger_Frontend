@@ -67,6 +67,9 @@ export async function processPostOCR(fileRecordId: string): Promise<ProcessFileR
         invoiceNumber: doc.invoice_number || 'none',
         amount: doc.amount || 'unknown',
         team: doc.team || 'none',
+        freightCharge: doc.freight_charge ?? 'none',
+        surcharge: doc.surcharge ?? 'none',
+        poNumbers: doc.po_numbers?.length > 0 ? doc.po_numbers.join(', ') : 'none',
       });
     });
     console.log();
@@ -139,6 +142,9 @@ export async function processPostOCR(fileRecordId: string): Promise<ProcessFileR
           vendor: doc.vendor_name,
           invoiceNumber: doc.invoice_number,
           amount: doc.amount,
+          freightCharge: doc.freight_charge,
+          surcharge: doc.surcharge,
+          poNumbers: doc.po_numbers,
           invoiceId: createdInvoices[idx]?.id,
           lineItemsCount: doc.line_items?.length || 0,
         })),

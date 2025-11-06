@@ -97,7 +97,8 @@ export function validateInvoice(invoice: Invoice | DeliveryTicket): ValidationRe
     const issues: ValidationIssue[] = [];
 
     // Use server-side validation if available (from Airtable formula field)
-    if (invoice.missingFieldsMessage) {
+    // Check if the field exists (not undefined/null) - empty string means "no missing fields"
+    if (invoice.missingFieldsMessage !== undefined && invoice.missingFieldsMessage !== null) {
         // Parse the missing fields message (e.g., "Vendor Code, Amount")
         const hasBlockingIssues = invoice.missingFieldsMessage.trim().length > 0;
         if (hasBlockingIssues) {
@@ -145,7 +146,8 @@ export function hasBlockingIssues(invoice: Invoice | DeliveryTicket): boolean {
  */
 export function getMissingFieldsMessage(invoice: Invoice | DeliveryTicket): string {
     // Use server-side validation from Airtable if available
-    if (invoice.missingFieldsMessage) {
+    // Check if the field exists (not undefined/null) - empty string means "no missing fields"
+    if (invoice.missingFieldsMessage !== undefined && invoice.missingFieldsMessage !== null) {
         return invoice.missingFieldsMessage;
     }
     

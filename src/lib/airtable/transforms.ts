@@ -17,6 +17,7 @@ export const INVOICE_ENTITY_FIELDS = {
   POS: 'POs',
   DOCUMENT_RAW_TEXT: 'Document Raw Text',
   FILES: 'Files',
+  ATTACHMENTS: 'Attachments', // Lookup field to Files table's Attachments
   PO_INVOICE_HEADERS: 'POInvoiceHeaders',
   MATCH_JSON_PAYLOAD: 'MatchJSONPayload',
   ERROR_CODE: 'Error Code',
@@ -98,13 +99,15 @@ export function transformAirtableToInvoiceEntity(record: AirtableRecord): Invoic
     const statusMap: Record<string, DocumentStatus> = {
       'Pending': 'pending',
       'Matched': 'open',      // Editable state
-      'Queued': 'pending',
+      'Queued': 'queued',     // Queued state (ready for export, displays as "Queued")
+      'Reviewed': 'reviewed', // Reviewed state (displays as "Reviewed")
       'Exported': 'exported',
       'Error': 'rejected',
       // Legacy mappings
       'pending': 'pending',
       'open': 'open',
       'reviewed': 'reviewed',
+      'queued': 'queued',
       'approved': 'approved',
       'rejected': 'rejected',
       'exported': 'exported'
@@ -125,6 +128,8 @@ export function transformAirtableToInvoiceEntity(record: AirtableRecord): Invoic
     vendorName: fields[INVOICE_ENTITY_FIELDS.VENDOR_NAME] || '',
     vendorCode: fields[INVOICE_ENTITY_FIELDS.VEND_ID] || '',
     amount: fields[INVOICE_ENTITY_FIELDS.AMOUNT] || 0,
+    freightCharge: fields[INVOICE_ENTITY_FIELDS.FREIGHT_CHARGE] || undefined,
+    surcharge: fields[INVOICE_ENTITY_FIELDS.SURCHARGE] || undefined,
     invoiceDate: parseDate(fields[INVOICE_ENTITY_FIELDS.DATE]) || new Date(),
     glAccount: '', // GL Account is in POInvoiceDetails (line items)
     rawTextOcr: fields[INVOICE_ENTITY_FIELDS.DOCUMENT_RAW_TEXT] || '',
@@ -136,8 +141,8 @@ export function transformAirtableToInvoiceEntity(record: AirtableRecord): Invoic
     // Linked POInvoiceHeaders records
     invoiceDetails: fields[INVOICE_ENTITY_FIELDS.PO_INVOICE_HEADERS] || [],
     
-    // Attachments from Files table (lookup)
-    attachments: [],
+    // Attachments from Files table (lookup field)
+    attachments: fields[INVOICE_ENTITY_FIELDS.ATTACHMENTS] || [],
     files: fields[INVOICE_ENTITY_FIELDS.FILES] || [],
     
     // Additional computed fields
@@ -162,16 +167,17 @@ export function transformAirtableToInvoice(record: AirtableRecord): Invoice {
   const mapStatus = (airtableStatus: string): DocumentStatus => {
     const statusMap: Record<string, DocumentStatus> = {
       // POInvoiceHeaders status mappings
-      'Queued': 'pending',
-      'Exported': 'exported',
-      'Error': 'rejected',
-      // Legacy mappings
+      'Queued': 'queued',     // Queued state (ready for export, displays as "Queued")
       'Pending': 'pending',
       'Matched': 'open',
       'Reviewed': 'reviewed',
+      'Exported': 'exported',
+      'Error': 'rejected',
+      // Legacy mappings
       'pending': 'pending',
       'open': 'open',
       'reviewed': 'reviewed',
+      'queued': 'queued',
       'approved': 'approved',
       'rejected': 'rejected',
       'exported': 'exported'
@@ -224,13 +230,16 @@ export function transformInvoiceToAirtableEntity(invoice: Partial<Invoice>): Rec
   if (invoice.vendorName) fields[INVOICE_ENTITY_FIELDS.VENDOR_NAME] = invoice.vendorName;
   if (invoice.vendorCode) fields[INVOICE_ENTITY_FIELDS.VEND_ID] = invoice.vendorCode;
   if (invoice.amount !== undefined) fields[INVOICE_ENTITY_FIELDS.AMOUNT] = invoice.amount;
+  if (invoice.freightCharge !== undefined) fields[INVOICE_ENTITY_FIELDS.FREIGHT_CHARGE] = invoice.freightCharge;
+  if (invoice.surcharge !== undefined) fields[INVOICE_ENTITY_FIELDS.SURCHARGE] = invoice.surcharge;
   
   // Map our internal status back to Airtable's capitalized values
   if (invoice.status) {
     const statusMap: Record<string, string> = {
       'pending': 'Pending',
       'open': 'Matched',       // Editable state
-      'reviewed': 'Queued',    // Ready for export
+      'reviewed': 'Reviewed',  // Reviewed state
+      'queued': 'Queued',      // Queued state
       'approved': 'Queued',    // Also maps to Queued
       'exported': 'Exported',
       'rejected': 'Error',
@@ -267,7 +276,8 @@ export function transformInvoiceToAirtable(invoice: Partial<Invoice>): Record<st
     const statusMap: Record<string, string> = {
       'pending': 'Queued',
       'open': 'Queued',
-      'reviewed': 'Queued',
+      'reviewed': 'Reviewed',
+      'queued': 'Queued',
       'approved': 'Queued',
       'exported': 'Exported',
       'rejected': 'Error',

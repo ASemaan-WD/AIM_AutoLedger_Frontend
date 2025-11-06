@@ -4,7 +4,7 @@ import type { AirtableRecord } from './types';
 import type { DocumentLine } from '@/types/documents';
 
 interface UseInvoiceDetailsOptions {
-  invoiceDetailsIds?: string[]; // Array of InvoiceDetails record IDs from InvoiceHeaders
+  invoiceDetailsIds?: string[]; // Array of POInvoiceDetails record IDs from POInvoiceHeaders
   autoFetch?: boolean;
 }
 
@@ -15,7 +15,7 @@ interface UseInvoiceDetailsResult {
   refresh: () => Promise<void>;
 }
 
-// Transform Airtable InvoiceDetails record to DocumentLine
+// Transform Airtable POInvoiceDetails record to DocumentLine
 function transformInvoiceDetailToLine(record: AirtableRecord): DocumentLine {
   const fields = record.fields;
   
@@ -49,8 +49,8 @@ function transformInvoiceDetailToLine(record: AirtableRecord): DocumentLine {
 }
 
 /**
- * Hook to fetch invoice line items from InvoiceDetails table
- * Uses the Invoice Details linked record IDs from the InvoiceHeaders record
+ * Hook to fetch invoice line items from POInvoiceDetails table
+ * Uses the Invoice Details linked record IDs from the POInvoiceHeaders record
  */
 export function useInvoiceDetails(options: UseInvoiceDetailsOptions = {}): UseInvoiceDetailsResult {
   const { invoiceDetailsIds, autoFetch = true } = options;

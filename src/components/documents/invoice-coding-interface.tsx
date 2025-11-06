@@ -26,7 +26,7 @@ export const InvoiceCodingInterface = ({
 }: InvoiceCodingInterfaceProps) => {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   
-  // Fetch invoice line items from InvoiceDetails table
+  // Fetch invoice line items from POInvoiceDetails table
   const { lines, loading, error } = useInvoiceDetails({
     invoiceDetailsIds: invoice.invoiceDetails, // Pass the linked record IDs
     autoFetch: true
@@ -89,7 +89,7 @@ export const InvoiceCodingInterface = ({
             <strong>No Line Items Found</strong>
           </p>
           <p className="text-xs text-blue-700">
-            This invoice doesn&apos;t have any line items in the InvoiceDetails table yet.
+            This invoice doesn&apos;t have any line items in the POInvoiceDetails table yet.
           </p>
         </div>
       </div>
@@ -107,14 +107,14 @@ export const InvoiceCodingInterface = ({
       {/* Header Divider */}
       <div className="border-b border-secondary" />
 
-      {/* Pagination Row */}
+      {/* Pagination Row - Always enabled for navigation even in read-only states */}
       <div className="flex items-center justify-between py-2 -mx-6 px-6">
         <button
           onClick={handlePreviousLine}
-          disabled={disabled || currentLineIndex === 0}
+          disabled={currentLineIndex === 0}
           className={cx(
             "p-1 rounded-lg transition-colors",
-            (disabled || currentLineIndex === 0)
+            currentLineIndex === 0
               ? "text-quaternary cursor-not-allowed"
               : "text-secondary hover:text-primary hover:bg-secondary"
           )}
@@ -129,10 +129,10 @@ export const InvoiceCodingInterface = ({
 
         <button
           onClick={handleNextLine}
-          disabled={disabled || currentLineIndex === lines.length - 1}
+          disabled={currentLineIndex === lines.length - 1}
           className={cx(
             "p-1 rounded-lg transition-colors",
-            (disabled || currentLineIndex === lines.length - 1)
+            currentLineIndex === lines.length - 1
               ? "text-quaternary cursor-not-allowed"
               : "text-secondary hover:text-primary hover:bg-secondary"
           )}

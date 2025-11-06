@@ -9,9 +9,18 @@ export const INVOICE_STATUS = {
   PENDING: 'pending',
   OPEN: 'open',
   REVIEWED: 'reviewed',
+  QUEUED: 'queued',
   APPROVED: 'approved',
   REJECTED: 'rejected',
   EXPORTED: 'exported',
+} as const;
+
+// Status constants for File documents
+export const FILE_STATUS = {
+  QUEUED: 'Queued',
+  PROCESSING: 'Processing',
+  PROCESSED: 'Processed',
+  ATTENTION: 'Attention',
 } as const;
 
 // Auto-generated field IDs from Airtable schema
@@ -48,6 +57,7 @@ export const FIELD_IDS = {
     POS: 'fldmBwAkd2ekGDS3h',
     DOCUMENT_RAW_TEXT: 'fldYajj2Ql4O3ZJNl',
     FILES: 'fldvgp2k2Ro3xneyz',
+    ATTACHMENTS: 'fldAttachmentsLookup', // TODO: Update with actual field ID once Attachments lookup field is created in Airtable
     CREATED_AT: 'fldQTWe0E9ik9t3SW',
     MODIFIED_AT: 'fldtlqLgTn2IdBbkj',
     MATCHJSONPAYLOAD: 'fldFxQNImfvsULyL2',
@@ -199,6 +209,7 @@ export interface InvoicesFields {
   pOs?: string;
   documentRawText?: string;
   files?: string[];
+  attachments?: AirtableAttachment[];
   createdAt: string;
   modifiedAt?: string;
   matchJSONPayload?: string;
@@ -329,6 +340,7 @@ export interface InvoicesRecord {
   pOs?: string;
   documentRawText?: string;
   files?: string[];
+  attachments?: AirtableAttachment[];
   createdAt: string;
   modifiedAt?: string;
   matchJSONPayload?: string;

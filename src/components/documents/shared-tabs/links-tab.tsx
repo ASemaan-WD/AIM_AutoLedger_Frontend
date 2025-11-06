@@ -154,7 +154,7 @@ const getStatusDisplayName = (item: LinkedItem): string => {
         case 'processed': return 'Processed';
         case 'processing': return 'Processing';
         case 'queued': return 'Queued';
-        case 'reviewed': return 'Reviewed';
+        case 'reviewed': return 'Queued';
         case 'approved': return 'Approved';
         case 'rejected': return 'Rejected';
         case 'exported': return 'Exported';

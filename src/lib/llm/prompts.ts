@@ -26,11 +26,14 @@ Rules:
    - Extract just the number, not the full text
 7. invoice_date must be in YYYY-MM-DD format if present
 8. amount should be a string with the numeric value (e.g., "1234.56")
-9. Do not invent information - only extract what is clearly present
+9. freight_charge should be a numeric value for freight/shipping charges (e.g., 45.50). Look for terms like "Freight", "Freight Charge", "Shipping", "Delivery Charge", etc.
+10. surcharge should be a numeric value for surcharges or additional fees (e.g., 12.25). Look for terms like "Surcharge", "Fuel Surcharge", "Service Charge", "Handling Fee", etc.
+11. po_numbers should be an array of all purchase order numbers found on the invoice. Look for terms like "PO", "P.O.", "Purchase Order", "PO Number", etc. Extract all unique PO numbers from the invoice header, footer, or line items. If no PO numbers are found, use an empty array [].
+12. Do not invent information - only extract what is clearly present
 
 Line Items Extraction (for invoices):
-10. Extract ALL line items from the invoice into the line_items array
-11. Each line item should include:
+13. Extract ALL line items from the invoice into the line_items array
+14. Each line item should include:
     - line_number: Line number or sequence (e.g., "1", "2", "3")
     - item_no: Item SKU or product number (e.g., "12345", "ABC-123")
     - item_description: Description of the item/product
@@ -39,8 +42,8 @@ Line Items Extraction (for invoices):
     - line_amount: Total amount for the line (quantity * price, numeric)
     - po_number: Purchase order number if present on the line
     - expacct: GL account or expense account code if present
-12. For non-invoice documents (store_receiver, delivery_ticket), line_items should be an empty array []
-13. Line amounts should be numeric values, not strings (e.g., 123.45, not "123.45")
+15. For non-invoice documents (store_receiver, delivery_ticket), line_items should be an empty array []
+16. Line amounts should be numeric values, not strings (e.g., 123.45, not "123.45")
 
 Document type identification:
 - "invoice": Standard vendor invoice with amount due

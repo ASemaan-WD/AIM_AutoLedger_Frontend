@@ -86,17 +86,17 @@ function InvoicesPageContent() {
     // Status change handlers
     const handleSendForApproval = async (invoice: Invoice) => {
         try {
-            // Validate required fields before marking as reviewed
+            // Validate required fields before marking as queued
             const validation = validateInvoice(invoice);
             if (!validation.canMarkAsReviewed) {
                 const missingFieldsMessage = getMissingFieldsMessage(invoice);
-                alert(`Cannot mark as reviewed. ${missingFieldsMessage}`);
+                alert(`Cannot mark as queued. ${missingFieldsMessage}`);
                 return;
             }
 
             await updateInvoice(invoice.id, { status: 'reviewed' });
         } catch (err) {
-            console.error('Failed to mark as reviewed:', err);
+            console.error('Failed to mark as queued:', err);
         }
     };
 
@@ -120,7 +120,7 @@ function InvoicesPageContent() {
         try {
             await updateInvoice(invoice.id, { status: 'pending' });
         } catch (err) {
-            console.error('Failed to re-mark as reviewed:', err);
+            console.error('Failed to re-mark as queued:', err);
         }
     };
 

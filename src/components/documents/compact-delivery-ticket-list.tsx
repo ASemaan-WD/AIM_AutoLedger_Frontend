@@ -38,7 +38,7 @@ const DeliveryTicketItem = ({ value, className, ...otherProps }: ListBoxItemProp
         switch (status) {
             case 'open': return 'Open';
             case 'pending': return 'Pending';
-            case 'reviewed': return 'Reviewed';
+            case 'reviewed': return 'Queued';
             case 'approved': return 'Approved';
             case 'rejected': return 'Rejected';
             case 'exported': return 'Exported';

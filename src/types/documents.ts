@@ -4,7 +4,7 @@ import type { AirtableAttachment } from '@/lib/airtable/types';
 export type DocumentType = 'invoices' | 'files' | 'store-receivers' | 'delivery-tickets';
 
 // Document Status (from Airtable schema)
-export type DocumentStatus = 'open' | 'reviewed' | 'exported' | 'pending' | 'approved' | 'rejected';
+export type DocumentStatus = 'open' | 'reviewed' | 'queued' | 'exported' | 'pending' | 'approved' | 'rejected';
 
 // Completeness is computed on the fly in UI; keeping type for legacy references if any
 export type CompletenessStatus = 'complete' | 'incomplete' | 'missing_fields';
@@ -29,6 +29,8 @@ export interface Invoice extends BaseDocument {
     invoiceNumber: string;
     invoiceDate: Date;
     amount: number;
+    freightCharge?: number;
+    surcharge?: number;
     glAccount?: string;
     rawTextOcr?: string;
     rejectionCode?: string;
@@ -36,7 +38,21 @@ export interface Invoice extends BaseDocument {
     attachments?: AirtableAttachment[];
     files?: string[];
     team?: string[];
-    invoiceDetails?: string[]; // Linked InvoiceDetails record IDs
+    invoiceDetails?: string[]; // Linked POInvoiceDetails record IDs
+    balance?: number; // Balance between invoice and PO
+    balanceExplanation?: string; // Explanation for balance discrepancy
+    errorCode?: string; // Error code for Error state
+    errorMessage?: string; // Error message for Error state
+    isMultilineCoding?: boolean; // Whether invoice uses multi-line coding
+    lines?: InvoiceLine[]; // Line items for multi-line coding
+}
+
+// Invoice Line Item (for multi-line coding)
+export interface InvoiceLine {
+    id: string;
+    description: string;
+    amount: number;
+    glAccount?: string;
 }
 
 // Purchase Order Document
@@ -164,8 +180,8 @@ export const INVOICE_SUB_VIEWS: DocumentSubView[] = [
     },
     {
         id: 'reviewed',
-        label: 'Reviewed',
-        filter: (docs: Document[]) => docs.filter(doc => doc.status === 'reviewed')
+        label: 'Queued',
+        filter: (docs: Document[]) => docs.filter(doc => doc.status === 'reviewed' || doc.status === 'queued')
     },
     {
         id: 'pending',
@@ -305,8 +321,8 @@ export const DELIVERY_TICKET_SUB_VIEWS: DocumentSubView[] = [
     },
     {
         id: 'reviewed',
-        label: 'Reviewed',
-        filter: (docs: Document[]) => docs.filter(doc => doc.status === 'reviewed')
+        label: 'Queued',
+        filter: (docs: Document[]) => docs.filter(doc => doc.status === 'reviewed' || doc.status === 'queued')
     },
     {
         id: 'pending',

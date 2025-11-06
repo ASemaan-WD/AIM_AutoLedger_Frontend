@@ -24,8 +24,9 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
 
     const getStatusColor = (status: Invoice['status']) => {
         switch (status) {
-            case 'reviewed': return 'success';   // Reviewed (locked, green)
-            case 'approved': return 'success';   // Also maps to Reviewed
+            case 'reviewed': return 'success';   // Queued (locked, green)
+            case 'queued': return 'success';     // Queued (locked, green)
+            case 'approved': return 'success';   // Also maps to Queued
             case 'rejected': return 'error';     // Error (red)
             case 'exported': return 'brand';     // Exported (blue/purple)
             case 'pending': return 'warning';    // Pending (yellow/orange)
@@ -39,8 +40,9 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
         switch (status) {
             case 'open': return 'Matched';      // Editable state
             case 'pending': return 'Pending';   // No edits, missing fields
-            case 'reviewed': return 'Reviewed'; // Locked, ready to export
-            case 'approved': return 'Reviewed'; // Also maps to Reviewed
+            case 'reviewed': return 'Queued';   // Locked, ready to export
+            case 'queued': return 'Queued';     // Queued state
+            case 'approved': return 'Queued';   // Also maps to Queued
             case 'rejected': return 'Error';    // Has errors
             case 'exported': return 'Exported'; // Already exported
             default: return status;
@@ -128,7 +130,8 @@ export const CompactInvoiceList = ({
         { id: 'all', label: 'All', count: invoices.length },
         { id: 'missing_fields', label: 'Missing Fields', count: invoices.filter(inv => hasBlockingIssues(inv)).length },
         { id: 'open', label: 'Open', count: invoices.filter(inv => inv.status === INVOICE_STATUS.OPEN).length },
-        { id: 'reviewed', label: 'Reviewed', count: invoices.filter(inv => inv.status === INVOICE_STATUS.REVIEWED).length },
+        { id: 'reviewed', label: 'Queued', count: invoices.filter(inv => inv.status === INVOICE_STATUS.REVIEWED || inv.status === INVOICE_STATUS.QUEUED).length },
+        { id: 'queued', label: 'Queued', count: invoices.filter(inv => inv.status === INVOICE_STATUS.QUEUED).length },
         { id: 'pending', label: 'Pending', count: invoices.filter(inv => inv.status === INVOICE_STATUS.PENDING).length },
         { id: 'approved', label: 'Approved', count: invoices.filter(inv => inv.status === INVOICE_STATUS.APPROVED).length },
         { id: 'rejected', label: 'Rejected', count: invoices.filter(inv => inv.status === INVOICE_STATUS.REJECTED).length },
@@ -144,6 +147,7 @@ export const CompactInvoiceList = ({
                     case 'missing_fields': return hasBlockingIssues(invoice);
                     case 'open': return invoice.status === INVOICE_STATUS.OPEN;
                     case 'reviewed': return invoice.status === INVOICE_STATUS.REVIEWED;
+                    case 'queued': return invoice.status === INVOICE_STATUS.QUEUED;
                     case 'pending': return invoice.status === INVOICE_STATUS.PENDING;
                     case 'approved': return invoice.status === INVOICE_STATUS.APPROVED;
                     case 'rejected': return invoice.status === INVOICE_STATUS.REJECTED;

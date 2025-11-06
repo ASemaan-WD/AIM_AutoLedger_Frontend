@@ -44,6 +44,21 @@ export const DocumentArraySchema = {
             type: ["string", "null"],
             description: "Store number or team identifier"
           },
+          freight_charge: {
+            type: ["number", "null"],
+            description: "Freight charge amount as a number, e.g. 45.50"
+          },
+          surcharge: {
+            type: ["number", "null"],
+            description: "Surcharge amount as a number, e.g. 12.25"
+          },
+          po_numbers: {
+            type: "array",
+            items: {
+              type: "string"
+            },
+            description: "Array of purchase order numbers found on the invoice (e.g., ['PO-12345', 'PO-67890'])"
+          },
           line_items: {
             type: "array",
             items: {
@@ -106,6 +121,9 @@ export const DocumentArraySchema = {
           "document_type",
           "document_name",
           "team",
+          "freight_charge",
+          "surcharge",
+          "po_numbers",
           "line_items"
         ],
         additionalProperties: false
@@ -142,6 +160,9 @@ export type ParsedDocument = {
   document_type: "invoice" | "store_receiver" | "delivery_ticket";
   document_name: string | null;
   team: string | null;
+  freight_charge: number | null;
+  surcharge: number | null;
+  po_numbers: string[];
   line_items: ParsedLineItem[];
 };
 

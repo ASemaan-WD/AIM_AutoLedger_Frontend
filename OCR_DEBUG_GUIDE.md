@@ -193,3 +193,6 @@ If you need even more detail, add logs to:
 - `/src/lib/openai.ts` - OpenAI client initialization
 
 
+
+
+

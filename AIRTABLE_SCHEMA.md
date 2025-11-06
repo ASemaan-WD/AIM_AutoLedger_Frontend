@@ -46,6 +46,7 @@ File Upload → OCR Processing → Invoice Created → POInvoiceHeader Created �
    - One invoice can come from multiple files
    - Files table: `Invoices` field (multipleRecordLinks)
    - Invoices table: `Files` field (multipleRecordLinks)
+   - Invoices table: `Attachments` field (multipleLookupValues) - Lookup to Files table's `Attachments` field
 
 2. **Invoices ↔ POInvoiceHeaders**: One-to-many
    - Multiple POInvoiceHeaders can share the same AP Invoice Number
@@ -120,6 +121,7 @@ File Upload → OCR Processing → Invoice Created → POInvoiceHeader Created �
 | POs | `fldmBwAkd2ekGDS3h` | multilineText | Purchase order numbers (text) |
 | Document Raw Text | `fldYajj2Ql4O3ZJNl` | multilineText | OCR extracted text content |
 | Files | `fldvgp2k2Ro3xneyz` | multipleRecordLinks | **Links to Files table** |
+| Attachments | `fldAttachmentsLookup` ⚠️ | multipleLookupValues | **Lookup to Attachments field from Files table** (Field ID needs to be updated once created in Airtable) |
 | Status | `fldbeTDRDaKibT17s` | singleSelect | Workflow status |
 | Balance | `fldSjTjrW8Fso4j70` | currency | Invoice balance |
 | Balance Explanation | `fldySfNaohpv3gv4l` | singleLineText | Explanation of balance |

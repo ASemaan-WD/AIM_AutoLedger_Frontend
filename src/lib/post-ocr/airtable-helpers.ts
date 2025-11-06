@@ -216,6 +216,21 @@ export async function createInvoiceRecord(
     }
   }
   
+  // Freight Charge
+  if (doc.freight_charge !== null && doc.freight_charge !== undefined) {
+    fields['Freight Charge'] = doc.freight_charge;
+  }
+  
+  // Surcharge
+  if (doc.surcharge !== null && doc.surcharge !== undefined) {
+    fields['Surcharge'] = doc.surcharge;
+  }
+  
+  // PO Numbers - join array with newlines for multilineText field
+  if (doc.po_numbers && doc.po_numbers.length > 0) {
+    fields['POs'] = doc.po_numbers.join('\n');
+  }
+  
   // Set default status to 'Pending'
   fields['Status'] = 'Pending';
   

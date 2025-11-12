@@ -9,9 +9,9 @@ import { setRecordError } from '@/lib/airtable/error-handler';
 // Force this route to use Node.js runtime for server-side operations
 export const runtime = 'nodejs';
 
-// Set maximum execution time to 60 seconds for file upload and initial processing
-// The actual OCR processing happens in a separate API call
-export const maxDuration = 60;
+// Set maximum execution time to 300 seconds (5 minutes) for file upload and OCR processing
+// OCR processing is triggered synchronously and can take up to 300 seconds
+export const maxDuration = 300;
 
 /**
  * Trigger OCR processing for a file
@@ -37,7 +37,7 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(55000) // 55 second timeout
+        signal: AbortSignal.timeout(300000) // 300 second timeout (5 minutes)
       });
       console.log(`✅ Fetch completed`);
     } catch (fetchError) {
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
         // 'Source' field removed in new schema
         'Status': isDuplicateFile ? 'Attention' : 'Queued',
         'FileHash': fileHash, // Changed from 'File Hash' to 'FileHash' (no space)
-        'UploadDate': new Date().toISOString().split('T')[0], // Add upload date
+        'UploadedDate': new Date().toISOString().split('T')[0], // Add upload date (correct field name)
         'Attachments': [
           {
             url: blob.url,
@@ -246,8 +246,8 @@ export async function POST(request: NextRequest) {
 
       // Add duplicate error information if detected
       if (isDuplicateFile && duplicateInfo) {
-        recordFields['Error Code'] = 'DUPLICATE_FILE';
-        recordFields['Error Link'] = `/files?id=${duplicateInfo.duplicateRecord?.id}`;
+        recordFields['Error-Code'] = 'DUPLICATE_FILE';
+        recordFields['Error-Link'] = `/files?id=${duplicateInfo.duplicateRecord?.id}`;
       }
 
       const recordData = {

@@ -1,33 +1,23 @@
 {
   "tables": [
     {
-      "id": "tblMNDY3eCvIwSdA8",
+      "id": "tbluYB0mHO6CQWrwL",
       "name": "Files",
-      "primaryFieldId": "fldvv1P403ZBW5bzD",
+      "primaryFieldId": "fld4aUSAm9rH0gPYt",
       "fields": [
         {
           "type": "autoNumber",
-          "id": "fldvv1P403ZBW5bzD",
+          "id": "fld4aUSAm9rH0gPYt",
           "name": "FileID"
         },
         {
           "type": "singleLineText",
-          "id": "fldfWuCdkpNQj9Ldk",
-          "name": "InvoiceHeaderID"
-        },
-        {
-          "type": "url",
-          "id": "fldMOyx6UwMi6bEBe",
-          "name": "FileURL"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fld4ul9KRJUSKaUWS",
+          "id": "fldAkFbKnjYLzQJqS",
           "name": "FileHash"
         },
         {
           "type": "singleLineText",
-          "id": "fldIGVTS5FNOBGa6R",
+          "id": "fld7E1dvgRISwW0Pt",
           "name": "FileName"
         },
         {
@@ -38,52 +28,47 @@
               "format": "YYYY-MM-DD"
             }
           },
-          "id": "fldNiceCZo3dSbvaD",
-          "name": "UploadDate"
+          "id": "fldX1faf1UWuRF2p3",
+          "name": "UploadedDate"
         },
         {
           "type": "singleSelect",
           "options": {
             "choices": [
               {
-                "id": "selGrWb30VUc4KwTP",
+                "id": "sellBHcOWVUDoJoOp",
                 "name": "Queued",
                 "color": "blueLight2"
               },
               {
-                "id": "selrPyIHZYfOJckXn",
+                "id": "selwQMfVgIZXAdhTV",
                 "name": "Processing",
-                "color": "cyanLight2"
-              },
-              {
-                "id": "selP9v8kemzCYJVcM",
-                "name": "Processed",
                 "color": "tealLight2"
               },
               {
-                "id": "sele0xKZX44GpDg4r",
+                "id": "selq44pKdk32uBAO3",
+                "name": "Processed",
+                "color": "greenLight1"
+              },
+              {
+                "id": "selIopyn3GzJQp0CY",
                 "name": "Attention",
-                "color": "greenLight2"
+                "color": "orangeLight1"
               }
             ]
           },
-          "id": "flduvY2bmQosJsn7n",
+          "id": "fldV1n0WIjvaQVFjz",
           "name": "Status"
         },
         {
-          "type": "dateTime",
+          "type": "date",
           "options": {
             "dateFormat": {
               "name": "iso",
               "format": "YYYY-MM-DD"
-            },
-            "timeFormat": {
-              "name": "24hour",
-              "format": "HH:mm"
-            },
-            "timeZone": "utc"
+            }
           },
-          "id": "fldtidSYAqPRmoW3e",
+          "id": "fldbB5yMnHs6fITao",
           "name": "ParsedAt"
         },
         {
@@ -91,28 +76,28 @@
           "options": {
             "isReversed": false
           },
-          "id": "fld3draNU7mkLeGqI",
+          "id": "fldsDbtBW8gSpq9VD",
           "name": "Attachments"
         },
         {
           "type": "multilineText",
-          "id": "fld1lL5zRXtTbt0A3",
-          "name": "Raw Text"
+          "id": "fldGeuHck13u4BmDY",
+          "name": "Raw-Text"
         },
         {
           "type": "singleLineText",
-          "id": "flddPRt8iRsl1YYZM",
-          "name": "Error Code"
+          "id": "fldRocwOoLwBolAMv",
+          "name": "Error-Code"
         },
         {
           "type": "singleLineText",
-          "id": "flddfs5LMqSRF4gXO",
-          "name": "Error Description"
+          "id": "fldVm4uH7SYWLVKeg",
+          "name": "Error-Description"
         },
         {
           "type": "singleLineText",
-          "id": "fldO1mNxkXBkp9hiC",
-          "name": "Error Link"
+          "id": "fldwB1xjV6HlVPCdL",
+          "name": "Error-Link"
         },
         {
           "type": "createdTime",
@@ -132,8 +117,8 @@
               }
             }
           },
-          "id": "fldPaMbKTIR1J6gAn",
-          "name": "Created At"
+          "id": "fldUFewWxBBP9D5bv",
+          "name": "Created-At"
         },
         {
           "type": "lastModifiedTime",
@@ -155,58 +140,53 @@
               }
             }
           },
-          "id": "fldTqso4wgmGyPkUj",
-          "name": "Modified At"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fld8fYyXVZiKhNeDv",
-          "name": "InvoiceHeaders"
+          "id": "fldnSfYc4IRnK3pHQ",
+          "name": "Modified-At"
         },
         {
           "type": "multipleRecordLinks",
           "options": {
-            "linkedTableId": "tblNKS2pOwcisNWJJ",
+            "linkedTableId": "tblokyH2U1PBhhCE9",
             "isReversed": false,
             "prefersSingleRecordLink": false,
-            "inverseLinkFieldId": "fldvgp2k2Ro3xneyz"
+            "inverseLinkFieldId": "fldDzY5Ch6fCP0XHp"
           },
-          "id": "fldwKImJnsRbsWjHj",
+          "id": "flduJO35gW8Lo6Mh9",
           "name": "Invoices"
         }
       ],
       "views": [
         {
-          "id": "viwAiWwhejfEafkin",
+          "id": "viwnatz0C9ABbeKvX",
           "name": "Grid view",
           "type": "grid"
         }
       ]
     },
     {
-      "id": "tblNKS2pOwcisNWJJ",
+      "id": "tblokyH2U1PBhhCE9",
       "name": "Invoices",
-      "primaryFieldId": "fldZ17knWjEOCfztq",
+      "primaryFieldId": "fldvQzw4GlIefZTPy",
       "fields": [
         {
           "type": "autoNumber",
-          "id": "fldZ17knWjEOCfztq",
+          "id": "fldvQzw4GlIefZTPy",
           "name": "RecordID"
         },
         {
           "type": "singleLineText",
-          "id": "fldWJIn3Sb0JSCr2a",
-          "name": "Invoice Number"
+          "id": "fldI9lZSSR7ucHPHC",
+          "name": "Invoice-Number"
         },
         {
           "type": "singleLineText",
-          "id": "fldr9N3nkBSzTvOct",
+          "id": "fldhRQMEeBh3yLzRj",
           "name": "VendId"
         },
         {
           "type": "singleLineText",
-          "id": "fldgdPfsIPIu6GFrg",
-          "name": "Vendor Name"
+          "id": "fldJGXLYs7xaXP7xR",
+          "name": "Vendor-Name"
         },
         {
           "type": "currency",
@@ -214,18 +194,18 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldWskTDGmzu3udgQ",
+          "id": "fldO8fN0NWv8dqDKC",
           "name": "Amount"
         },
         {
           "type": "date",
           "options": {
             "dateFormat": {
-              "name": "local",
-              "format": "l"
+              "name": "iso",
+              "format": "YYYY-MM-DD"
             }
           },
-          "id": "fldp1dFsyYtFcMk63",
+          "id": "fldEx6RyGqFl0WivA",
           "name": "Date"
         },
         {
@@ -234,8 +214,8 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldmIOZypPrjc45MR",
-          "name": "Freight Charge"
+          "id": "fldYXCLntMTfENKJa",
+          "name": "Freight-Charge"
         },
         {
           "type": "currency",
@@ -243,42 +223,38 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fld0zGVtnSUl4YWva",
+          "id": "fldX0qPQMAgKaRFX3",
+          "name": "Misc-Charge"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fldIgWe2IFDOqnYO1",
           "name": "Surcharge"
         },
         {
           "type": "multilineText",
-          "id": "fldmBwAkd2ekGDS3h",
+          "id": "fldmoLZSY47DRFnAr",
           "name": "POs"
         },
         {
           "type": "multilineText",
-          "id": "fldYajj2Ql4O3ZJNl",
-          "name": "Document Raw Text"
+          "id": "fldB5FcRvWID00Tdn",
+          "name": "Document-Raw-Text"
         },
         {
           "type": "multipleRecordLinks",
           "options": {
-            "linkedTableId": "tblMNDY3eCvIwSdA8",
+            "linkedTableId": "tbluYB0mHO6CQWrwL",
             "isReversed": false,
-            "prefersSingleRecordLink": false,
-            "inverseLinkFieldId": "fldwKImJnsRbsWjHj"
+            "prefersSingleRecordLink": true,
+            "inverseLinkFieldId": "flduJO35gW8Lo6Mh9"
           },
-          "id": "fldvgp2k2Ro3xneyz",
+          "id": "fldDzY5Ch6fCP0XHp",
           "name": "Files"
-        },
-        {
-          "type": "multipleLookupValues",
-          "options": {
-            "isValid": true,
-            "recordLinkFieldId": "fldvgp2k2Ro3xneyz",
-            "fieldIdInLinkedTable": "fld3draNU7mkLeGqI",
-            "result": {
-              "type": "multipleAttachments"
-            }
-          },
-          "id": "fldAttachmentsLookup",
-          "name": "Attachments"
         },
         {
           "type": "createdTime",
@@ -298,8 +274,8 @@
               }
             }
           },
-          "id": "fldQTWe0E9ik9t3SW",
-          "name": "Created At"
+          "id": "fldOh6DdIq2JAhGHO",
+          "name": "Created-At"
         },
         {
           "type": "lastModifiedTime",
@@ -321,249 +297,60 @@
               }
             }
           },
-          "id": "fldtlqLgTn2IdBbkj",
-          "name": "Modified At"
+          "id": "fldSAyzOAxppKn8rh",
+          "name": "Modified-At"
         },
         {
           "type": "multilineText",
-          "id": "fldFxQNImfvsULyL2",
-          "name": "MatchJSONPayload"
+          "id": "fld7nZtX7h9ykBAS2",
+          "name": "MatchPayloadJSON"
         },
         {
           "type": "singleLineText",
-          "id": "fldBbD1mWcSqD5mn5",
-          "name": "Error Code"
+          "id": "fldwsvCcR8BsNYQVx",
+          "name": "ErrorCode"
         },
         {
           "type": "singleSelect",
           "options": {
             "choices": [
               {
-                "id": "sel6UEDu8LjRGUy29",
+                "id": "selcqHtyv6gxWbbl6",
                 "name": "Pending",
-                "color": "blueLight2"
+                "color": "greenLight1"
               },
               {
-                "id": "selWZbvi8DeTcKAZD",
+                "id": "seli03cIExOfJQbbj",
                 "name": "Matched",
-                "color": "cyanLight2"
-              },
-              {
-                "id": "selYO0ztfxDnTgiby",
-                "name": "Queued",
-                "color": "tealLight2"
-              },
-              {
-                "id": "selPuqnjahOulXqbY",
-                "name": "Exported",
-                "color": "greenLight2"
-              },
-              {
-                "id": "selC4DYl4h7ZyjUfk",
-                "name": "Error",
-                "color": "yellowLight2"
-              }
-            ]
-          },
-          "id": "fldbeTDRDaKibT17s",
-          "name": "Status"
-        },
-        {
-          "type": "currency",
-          "options": {
-            "precision": 2,
-            "symbol": "$"
-          },
-          "id": "fldSjTjrW8Fso4j70",
-          "name": "Balance"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldySfNaohpv3gv4l",
-          "name": "Balance Explanation"
-        },
-        {
-          "type": "multipleRecordLinks",
-          "options": {
-            "linkedTableId": "tblJoCXc4S52J5h6L",
-            "isReversed": false,
-            "prefersSingleRecordLink": false,
-            "inverseLinkFieldId": "fldlDBkOm2QV6vSSc"
-          },
-          "id": "fldzGkuubdu4lLy9n",
-          "name": "POInvoiceHeaders"
-        },
-        {
-          "type": "multipleLookupValues",
-          "options": {
-            "isValid": true,
-            "recordLinkFieldId": "fldvgp2k2Ro3xneyz",
-            "fieldIdInLinkedTable": "fld1lL5zRXtTbt0A3",
-            "result": {
-              "type": "multilineText"
-            }
-          },
-          "id": "fldUsIefXXVrL9ugZ",
-          "name": "File Raw Text"
-        },
-        {
-          "type": "formula",
-          "options": {
-            "isValid": true,
-            "formula": "IF(\n  TRIM(\n    IF({fldgdPfsIPIu6GFrg} = \"\", \"Vendor Name, \") &\n    IF({fldp1dFsyYtFcMk63} = \"\", \"Invoice Date, \") &\n    IF({fldWskTDGmzu3udgQ} = \"\", \"Amount, \") &\n    IF({fldWJIn3Sb0JSCr2a} = \"\", \"Invoice Number, \")\n  ) = \"\",\n  \"\",\n  LEFT(\n    TRIM(\n      IF({fldgdPfsIPIu6GFrg} = \"\", \"Vendor Name, \") &\n      IF({fldp1dFsyYtFcMk63} = \"\", \"Invoice Date, \") &\n      IF({fldWskTDGmzu3udgQ} = \"\", \"Amount, \") &\n      IF({fldWJIn3Sb0JSCr2a} = \"\", \"Invoice Number, \")\n    ),\n    LEN(\n      TRIM(\n        IF({fldgdPfsIPIu6GFrg} = \"\", \"Vendor Name, \") &\n        IF({fldp1dFsyYtFcMk63} = \"\", \"Invoice Date, \") &\n        IF({fldWskTDGmzu3udgQ} = \"\", \"Amount, \") &\n        IF({fldWJIn3Sb0JSCr2a} = \"\", \"Invoice Number, \")\n      )\n    ) - 1\n  )\n)",
-            "referencedFieldIds": [
-              "fldgdPfsIPIu6GFrg",
-              "fldp1dFsyYtFcMk63",
-              "fldWskTDGmzu3udgQ",
-              "fldWJIn3Sb0JSCr2a"
-            ],
-            "result": {
-              "type": "singleLineText"
-            }
-          },
-          "id": "fldhUobiEpFG2S8E2",
-          "name": "Missing Fields"
-        }
-      ],
-      "views": [
-        {
-          "id": "viwArnyxHQKOYuzRT",
-          "name": "Grid view",
-          "type": "grid"
-        }
-      ]
-    },
-    {
-      "id": "tblJoCXc4S52J5h6L",
-      "name": "POInvoiceHeaders",
-      "primaryFieldId": "fldKuzxRLh9ebfwQ6",
-      "fields": [
-        {
-          "type": "autoNumber",
-          "id": "fldKuzxRLh9ebfwQ6",
-          "name": "RecordID"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldTxznaohx3570gT",
-          "name": "Company-Code"
-        },
-        {
-          "type": "singleSelect",
-          "options": {
-            "choices": [
-              {
-                "id": "selHV3TBGln1G5c2f",
-                "name": "Queued",
-                "color": "greenLight2"
-              },
-              {
-                "id": "self9T7hrCBjzpiL6",
-                "name": "Exported",
                 "color": "blueLight2"
               },
               {
-                "id": "sel8MzzatJYdMggRJ",
+                "id": "selYYOfS104FewMSz",
+                "name": "Queued",
+                "color": "orangeLight1"
+              },
+              {
+                "id": "selFIEXjiftDBIFbe",
+                "name": "Exported",
+                "color": "purpleBright"
+              },
+              {
+                "id": "selp1gc1wmgZKBPUq",
                 "name": "Error",
-                "color": "yellowLight2"
+                "color": "redBright"
               }
             ]
           },
-          "id": "fldQG5aLrzWuybUGl",
+          "id": "fld8ZH6sheroClLwL",
           "name": "Status"
         },
         {
-          "type": "singleLineText",
-          "id": "fldHqAuDgGiFwEbNu",
-          "name": "VendId"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldoQDBbjtB45u8Y0",
-          "name": "Vendor Name"
-        },
-        {
-          "type": "multipleRecordLinks",
-          "options": {
-            "linkedTableId": "tblRkwaiS3LcFFrZ9",
-            "isReversed": false,
-            "prefersSingleRecordLink": false,
-            "inverseLinkFieldId": "fldS39vWDismMUvfC"
-          },
-          "id": "fldDtXpleyIIKomex",
-          "name": "Invoice Details"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldeLVE34jFJIZ4mt",
-          "name": "AP-Invoice-Number"
-        },
-        {
-          "type": "date",
-          "options": {
-            "dateFormat": {
-              "name": "iso",
-              "format": "YYYY-MM-DD"
-            }
-          },
-          "id": "fld965jyW6vfHSzve",
-          "name": "Invoice-Date"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldEfXJh4GLbPWnQ4",
-          "name": "TermsId"
-        },
-        {
-          "type": "date",
-          "options": {
-            "dateFormat": {
-              "name": "iso",
-              "format": "YYYY-MM-DD"
-            }
-          },
-          "id": "fldaToVmDpqv9ONaF",
-          "name": "Due-Date"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldnqlfWxfsldK9bw",
-          "name": "Remit-Name"
-        },
-        {
           "type": "currency",
           "options": {
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldCm1wXZcP8By64B",
-          "name": "Total-Invoice-Amount"
-        },
-        {
-          "type": "currency",
-          "options": {
-            "precision": 2,
-            "symbol": "$"
-          },
-          "id": "fldlY0X5bukPwEL8m",
-          "name": "Freight-Charge"
-        },
-        {
-          "type": "currency",
-          "options": {
-            "precision": 2,
-            "symbol": "$"
-          },
-          "id": "fldliitVmX1mosV3v",
-          "name": "Miscellaneous-Charge"
-        },
-        {
-          "type": "currency",
-          "options": {
-            "precision": 2,
-            "symbol": "$"
-          },
-          "id": "fldVMtTKXIqwZwxyp",
+          "id": "fld0zHEhMerfgxZx1",
           "name": "Discount-Amount"
         },
         {
@@ -574,27 +361,631 @@
               "format": "YYYY-MM-DD"
             }
           },
-          "id": "fldUUPq044MMnF5oJ",
+          "id": "fldyN4Sf6FTZoH9YI",
           "name": "Discount-Date"
         },
         {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "{fldO8fN0NWv8dqDKC} - {fldI5H4YHsu4VPPjg} - {fldYXCLntMTfENKJa} - {fldIgWe2IFDOqnYO1} - {fldX0qPQMAgKaRFX3}",
+            "referencedFieldIds": [
+              "fldO8fN0NWv8dqDKC",
+              "fldI5H4YHsu4VPPjg",
+              "fldYXCLntMTfENKJa",
+              "fldIgWe2IFDOqnYO1",
+              "fldX0qPQMAgKaRFX3"
+            ],
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldgF26E6kAcOYIEf",
+          "name": "Balance"
+        },
+        {
           "type": "singleLineText",
-          "id": "fld99Me7yA3uT9Dlg",
+          "id": "fldXH56bhzI3ieEsU",
+          "name": "Balance-Explanation"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldDzY5Ch6fCP0XHp",
+            "fieldIdInLinkedTable": "fldGeuHck13u4BmDY",
+            "result": {
+              "type": "multilineText"
+            }
+          },
+          "id": "fldbhuxrnxJ1Fun9u",
+          "name": "File-Raw-Text"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "IF(\r\n  TRIM(\r\n    IF({fldJGXLYs7xaXP7xR} = \"\", \"Vendor Name, \") &\r\n    IF({fldEx6RyGqFl0WivA} = \"\", \"Invoice Date, \") &\r\n    IF({fldO8fN0NWv8dqDKC} = \"\", \"Amount, \") &\r\n    IF({fldI9lZSSR7ucHPHC} = \"\", \"Invoice Number, \")\r\n  ) = \"\",\r\n  \"\",\r\n  LEFT(\r\n    TRIM(\r\n      IF({fldJGXLYs7xaXP7xR} = \"\", \"Vendor Name, \") &\r\n      IF({fldEx6RyGqFl0WivA} = \"\", \"Invoice Date, \") &\r\n      IF({fldO8fN0NWv8dqDKC} = \"\", \"Amount, \") &\r\n      IF({fldI9lZSSR7ucHPHC} = \"\", \"Invoice Number, \")\r\n    ),\r\n    LEN(\r\n      TRIM(\r\n        IF({fldJGXLYs7xaXP7xR} = \"\", \"Vendor Name, \") &\r\n        IF({fldEx6RyGqFl0WivA} = \"\", \"Invoice Date, \") &\r\n        IF({fldO8fN0NWv8dqDKC} = \"\", \"Amount, \") &\r\n        IF({fldI9lZSSR7ucHPHC} = \"\", \"Invoice Number, \")\r\n      )\r\n    ) - 1\r\n  )\r\n)",
+            "referencedFieldIds": [
+              "fldJGXLYs7xaXP7xR",
+              "fldEx6RyGqFl0WivA",
+              "fldO8fN0NWv8dqDKC",
+              "fldI9lZSSR7ucHPHC"
+            ],
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldRkn64EhJZkKKQg",
+          "name": "Missing-Fields"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldDzY5Ch6fCP0XHp",
+            "fieldIdInLinkedTable": "fldsDbtBW8gSpq9VD",
+            "result": {
+              "type": "multipleAttachments",
+              "options": {
+                "isReversed": false
+              }
+            }
+          },
+          "id": "fldBSFvaBJYkkbaRe",
+          "name": "Attachments"
+        },
+        {
+          "type": "multipleRecordLinks",
+          "options": {
+            "linkedTableId": "tblgEJz0WQtZusPAT",
+            "isReversed": false,
+            "prefersSingleRecordLink": false,
+            "inverseLinkFieldId": "fldWTaHrIJXSx5hrr"
+          },
+          "id": "fldGeieJZPW2XwQEJ",
+          "name": "POInvoiceHeaders"
+        },
+        {
+          "type": "rollup",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldGeieJZPW2XwQEJ",
+            "fieldIdInLinkedTable": "fldId0eVt84ZYF9fx",
+            "referencedFieldIds": [],
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldI5H4YHsu4VPPjg",
+          "name": "Headers-Sum"
+        },
+        {
+          "type": "multilineText",
+          "id": "fldHPkRk05SqNzF2W",
+          "name": "Line Items"
+        },
+        {
+          "type": "multilineText",
+          "id": "fldnH8Tqrvk52I7e9",
+          "name": "Error Description"
+        }
+      ],
+      "views": [
+        {
+          "id": "viwtL6WntwicNp8To",
+          "name": "Grid view",
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "tblgEJz0WQtZusPAT",
+      "name": "POInvoiceHeaders",
+      "primaryFieldId": "fldhszvX1XbN0cGah",
+      "fields": [
+        {
+          "type": "autoNumber",
+          "id": "fldhszvX1XbN0cGah",
+          "name": "RecordID"
+        },
+        {
+          "type": "multipleRecordLinks",
+          "options": {
+            "linkedTableId": "tblokyH2U1PBhhCE9",
+            "isReversed": false,
+            "prefersSingleRecordLink": true,
+            "inverseLinkFieldId": "fldGeieJZPW2XwQEJ"
+          },
+          "id": "fldWTaHrIJXSx5hrr",
+          "name": "Invoice"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldvQzw4GlIefZTPy",
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldsuXjbykjLkRbC2",
+          "name": "InvoiceRecordID"
+        },
+        {
+          "type": "multipleRecordLinks",
+          "options": {
+            "linkedTableId": "tblajSDlRV6SsUtw8",
+            "isReversed": false,
+            "prefersSingleRecordLink": false,
+            "inverseLinkFieldId": "fldeJpf4G5Cj0LnaR"
+          },
+          "id": "fldyMJiQO4L0Ev0cT",
+          "name": "Details"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldFKFB68UVpa9ANK",
+          "name": "Company-Code"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld7tAlKGvv0LG8EI",
+          "name": "VendId"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldI9lZSSR7ucHPHC",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fld6MSB6CS7j3sCiS",
+          "name": "AP-Invoice-Number"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldJGXLYs7xaXP7xR",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldg1lTgqcRh7KX0Y",
+          "name": "Remit-Name"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldEx6RyGqFl0WivA",
+            "result": {
+              "type": "date",
+              "options": {
+                "dateFormat": {
+                  "name": "iso",
+                  "format": "YYYY-MM-DD"
+                }
+              }
+            }
+          },
+          "id": "fld27xiiYfeMD3XB5",
+          "name": "Invoice-Date"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld6zPKOrAgFUMA1q",
+          "name": "TermsId"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "DATEADD({fld27xiiYfeMD3XB5}, {fldGmplqb3IKIwnBW}, 'days')",
+            "referencedFieldIds": [
+              "fld27xiiYfeMD3XB5",
+              "fldGmplqb3IKIwnBW"
+            ],
+            "result": {
+              "type": "date",
+              "options": {
+                "dateFormat": {
+                  "name": "us",
+                  "format": "M/D/YYYY"
+                }
+              }
+            }
+          },
+          "id": "fldNHyjXi1MkrFvS7",
+          "name": "Due-Date"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldyN4Sf6FTZoH9YI",
+            "result": {
+              "type": "date",
+              "options": {
+                "dateFormat": {
+                  "name": "iso",
+                  "format": "YYYY-MM-DD"
+                }
+              }
+            }
+          },
+          "id": "fldSBhnyVm2fESlds",
+          "name": "Discount-Date"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldO8fN0NWv8dqDKC",
+            "result": {
+              "type": "currency",
+              "options": {
+                "precision": 2,
+                "symbol": "$"
+              }
+            }
+          },
+          "id": "flda0ukWjWxzyJ2Hr",
+          "name": "Total-Invoice-Amount"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldYXCLntMTfENKJa",
+            "result": {
+              "type": "currency",
+              "options": {
+                "precision": 2,
+                "symbol": "$"
+              }
+            }
+          },
+          "id": "fld5UETBDzu4e0uk6",
+          "name": "Freight-Charge"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldX0qPQMAgKaRFX3",
+            "result": {
+              "type": "currency",
+              "options": {
+                "precision": 2,
+                "symbol": "$"
+              }
+            }
+          },
+          "id": "fldEDwJxYhaye4VmJ",
+          "name": "Miscellaneous-Charge"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fld0zHEhMerfgxZx1",
+            "result": {
+              "type": "currency",
+              "options": {
+                "precision": 2,
+                "symbol": "$"
+              }
+            }
+          },
+          "id": "fldUcQK1FqpUZxxGJ",
+          "name": "Discount-Amount"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldIgWe2IFDOqnYO1",
+            "result": {
+              "type": "currency",
+              "options": {
+                "precision": 2,
+                "symbol": "$"
+              }
+            }
+          },
+          "id": "fldSY9GdNlijlsYdQ",
+          "name": "Surcharge"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldyi7UcDACICVIcq",
+          "name": "APAcct"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldrdeHuh1NVCeKSv",
+          "name": "APSub"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld336ezRpzzEkyGh",
+          "name": "Freight-Account"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldVB7LIxLqOeMmvd",
+          "name": "Freight-Subaccount"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldCGiCgdrg5GL5pY",
+          "name": "Misc-Charge-Account"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldeFFh9n47APVWUr",
+          "name": "Misc-Charge-Subaccount"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldgqMRGrJM3BUUfQ",
+          "name": "PO-Number-Seq-Type"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld4uJuo5MBMnsZgw",
+          "name": "PO-Number"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld0qGIscEzVUgiZm",
+          "name": "PO-Vendor"
+        },
+        {
+          "type": "singleLineText",
+          "id": "flduhd4WL9ksJK3cW",
+          "name": "CuryId"
+        },
+        {
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              {
+                "id": "selBzoV7HgqNuZS4C",
+                "name": "multiple",
+                "color": "blueLight2"
+              },
+              {
+                "id": "seleH5x0Dorc8n9ps",
+                "name": "divide",
+                "color": "cyanLight2"
+              }
+            ]
+          },
+          "id": "fldqZxGWc5TR5Tomh",
+          "name": "CuryMultDiv"
+        },
+        {
+          "type": "number",
+          "options": {
+            "precision": 8
+          },
+          "id": "fldtu6II85lju5kvT",
+          "name": "CuryRate"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldLq5lUAm5C0HSa8",
+          "name": "CuryRateType"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld4QUJecGm4skJhh",
+          "name": "Update-Batch-Number"
+        },
+        {
+          "type": "createdTime",
+          "options": {
+            "result": {
+              "type": "dateTime",
+              "options": {
+                "dateFormat": {
+                  "name": "local",
+                  "format": "l"
+                },
+                "timeFormat": {
+                  "name": "12hour",
+                  "format": "h:mma"
+                },
+                "timeZone": "client"
+              }
+            }
+          },
+          "id": "fldZxGyjFcQaPvxiO",
+          "name": "Date-Stamp"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "DATETIME_FORMAT(NOW(),\"HH:mm:ss\")",
+            "referencedFieldIds": [],
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldXVDFDDk3sud6B9",
+          "name": "Time-Stamp"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldSelF39N2dmQ3EA",
+          "name": "User-Id"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldWTaHrIJXSx5hrr",
+            "fieldIdInLinkedTable": "fldgF26E6kAcOYIEf",
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldHGoxrb3gYiN2Z7",
+          "name": "Invoice-Balance"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "{fldHGoxrb3gYiN2Z7}!=0",
+            "referencedFieldIds": [
+              "fldHGoxrb3gYiN2Z7"
+            ],
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldE38iRhlU7uIvma",
+          "name": "Balance-Exception-YN",
+          "description": "Checks if the Invoice-Balance is zero and returns true if so."
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldg88jTL4hxHCgUG",
+          "name": "Job-Project-Number"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "RECORD_ID()",
+            "referencedFieldIds": [],
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldy6aT5yhZVbcs87",
+          "name": "DocumentAttachment",
+          "description": "Displays the unique Airtable record ID for this record."
+        },
+        {
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              {
+                "id": "seljV7jdS4Zgn8PV8",
+                "name": "Pending",
+                "color": "blueLight2"
+              },
+              {
+                "id": "selaudwiJOE3mA4be",
+                "name": "Matched",
+                "color": "cyanLight2"
+              },
+              {
+                "id": "sel9Z5sArHxELbT12",
+                "name": "Queued",
+                "color": "tealLight2"
+              },
+              {
+                "id": "selmIGiwB8W4B6Kc0",
+                "name": "Exported",
+                "color": "greenLight2"
+              },
+              {
+                "id": "selSZgM5fUDz6hKfJ",
+                "name": "Error",
+                "color": "yellowLight2"
+              },
+              {
+                "id": "selZ9wwtyArfoloYE",
+                "name": "",
+                "color": "orangeLight2"
+              }
+            ]
+          },
+          "id": "fldb5mLqnscBfBzjM",
+          "name": "Export-Status"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld08whvyI1HaV5Dx",
+          "name": "Export-Error-Code"
+        },
+        {
+          "type": "rollup",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldyMJiQO4L0Ev0cT",
+            "fieldIdInLinkedTable": "fldPv8Y6IhHnpH6A3",
+            "referencedFieldIds": [],
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldId0eVt84ZYF9fx",
+          "name": "Details-Sum"
+        },
+        {
+          "type": "number",
+          "options": {
+            "precision": 0
+          },
+          "id": "fldGmplqb3IKIwnBW",
+          "name": "TermsDaysInt"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldrfChafGoYKQ2aJ",
           "name": "TaxID00"
         },
         {
           "type": "singleLineText",
-          "id": "fld9qJ9C83aOV5oni",
+          "id": "fldxnhDiN7gAcEjS4",
           "name": "TaxID01"
         },
         {
           "type": "singleLineText",
-          "id": "fld679IZrwMt4R9BZ",
+          "id": "fldaTI1fhJnCe3T22",
           "name": "TaxID02"
         },
         {
           "type": "singleLineText",
-          "id": "fld5Ey8H28MnPLope",
+          "id": "fldLImdkt3VKPM9kD",
           "name": "TaxID03"
         },
         {
@@ -603,7 +994,7 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldj76RPNLhY1tPb1",
+          "id": "fldJPOml9TR5KY0XV",
           "name": "TaxTot00"
         },
         {
@@ -612,7 +1003,7 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldGaxViKpt3yFjyT",
+          "id": "flde9AkgkL7aMmHmC",
           "name": "TaxTot01"
         },
         {
@@ -621,7 +1012,7 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldjZeRIq4fMGiEod",
+          "id": "fldgbCFoc9oeCUvfo",
           "name": "TaxTot02"
         },
         {
@@ -630,7 +1021,7 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldwC86weaUTWnVhS",
+          "id": "fldAszQzhL5op3gDZ",
           "name": "TaxTot03"
         },
         {
@@ -639,8 +1030,8 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldSts2L2SzKyUJ7J",
-          "name": "TxblTot00"
+          "id": "fldmkyVeMdke8yfzm",
+          "name": "txblTot00"
         },
         {
           "type": "currency",
@@ -648,8 +1039,8 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldqpZlraRgJxdK6Z",
-          "name": "TxblTot01"
+          "id": "fldAFeEPbIgFXZvbO",
+          "name": "txblTot01"
         },
         {
           "type": "currency",
@@ -657,8 +1048,8 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldBAyP5RVW801lCB",
-          "name": "TxblTot02"
+          "id": "fldkq1ZeymtKZS8di",
+          "name": "txblTot02"
         },
         {
           "type": "currency",
@@ -666,452 +1057,602 @@
             "precision": 2,
             "symbol": "$"
           },
-          "id": "fldspyoZi8utbSIkL",
-          "name": "TxblTot03"
+          "id": "fldqioYsgvrTwWJAx",
+          "name": "txblTot03"
         },
         {
           "type": "singleLineText",
-          "id": "fldc59eW74gdn78Q4",
-          "name": "CuryId"
+          "id": "fldc49yqGYfycjJm7",
+          "name": "Tax00Acct"
         },
         {
           "type": "singleLineText",
-          "id": "fldn5JONpJqhBHbyS",
-          "name": "PO-Number-Seq-Type"
+          "id": "fldPFOUYttpBw2HVp",
+          "name": "Tax01Acct"
         },
         {
           "type": "singleLineText",
-          "id": "fld2DoiZs6t3sq3ru",
-          "name": "PO-Number"
+          "id": "fldrtSPsGYh0EfR8O",
+          "name": "Tax02Acct"
         },
         {
           "type": "singleLineText",
-          "id": "fld8m7237dBbsJyZp",
-          "name": "Type"
+          "id": "fldXQ3vJa8HyitF03",
+          "name": "Tax03Acct"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldR03OR5REc0uPmA",
+          "name": "Tax00Sub"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldaU2IBNcOm07Vu6",
+          "name": "Tax01Sub"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld14PdXAJF2iUNEV",
+          "name": "Tax02Sub"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldn1f5oPJYIMqChb",
+          "name": "Tax03Sub"
         },
         {
           "type": "checkbox",
           "options": {
-            "icon": "thumbsUp",
+            "icon": "check",
             "color": "greenBright"
           },
-          "id": "fldsFz9XdZA7E5V2V",
+          "id": "fldfprb6BWN7yHaiU",
           "name": "Update-YN"
         },
         {
-          "type": "checkbox",
-          "options": {
-            "icon": "thumbsUp",
-            "color": "greenBright"
-          },
-          "id": "fld9JKT03Uq60oBzX",
-          "name": "Balance-Exception-YN"
-        },
-        {
           "type": "singleLineText",
-          "id": "fldqTd1R4rlXq1zXN",
-          "name": "APAcct"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldAiBcZrN7C4fFS8",
-          "name": "APSub"
+          "id": "fldZlmKvQaAmYGzcd",
+          "name": "Update-Audit-Number"
         },
         {
           "type": "checkbox",
           "options": {
-            "icon": "thumbsUp",
+            "icon": "check",
             "color": "greenBright"
           },
-          "id": "fldGZcx5ypXYPKjpS",
-          "name": "curymultdiv"
-        },
-        {
-          "type": "number",
-          "options": {
-            "precision": 2
-          },
-          "id": "fldPgqTjWKAb5Z9T5",
-          "name": "CuryRate"
+          "id": "fld8VOSGAHVwsnNdp",
+          "name": "GL-Exception-YN"
         },
         {
           "type": "singleLineText",
-          "id": "fld17OblRg1DcLGV3",
-          "name": "curyratetype"
-        },
-        {
-          "type": "currency",
-          "options": {
-            "precision": 2,
-            "symbol": "$"
-          },
-          "id": "fld7hsHTZGxv2psSg",
-          "name": "Surcharge"
-        },
-        {
-          "type": "url",
-          "id": "flddZj4GmYKTIKa5p",
-          "name": "DocumentAttachment"
+          "id": "fld9hrf3hvO78stDY",
+          "name": "Type"
         },
         {
           "type": "singleLineText",
-          "id": "flddH7m8XIlXZLvkR",
-          "name": "ErrorCode"
+          "id": "fldUDB4VInuh7JPOI",
+          "name": "FutureA"
         },
         {
-          "type": "multilineText",
-          "id": "fldDGh2zVJXjpoTvX",
-          "name": "Document Raw Text"
-        },
-        {
-          "type": "createdTime",
-          "options": {
-            "result": {
-              "type": "dateTime",
-              "options": {
-                "dateFormat": {
-                  "name": "local",
-                  "format": "l"
-                },
-                "timeFormat": {
-                  "name": "12hour",
-                  "format": "h:mma"
-                },
-                "timeZone": "client"
-              }
-            }
-          },
-          "id": "fldTOi6cp2tzLromy",
-          "name": "Created At"
-        },
-        {
-          "type": "lastModifiedTime",
-          "options": {
-            "isValid": true,
-            "referencedFieldIds": [],
-            "result": {
-              "type": "dateTime",
-              "options": {
-                "dateFormat": {
-                  "name": "local",
-                  "format": "l"
-                },
-                "timeFormat": {
-                  "name": "12hour",
-                  "format": "h:mma"
-                },
-                "timeZone": "client"
-              }
-            }
-          },
-          "id": "fld7UTUCBIDIP8bw4",
-          "name": "Modified At"
-        },
-        {
-          "type": "multipleRecordLinks",
-          "options": {
-            "linkedTableId": "tblNKS2pOwcisNWJJ",
-            "isReversed": false,
-            "prefersSingleRecordLink": false,
-            "inverseLinkFieldId": "fldzGkuubdu4lLy9n"
-          },
-          "id": "fldlDBkOm2QV6vSSc",
-          "name": "Invoices"
+          "type": "singleLineText",
+          "id": "fldXSWA3dr1rLL5s4",
+          "name": "FutureB"
         }
       ],
       "views": [
         {
-          "id": "viwL483A6lxoF8eqW",
+          "id": "viwVLLef2xsbZM1bT",
           "name": "Grid view",
           "type": "grid"
         }
       ]
     },
     {
-      "id": "tblRkwaiS3LcFFrZ9",
+      "id": "tblajSDlRV6SsUtw8",
       "name": "POInvoiceDetails",
-      "primaryFieldId": "flddeN1uf4flGhHNS",
+      "primaryFieldId": "fldsFnV2r5H0Pljoz",
       "fields": [
         {
           "type": "autoNumber",
-          "id": "flddeN1uf4flGhHNS",
+          "id": "fldsFnV2r5H0Pljoz",
           "name": "RecordID"
         },
         {
-          "type": "singleLineText",
-          "id": "fldaagXjpyrRtsy8e",
+          "type": "multipleRecordLinks",
+          "options": {
+            "linkedTableId": "tblgEJz0WQtZusPAT",
+            "isReversed": false,
+            "prefersSingleRecordLink": false,
+            "inverseLinkFieldId": "fldyMJiQO4L0Ev0cT"
+          },
+          "id": "fldeJpf4G5Cj0LnaR",
+          "name": "POInvoiceHeaders"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldhszvX1XbN0cGah",
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldFEMHbiZkR41Dzz",
+          "name": "HeaderRecordID"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldFKFB68UVpa9ANK",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "flduZQavGskCdu35d",
           "name": "Company-Code"
         },
         {
-          "type": "singleLineText",
-          "id": "fldKjuYXhgwv8fcLs",
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fld7tAlKGvv0LG8EI",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldwYCDK6mImfRGKQ",
           "name": "VendId"
         },
         {
-          "type": "singleLineText",
-          "id": "fld4i5XGZJi4sYyDV",
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fld6MSB6CS7j3sCiS",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldbItKufSN7jJcoe",
           "name": "AP-Invoice-Number"
         },
         {
           "type": "singleLineText",
-          "id": "fld3sdHL8z7RxoZTn",
+          "id": "fldTKJp6ebeYQ4ti8",
           "name": "Line-Number"
         },
         {
           "type": "singleLineText",
-          "id": "fldMeG51leLehcgNa",
+          "id": "fldHh1UwP2TYOq5sF",
           "name": "Item-No"
         },
         {
-          "type": "singleLineText",
-          "id": "fld7iTo1UUNAjRAK4",
+          "type": "multilineText",
+          "id": "fldwQ6IQzEw9mRONP",
           "name": "Item-Description"
         },
         {
-          "type": "number",
+          "type": "singleLineText",
+          "id": "fldi9cVjcUubszKd1",
+          "name": "Step"
+        },
+        {
+          "type": "currency",
           "options": {
-            "precision": 2
+            "precision": 2,
+            "symbol": "$"
           },
-          "id": "fldzRKqDHlSo168I5",
+          "id": "fldUHbpqV38hAceMw",
           "name": "Invoice-Price"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 4
           },
-          "id": "fldm3JJHqefoSzkY0",
+          "id": "fldS0PBUjsKt4j4Fo",
           "name": "Invoice-Pricing-Qty"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 4
           },
-          "id": "fldyMWOPBZ0VSFS6Z",
+          "id": "fldcBn6GL9jFFGxbW",
           "name": "Quantity-Invoiced"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 1
           },
-          "id": "fldogLboVcfjTq9M8",
+          "id": "fldypCHLMTKdhCtJh",
           "name": "Line-Amount"
         },
         {
-          "type": "singleLineText",
-          "id": "fld8WcpVpCxKXXZMT",
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldgqMRGrJM3BUUfQ",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fld6bzXTyqa3HUgsl",
           "name": "PO-Number-Seq-Type"
         },
         {
-          "type": "singleLineText",
-          "id": "fldCGNWvybCS5wLh0",
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fld4uJuo5MBMnsZgw",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldb9eHuvv0NL2uAS",
           "name": "PO-Number"
         },
         {
           "type": "singleLineText",
-          "id": "fldziXj8Hn4MSPvNc",
+          "id": "fld0iqeOix7I3E1fh",
           "name": "PO-Release-Number"
         },
         {
           "type": "singleLineText",
-          "id": "fldaRbB9j71w8TL9S",
+          "id": "fld44aIaJT2bd0Pve",
           "name": "PO-Line-Number"
         },
         {
           "type": "singleLineText",
-          "id": "fldlgZS1vfjADumtA",
+          "id": "fldAjiR63OdQEI0VS",
           "name": "Vendor-Ship-Number"
         },
         {
           "type": "date",
           "options": {
             "dateFormat": {
-              "name": "iso",
-              "format": "YYYY-MM-DD"
+              "name": "local",
+              "format": "l"
             }
           },
-          "id": "fldvsBVEoR4wvpU4q",
+          "id": "fld8dUDZw2Ewki8M4",
           "name": "Date-Received"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 4
           },
-          "id": "fldhbGZ18orSgmF9X",
+          "id": "fldm9Pj9tmNEbTjLL",
           "name": "Quantity-Received"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 4
           },
-          "id": "fldmC8tCkMds0r1ss",
+          "id": "fldyHlGfIbwu9Tqxh",
           "name": "Quantity-Accepted"
         },
         {
-          "type": "number",
+          "type": "currency",
           "options": {
-            "precision": 2
+            "precision": 6,
+            "symbol": "$"
           },
-          "id": "fldOyoAVTjukUffi2",
+          "id": "fldAdxuO3XMEExrAw",
           "name": "Purchase-Price"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 4
           },
-          "id": "fldeEcQ2ZAupVq8h4",
+          "id": "fld8NIB8NIeQc782l",
           "name": "Pricing-Quantity"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 4
           },
-          "id": "flduobfDtNnBX1FIF",
+          "id": "fldLRcAiUUmFZspRv",
           "name": "Already-Invoiced-Qty"
         },
         {
           "type": "singleLineText",
-          "id": "fldmYAfYSSYynpSf4",
-          "name": "Expacct"
+          "id": "fldMbMltkhFFWKJUU",
+          "name": "ExpAcct"
         },
         {
           "type": "singleLineText",
-          "id": "fldCdFXPWyEMMZtbr",
-          "name": "Expsub"
+          "id": "fldKerXoxiWOGVLfF",
+          "name": "ExpSub"
         },
         {
           "type": "singleLineText",
-          "id": "fldqkgiosIR3wJiiM",
-          "name": "TaxID00"
+          "id": "fld8QL2nm1N6KYkhA",
+          "name": "PPV-Vouchered-Acct"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld7YTh4AeqWXKvuR",
+          "name": "PPV-Vouchered-SubAcct"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "{fldUHbpqV38hAceMw}-{fldAdxuO3XMEExrAw}",
+            "referencedFieldIds": [
+              "fldUHbpqV38hAceMw",
+              "fldAdxuO3XMEExrAw"
+            ],
+            "result": {
+              "type": "number",
+              "options": {
+                "precision": 0
+              }
+            }
+          },
+          "id": "fldeYDhZU0jIqvGWr",
+          "name": "PPV-Unit-Cost"
         },
         {
           "type": "number",
           "options": {
-            "precision": 2
+            "precision": 6
           },
-          "id": "fldkOB2fQTWqOL3VI",
-          "name": "TaxAmt00"
-        },
-        {
-          "type": "number",
-          "options": {
-            "precision": 2
-          },
-          "id": "fldyxHWBYVhrICaED",
-          "name": "TxblAmt00"
-        },
-        {
-          "type": "singleLineText",
-          "id": "fldtC4OeorogNCBzW",
-          "name": "PO-UOM"
-        },
-        {
-          "type": "checkbox",
-          "options": {
-            "icon": "thumbsUp",
-            "color": "greenBright"
-          },
-          "id": "fldTMFNrthWOMqwmt",
-          "name": "Invoiced-In-Full-YN"
-        },
-        {
-          "type": "checkbox",
-          "options": {
-            "icon": "thumbsUp",
-            "color": "greenBright"
-          },
-          "id": "fld3sBjJzVeqTA7p7",
-          "name": "GL-Exception-YN"
+          "id": "fldt9ttdXAuwVZj5U",
+          "name": "Standard-Cost"
         },
         {
           "type": "singleSelect",
           "options": {
             "choices": [
               {
-                "id": "selrnXfftH9m6PROu",
-                "name": "Queued",
+                "id": "selldAEI1eNglr2da",
+                "name": "Dollar",
                 "color": "blueLight2"
               },
               {
-                "id": "sel3KoF2eXVFC4kKf",
-                "name": "Exported",
+                "id": "selZnLn57hOcNLBl2",
+                "name": "Percent",
                 "color": "cyanLight2"
-              },
-              {
-                "id": "selL7lf9M3lVVKfaU",
-                "name": "Error",
-                "color": "tealLight2"
               }
             ]
           },
-          "id": "fld3c6QiWMYO8fUrO",
-          "name": "Status"
+          "id": "fldSkOOPdSeMXpqUN",
+          "name": "SurchargeType"
         },
         {
-          "type": "multipleRecordLinks",
+          "type": "currency",
           "options": {
-            "linkedTableId": "tblJoCXc4S52J5h6L",
-            "isReversed": false,
-            "prefersSingleRecordLink": false,
-            "inverseLinkFieldId": "fldDtXpleyIIKomex"
+            "precision": 2,
+            "symbol": "$"
           },
-          "id": "fldS39vWDismMUvfC",
-          "name": "InvoiceHeaders"
+          "id": "fldhDd6A2cK7gSKrN",
+          "name": "SurchargeRate"
         },
         {
-          "type": "createdTime",
+          "type": "currency",
           "options": {
-            "result": {
-              "type": "dateTime",
-              "options": {
-                "dateFormat": {
-                  "name": "local",
-                  "format": "l"
-                },
-                "timeFormat": {
-                  "name": "12hour",
-                  "format": "h:mma"
-                },
-                "timeZone": "client"
-              }
-            }
+            "precision": 2,
+            "symbol": "$"
           },
-          "id": "fld17mKjXewbTA0vy",
-          "name": "Created At"
+          "id": "fldrfM3P3WpqPYWsp",
+          "name": "Surcharge"
         },
         {
-          "type": "lastModifiedTime",
+          "type": "singleLineText",
+          "id": "fld1TXi1SH6tWh81n",
+          "name": "GL-Exception-YN"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldkMgmQzxYtjWStZ",
+          "name": "Invoiced-In-Full-YN"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldTIIZxPPflYDBzH",
+          "name": "Update-Level-Ind"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fld5BxvxdRs5zIV2s",
+          "name": "PO-UOM"
+        },
+        {
+          "type": "multipleLookupValues",
           "options": {
             "isValid": true,
-            "referencedFieldIds": [],
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldg88jTL4hxHCgUG",
             "result": {
-              "type": "dateTime",
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldkSs9wHlRvdmQBR",
+          "name": "Job-Project-Number"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldGpiLavevepWgsf",
+          "name": "BoxNbr"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldtLtHzF4eA2Hld6",
+          "name": "FutureA"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldVUsmxKS3WERXwN",
+          "name": "FutureB"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "{fldAdxuO3XMEExrAw}*{fldyHlGfIbwu9Tqxh}",
+            "referencedFieldIds": [
+              "fldAdxuO3XMEExrAw",
+              "fldyHlGfIbwu9Tqxh"
+            ],
+            "result": {
+              "type": "number",
               "options": {
-                "dateFormat": {
-                  "name": "local",
-                  "format": "l"
-                },
-                "timeFormat": {
-                  "name": "12hour",
-                  "format": "h:mma"
-                },
-                "timeZone": "client"
+                "precision": 0
               }
             }
           },
-          "id": "fldI3kD7U94DDThpi",
-          "name": "Modified At"
+          "id": "fldPv8Y6IhHnpH6A3",
+          "name": "Line-Pricing"
+        },
+        {
+          "type": "singleLineText",
+          "id": "fldrzIQxcaQWlAgwh",
+          "name": "Header"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldrfChafGoYKQ2aJ",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldtGfOf1jFI9aDbE",
+          "name": "TaxID00"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldxnhDiN7gAcEjS4",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldYfRbCVad371ks3",
+          "name": "TaxID01"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldaTI1fhJnCe3T22",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldzDmgba9EzmBrSo",
+          "name": "TaxID02"
+        },
+        {
+          "type": "multipleLookupValues",
+          "options": {
+            "isValid": true,
+            "recordLinkFieldId": "fldeJpf4G5Cj0LnaR",
+            "fieldIdInLinkedTable": "fldLImdkt3VKPM9kD",
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldRLMSigCKD5teaB",
+          "name": "TaxID03"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fldKjlpEzZoNjn3ix",
+          "name": "TaxAmt00"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fldTIM1VFMakCgyH2",
+          "name": "TaxAmt01"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fld7hseBSyCKVH3qC",
+          "name": "TaxAmt02"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fldtBDqltau80MMr0",
+          "name": "TaxAmt03"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fld3EOBBG1Di5KCeB",
+          "name": "txblAmt00"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fld7oN8j9FprFxOHn",
+          "name": "txblAmt01"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fldYWkUBK56G895DP",
+          "name": "txblAmt02"
+        },
+        {
+          "type": "currency",
+          "options": {
+            "precision": 2,
+            "symbol": "$"
+          },
+          "id": "fldeT4ChgqreD0CfD",
+          "name": "txblAmt03"
         }
       ],
       "views": [
         {
-          "id": "viwD1Y8BUq2k9uGHu",
+          "id": "viwggE6vlr6MFispj",
           "name": "Grid view",
           "type": "grid"
         }

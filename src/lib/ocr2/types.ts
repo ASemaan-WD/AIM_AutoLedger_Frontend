@@ -160,10 +160,10 @@ export interface AirtableFileRecord {
   id: string;
   fields: {
     Name: string;
-    'Upload Date': string;
+    UploadedDate: string;
     Source: string;
     Status: string;
-    'Raw Text'?: string;
+    'Raw-Text'?: string;
     Pages?: number;
     'Is Duplicate': boolean;
     'Duplicate Of'?: string[];
@@ -179,7 +179,7 @@ export interface AirtableFileRecord {
 }
 
 export interface AirtableUpdateData {
-  'Raw Text': string;
+  'Raw-Text': string;
   Status: 'Processed' | 'Error' | 'Processing';
   Pages?: number;
   'Processing Time'?: number;

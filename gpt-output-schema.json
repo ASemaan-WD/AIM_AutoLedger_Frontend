@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "POMatchingResponse",
+  "description": "Structured output schema for GPT-4o PO matching responses",
+  "type": "object",
+  "required": ["Invoice Line Items", "headers", "error_description"],
+  "additionalProperties": false,
+  "properties": {
+    "Invoice Line Items": {
+      "type": "array",
+      "description": "Flexible array of invoice line items with unrestricted structure. These line items serve as the source for pricing and quantity data in POInvoiceDetails.",
+      "items": { "type": "object" }
+    },
+    "headers": {
+      "type": "array",
+      "description": "Purchase order invoice headers, each containing corresponding details (POInvoiceDetails).",
+      "items": {
+        "type": "object",
+        "required": ["details"],
+        "properties": {
+          "Company-Code": { "type": "string", "description": "Company identifier" },
+          "VendId": { "type": "string", "description": "Vendor ID" },
+          "TermsId": { "type": "string", "description": "Payment terms" },
+          "APAcct": { "type": "string", "description": "Accounts Payable account" },
+          "APSub": { "type": "string", "description": "Accounts Payable subaccount" },
+          "Freight-Account": { "type": "string" },
+          "Freight-Subaccount": { "type": "string" },
+          "Misc-Charge-Account": { "type": "string" },
+          "Misc-Charge-Subaccount": { "type": "string" },
+          "PO-Number-Seq-Type": { "type": "string" },
+          "PO-Number": { "type": "string" },
+          "PO-Vendor": { "type": "string" },
+          "CuryId": { "type": "string" },
+          "CuryMultDiv": { "type": "string", "enum": ["multiple", "divide"] },
+          "CuryRate": { "type": "number" },
+          "CuryRateType": { "type": "string" },
+          "User-Id": { "type": "string" },
+          "Job-Project-Number": { "type": "string" },
+          "details": {
+            "type": "array",
+            "description": "POInvoiceDetail records linked to this header",
+            "items": {
+              "type": "object",
+              "properties": {
+                "Line-Number": {
+                  "type": "integer",
+                  "description": "Autonumber identifying line sequence"
+                },
+                "Item-No": { "type": "string" },
+                "Item-Description": { "type": "string" },
+                "Step": { "type": "string" },
+                "Invoice-Price": {
+                  "type": "number",
+                  "description": "Unit price from corresponding invoice line item"
+                },
+                "Invoice-Pricing-Qty": {
+                  "type": "number",
+                  "description": "Quantity price break from invoice line item"
+                },
+                "Quantity-Invoiced": {
+                  "type": "number",
+                  "description": "Invoiced quantity from corresponding invoice line item"
+                },
+                "Line-Amount": {
+                  "type": "number",
+                  "description": "Extended line total from invoice line item"
+                },
+                "PO-Release-Number": { "type": "string" },
+                "PO-Line-Number": { "type": "string" },
+                "Vendor-Ship-Number": { "type": "string" },
+                "Date-Received": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "Quantity-Received": { "type": "number" },
+                "Quantity-Accepted": { "type": "number" },
+                "Purchase-Price": { "type": "number" },
+                "Pricing-Quantity": { "type": "number" },
+                "ExpAcct": { "type": "string" },
+                "ExpSub": { "type": "string" },
+                "PPV-Vouchered-Acct": { "type": "string" },
+                "PPV-Vouchered-SubAcct": { "type": "string" },
+                "PPV-Unit-Cost": {
+                  "type": "number",
+                  "description": "Calculated formula field for purchase price variance per unit"
+                },
+                "Standard-Cost": { "type": "number" },
+                "Surcharge": { "type": "number" },
+                "PO-UOM": { "type": "string" },
+                "Job-Project-Number": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "error_description": {
+      "type": "string",
+      "description": "Field for describing any errors, warnings, or matching issues encountered during processing. Set to empty string if no issues."
+    }
+  }
+}

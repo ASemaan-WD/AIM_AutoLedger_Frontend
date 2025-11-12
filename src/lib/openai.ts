@@ -25,7 +25,8 @@ export const openai = new Proxy({} as OpenAI, {
   }
 });
 
-export const MODEL = "gpt-4o"; // Using GPT-4o as GPT-5 is not yet available
+// Using GPT-5 with structured outputs support
+export const MODEL = "gpt-5";
 
 
 

@@ -37,11 +37,11 @@ export async function checkFileHashDuplicate(
     const airtableClient = createAirtableClient(baseId);
     
     // Search for existing files with the same hash
-    // Note: Using new schema field names (FileHash, FileName, UploadDate)
+    // Note: Using new schema field names (FileHash, FileName, UploadedDate)
     const response = await airtableClient.listRecords('Files', {
       filterByFormula: `{FileHash} = "${fileHash}"`,
       maxRecords: 5, // Get up to 5 matches for analysis
-      fields: ['FileName', 'Created At', 'FileHash', 'Status', 'UploadDate']
+      fields: ['FileName', 'Created-At', 'FileHash', 'Status', 'UploadedDate']
     });
     
     if (response.records && response.records.length > 0) {
@@ -52,7 +52,7 @@ export async function checkFileHashDuplicate(
         duplicateRecord: {
           id: duplicateRecord.id,
           name: duplicateRecord.fields.FileName || 'Unknown',
-          uploadDate: duplicateRecord.fields['Created At'] || duplicateRecord.fields['UploadDate'], // Try Created At, fallback to UploadDate
+          uploadDate: duplicateRecord.fields['Created-At'] || duplicateRecord.fields['UploadedDate'], // Try Created-At, fallback to UploadedDate
           createdTime: duplicateRecord.createdTime,
           fileHash: duplicateRecord.fields['FileHash'] || ''
         },
@@ -93,9 +93,9 @@ export async function markFileAsDuplicate(
           id: recordId,
           fields: {
             'Status': 'Attention',
-            'Error Code': 'DUPLICATE_FILE',
-            'Error Description': `This file is a duplicate of record ${duplicateOfId}`,
-            'Error Link': `https://airtable.com/app${baseId}/${recordId}`
+            'Error-Code': 'DUPLICATE_FILE',
+            'Error-Description': `This file is a duplicate of record ${duplicateOfId}`,
+            'Error-Link': `https://airtable.com/app${baseId}/${recordId}`
           }
         }
       ]
@@ -124,7 +124,7 @@ export async function getFilesByHash(
     
     const response = await airtableClient.listRecords('Files', {
       filterByFormula: `{FileHash} = "${fileHash}"`,
-      sort: [{ field: 'Created At', direction: 'asc' }]
+      sort: [{ field: 'Created-At', direction: 'asc' }]
     });
     
     return response.records || [];
@@ -183,9 +183,9 @@ export async function generateDuplicateReport(baseId: string): Promise<{
     const airtableClient = createAirtableClient(baseId);
     
     // Get all files with hashes
-    // Note: Using new schema field names (FileHash, FileName, UploadDate)
+    // Note: Using new schema field names (FileHash, FileName, UploadedDate)
     const response = await airtableClient.listRecords('Files', {
-      fields: ['FileName', 'FileHash', 'UploadDate', 'Status'],
+      fields: ['FileName', 'FileHash', 'UploadedDate', 'Status'],
       filterByFormula: `{FileHash} != ""`
     });
     

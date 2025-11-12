@@ -28,22 +28,22 @@ function transformFileRecord(record: any): AirtableFile {
     return {
         id: record.id,
         name: record.fields['FileName'] || record.fields['Name'] || '', // New field name
-        uploadDate: record.fields['UploadDate'] || record.fields['Upload Date'] ? new Date(record.fields['UploadDate'] || record.fields['Upload Date']) : undefined,
+        uploadDate: record.fields['UploadedDate'] ? new Date(record.fields['UploadedDate']) : undefined,
         source: record.fields['Source'] || 'Upload',
         status: record.fields['Status'] || 'Queued',
         pages: record.fields['Pages'] || undefined,
-        isDuplicate: (record.fields['Error Code'] === 'DUPLICATE_FILE') || record.fields['Is Duplicate'] || false,
+        isDuplicate: (record.fields['Error-Code'] === 'DUPLICATE_FILE') || record.fields['Is Duplicate'] || false,
         duplicateOf: [], // This field was removed from schema
         relatedInvoices: record.fields['Invoices'] || [], // Links to Invoices table
         activity: record.fields['Activity'] || [],
         relatedEmails: [], // Emails no longer exist
         fileHash: record.fields['FileHash'] || record.fields['File Hash'],
-        errorCode: record.fields['Error Code'],
-        errorDescription: record.fields['Error Description'],
-        errorLink: record.fields['Error Link'],
+        errorCode: record.fields['Error-Code'],
+        errorDescription: record.fields['Error-Description'],
+        errorLink: record.fields['Error-Link'],
         isLinked: (record.fields['Invoices'] || []).length > 0,
         createdAt: record.createdTime ? new Date(record.createdTime) : undefined,
-        updatedAt: record.fields['Modified At'] || record.fields['ModifiedAt'] ? new Date(record.fields['Modified At'] || record.fields['ModifiedAt']) : undefined,
+        updatedAt: record.fields['Modified-At'] ? new Date(record.fields['Modified-At']) : undefined,
     };
 }
 
@@ -109,7 +109,7 @@ function transformInvoiceRecord(record: any): any {
         status: record.fields['Status'] || 'Pending',
         glAccount: undefined, // GL Account is in POInvoiceDetails
         createdAt: record.createdTime ? new Date(record.createdTime) : undefined,
-        updatedAt: record.fields['Modified At'] ? new Date(record.fields['Modified At']) : undefined,
+        updatedAt: record.fields['Modified-At'] ? new Date(record.fields['Modified-At']) : undefined,
     };
 }
 

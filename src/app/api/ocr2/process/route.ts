@@ -102,7 +102,7 @@ async function updateAirtableRecord(
 
     // Update fields in the Files table
     const updateData = {
-      'Raw Text': extractedText,
+      'Raw-Text': extractedText,
       Status: 'Processed' as const,
     };
 

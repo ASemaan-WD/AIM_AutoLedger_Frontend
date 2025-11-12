@@ -81,9 +81,9 @@ export default function UploadPage() {
                             progress: 100,
                             isDuplicate: result.isDuplicate,
                             duplicateInfo: result.duplicateInfo,
-                            errorCode: result.airtableRecord?.fields?.['Error Code'],
-                            errorDescription: result.airtableRecord?.fields?.['Error Description'],
-                            errorLink: result.airtableRecord?.fields?.['Error Link']
+                            errorCode: result.airtableRecord?.fields?.['Error-Code'],
+                            errorDescription: result.airtableRecord?.fields?.['Error-Description'],
+                            errorLink: result.airtableRecord?.fields?.['Error-Link']
                         } : f
                     ));
                     console.log('File uploaded successfully:', result);

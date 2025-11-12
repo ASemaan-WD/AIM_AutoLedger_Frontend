@@ -32,11 +32,11 @@ export async function setRecordError(options: SetErrorOptions): Promise<void> {
     
     const fields: any = {
       'Status': 'Attention',
-      'Error Code': errorCode
+      'Error-Code': errorCode
     };
     
     if (errorLink) {
-      fields['Error Link'] = errorLink;
+      fields['Error-Link'] = errorLink;
     }
     
     await airtableClient.updateRecords('Files', {
@@ -66,8 +66,8 @@ export async function clearRecordError(recordId: string, baseId: string): Promis
         id: recordId,
         fields: {
           'Status': 'Queued',
-          'Error Code': '',
-          'Error Link': ''
+          'Error-Code': '',
+          'Error-Link': ''
         }
       }],
       typecast: true

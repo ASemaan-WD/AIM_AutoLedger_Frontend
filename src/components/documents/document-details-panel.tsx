@@ -470,8 +470,8 @@ export const DocumentDetailsPanel = ({
                     records: [{
                         id: currentDoc.id,
                         fields: {
-                            'Vendor Name': editingVendorName.trim(),
-                            'Vendor Code': null // Clear vendor code since we're manually editing
+                            'Vendor-Name': editingVendorName.trim(),
+                            'VendId': null // Clear vendor code since we're manually editing
                         }
                     }]
                 })

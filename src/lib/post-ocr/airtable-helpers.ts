@@ -36,21 +36,21 @@ export async function getFileRecord(fileRecordId: string): Promise<any> {
   
   // Debug: Log the record structure to understand what fields are available
   console.log('🔍 File record fields available:', Object.keys(record.fields || {}));
-  console.log('🔍 Looking for Raw Text field ID:', FIELD_IDS.FILES.RAW_TEXT);
+  console.log('🔍 Looking for Raw-Text field ID:', FIELD_IDS.FILES.RAW_TEXT);
   
   // Check both field ID and field name (the actual code uses field name)
   const rawTextById = record.fields?.[FIELD_IDS.FILES.RAW_TEXT];
-  const rawTextByName = record.fields?.['Raw Text'];
+  const rawTextByName = record.fields?.['Raw-Text'];
   const hasRawText = !!(rawTextById || rawTextByName);
   
-  console.log('🔍 Raw Text present (by ID):', rawTextById ? 'YES' : 'NO');
-  console.log('🔍 Raw Text present (by name):', rawTextByName ? 'YES' : 'NO');
-  console.log('🔍 Raw Text present (either):', hasRawText ? 'YES' : 'NO');
+  console.log('🔍 Raw-Text present (by ID):', rawTextById ? 'YES' : 'NO');
+  console.log('🔍 Raw-Text present (by name):', rawTextByName ? 'YES' : 'NO');
+  console.log('🔍 Raw-Text present (either):', hasRawText ? 'YES' : 'NO');
   
   if (hasRawText) {
     const rawText = rawTextById || rawTextByName;
-    console.log('🔍 Raw Text length:', rawText.length);
-    console.log('🔍 Raw Text preview:', rawText.substring(0, 100) + '...');
+    console.log('🔍 Raw-Text length:', rawText.length);
+    console.log('🔍 Raw-Text preview:', rawText.substring(0, 100) + '...');
   }
   
   return record;
@@ -194,15 +194,15 @@ export async function createInvoiceRecord(
   fields['Files'] = [fileRecordId];
   
   // Set the document raw text
-  fields['Document Raw Text'] = documentRawText;
+  fields['Document-Raw-Text'] = documentRawText;
   
   // Common fields from parsed document
   if (doc.invoice_number) {
-    fields['Invoice Number'] = doc.invoice_number;
+    fields['Invoice-Number'] = doc.invoice_number;
   }
   
   if (doc.vendor_name) {
-    fields['Vendor Name'] = doc.vendor_name;
+    fields['Vendor-Name'] = doc.vendor_name;
   }
   
   if (doc.invoice_date) {
@@ -218,12 +218,17 @@ export async function createInvoiceRecord(
   
   // Freight Charge
   if (doc.freight_charge !== null && doc.freight_charge !== undefined) {
-    fields['Freight Charge'] = doc.freight_charge;
+    fields['Freight-Charge'] = doc.freight_charge;
   }
   
   // Surcharge
   if (doc.surcharge !== null && doc.surcharge !== undefined) {
     fields['Surcharge'] = doc.surcharge;
+  }
+  
+  // Misc Charge
+  if (doc.misc_charge !== null && doc.misc_charge !== undefined) {
+    fields['Misc-Charge'] = doc.misc_charge;
   }
   
   // PO Numbers - join array with newlines for multilineText field
@@ -279,37 +284,32 @@ export async function createPOInvoiceHeaderRecord(
   // Build the fields object using field names from POInvoiceHeaders table
   const fields: Record<string, any> = {};
   
-  // Link to the Invoice entity
-  fields['Invoices'] = [invoiceId];
+  // Link to the Invoice entity (singular field name per schema)
+  fields['Invoice'] = [invoiceId];
   
-  // Link to the source file
-  fields['Files'] = [fileRecordId];
+  // Note: The following fields are lookup fields from the Invoice table:
+  // - AP-Invoice-Number (lookup from Invoice table)
+  // - Remit-Name (lookup from Invoice table, Vendor-Name)
+  // - Invoice-Date (lookup from Invoice table)
+  // - Total-Invoice-Amount (lookup from Invoice table, Amount)
+  // - Freight-Charge (lookup from Invoice table)
+  // - Miscellaneous-Charge (lookup from Invoice table, Misc-Charge)
+  // - Discount-Amount (lookup from Invoice table)
+  // - Surcharge (lookup from Invoice table)
+  // - Discount-Date (lookup from Invoice table)
+  // These will automatically populate via the Invoice link
   
-  // Set the document raw text
-  fields['Document Raw Text'] = documentRawText;
+  // We can set direct fields like Company-Code, VendId, TermsId, etc.
+  // For now, we'll just link to the Invoice and let lookups populate
   
-  // Common fields from parsed document
-  if (doc.invoice_number) {
-    fields['AP-Invoice-Number'] = doc.invoice_number;
-  }
-  
+  // Set VendId if available (direct field, not lookup)
   if (doc.vendor_name) {
-    fields['Vendor Name'] = doc.vendor_name;
+    // Note: VendId should be vendor ID, not name. For now we'll skip this
+    // as we don't have vendor ID mapping yet
   }
   
-  if (doc.invoice_date) {
-    fields['Invoice-Date'] = doc.invoice_date;
-  }
-  
-  if (doc.amount) {
-    const amountNum = parseFloat(doc.amount);
-    if (!isNaN(amountNum)) {
-      fields['Total-Invoice-Amount'] = amountNum;
-    }
-  }
-  
-  // Set default status to 'Queued'
-  fields['Status'] = 'Queued';
+  // Set default export status to 'Pending'
+  fields['Export-Status'] = 'Pending';
   
   console.log(`📤 Creating POInvoiceHeader record linked to Invoice ${invoiceId}:`, {
     invoiceNumber: doc.invoice_number,
@@ -362,32 +362,52 @@ export async function createDocumentRecord(
   
   // Set the document raw text based on document type
   if (doc.document_type === 'invoice') {
-    fields['Document Raw Text'] = documentRawText;
+    fields['Document-Raw-Text'] = documentRawText;
   } else if (doc.document_type === 'delivery_ticket') {
     fields['Raw Text OCR'] = documentRawText;
   } else if (doc.document_type === 'store_receiver') {
-    fields['Document Raw Text'] = documentRawText;
+    fields['Document-Raw-Text'] = documentRawText;
   }
   
   // Common fields across all document types - UPDATED for new schema
   if (doc.invoice_number) {
-    fields['AP-Invoice-Number'] = doc.invoice_number; // New field name
+    fields['Invoice-Number'] = doc.invoice_number;
   }
   
   if (doc.vendor_name) {
-    fields['Vendor Name'] = doc.vendor_name;
+    fields['Vendor-Name'] = doc.vendor_name;
   }
   
   if (doc.invoice_date) {
-    fields['Invoice-Date'] = doc.invoice_date; // New field name
+    fields['Date'] = doc.invoice_date;
   }
   
   if (doc.amount) {
     // Parse amount to number
     const amountNum = parseFloat(doc.amount);
     if (!isNaN(amountNum)) {
-      fields['Total-Invoice-Amount'] = amountNum; // New field name
+      fields['Amount'] = amountNum;
     }
+  }
+  
+  // Freight Charge
+  if (doc.freight_charge !== null && doc.freight_charge !== undefined) {
+    fields['Freight-Charge'] = doc.freight_charge;
+  }
+  
+  // Surcharge
+  if (doc.surcharge !== null && doc.surcharge !== undefined) {
+    fields['Surcharge'] = doc.surcharge;
+  }
+  
+  // Misc Charge
+  if (doc.misc_charge !== null && doc.misc_charge !== undefined) {
+    fields['Misc-Charge'] = doc.misc_charge;
+  }
+  
+  // PO Numbers
+  if (doc.po_numbers && doc.po_numbers.length > 0) {
+    fields['POs'] = doc.po_numbers.join('\n');
   }
   
   // Team assignment - DEPRECATED in new schema

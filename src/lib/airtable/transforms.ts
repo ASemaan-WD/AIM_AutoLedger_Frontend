@@ -4,36 +4,39 @@ import { FIELD_IDS, TABLE_NAMES } from './schema-types';
 
 // Field mapping constants for Invoices table (primary entity)
 export const INVOICE_ENTITY_FIELDS = {
-  INVOICE_NUMBER: 'Invoice Number',
+  INVOICE_NUMBER: 'Invoice-Number',
   STATUS: 'Status',
-  CREATED_AT: 'Created At',
-  UPDATED_AT: 'Modified At',
-  VENDOR_NAME: 'Vendor Name',
+  CREATED_AT: 'Created-At',
+  UPDATED_AT: 'Modified-At',
+  VENDOR_NAME: 'Vendor-Name',
   VEND_ID: 'VendId',
   DATE: 'Date',
   AMOUNT: 'Amount',
-  FREIGHT_CHARGE: 'Freight Charge',
+  FREIGHT_CHARGE: 'Freight-Charge',
+  MISC_CHARGE: 'Misc-Charge',
   SURCHARGE: 'Surcharge',
   POS: 'POs',
-  DOCUMENT_RAW_TEXT: 'Document Raw Text',
+  DOCUMENT_RAW_TEXT: 'Document-Raw-Text',
   FILES: 'Files',
   ATTACHMENTS: 'Attachments', // Lookup field to Files table's Attachments
   PO_INVOICE_HEADERS: 'POInvoiceHeaders',
-  MATCH_JSON_PAYLOAD: 'MatchJSONPayload',
-  ERROR_CODE: 'Error Code',
+  MATCH_JSON_PAYLOAD: 'MatchPayloadJSON',
+  ERROR_CODE: 'ErrorCode',
   BALANCE: 'Balance',
-  BALANCE_EXPLANATION: 'Balance Explanation',
-  FILE_RAW_TEXT: 'File Raw Text', // Lookup field
-  MISSING_FIELDS: 'Missing Fields', // Formula field
+  BALANCE_EXPLANATION: 'Balance-Explanation',
+  FILE_RAW_TEXT: 'File-Raw-Text', // Lookup field
+  MISSING_FIELDS: 'Missing-Fields', // Formula field
+  LINE_ITEMS: 'Line Items', // JSON string of flexible line items
+  ERROR_DESCRIPTION: 'Error Description', // Detailed error description
 } as const;
 
 // Field mapping constants for POInvoiceHeaders table
 export const PO_INVOICE_HEADER_FIELDS = {
   INVOICE_NUMBER: 'AP-Invoice-Number',
   STATUS: 'Status',
-  CREATED_AT: 'Created At',
-  UPDATED_AT: 'Modified At',
-  VENDOR_NAME: 'Vendor Name',
+  CREATED_AT: 'Date-Stamp',
+  UPDATED_AT: 'Time-Stamp',
+  VENDOR_NAME: 'Remit-Name',
   VENDOR_ID: 'VendId',
   INVOICE_DATE: 'Invoice-Date',
   AMOUNT: 'Total-Invoice-Amount',

@@ -34,7 +34,7 @@ export async function parseDocuments(rawText: string): Promise<ParsedDocument[]>
           strict: true,
         },
       },
-      temperature: 0, // Deterministic output
+      // Note: temperature parameter removed - gpt-5 only supports default (1)
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -83,7 +83,7 @@ export async function extractSingleDocumentText(
           content: createExtractDocTextPrompt(rawText, doc)
         }
       ],
-      temperature: 0, // Deterministic output
+      // Note: temperature parameter removed - gpt-5 only supports default (1)
     });
 
     const extractedText = completion.choices[0]?.message?.content || '';

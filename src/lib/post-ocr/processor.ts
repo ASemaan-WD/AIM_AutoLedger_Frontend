@@ -41,7 +41,7 @@ export async function processPostOCR(fileRecordId: string): Promise<ProcessFileR
     const fileRecord = await getFileRecord(fileRecordId);
     
     // Try both field name and field ID for raw text
-    const rawText = fileRecord.fields['Raw Text'] || fileRecord.fields[FIELD_IDS.FILES.RAW_TEXT];
+    const rawText = fileRecord.fields['Raw-Text'] || fileRecord.fields[FIELD_IDS.FILES.RAW_TEXT];
     
     if (!rawText || rawText.trim().length === 0) {
       throw new Error('File record has no raw text - OCR may not have completed');
@@ -66,30 +66,56 @@ export async function processPostOCR(fileRecordId: string): Promise<ProcessFileR
         vendor: doc.vendor_name || 'unknown',
         invoiceNumber: doc.invoice_number || 'none',
         amount: doc.amount || 'unknown',
-        team: doc.team || 'none',
         freightCharge: doc.freight_charge ?? 'none',
         surcharge: doc.surcharge ?? 'none',
+        miscCharge: doc.misc_charge ?? 'none',
         poNumbers: doc.po_numbers?.length > 0 ? doc.po_numbers.join(', ') : 'none',
       });
     });
     console.log();
+    
+    // Filter to only process invoices - skip any non-invoice documents
+    const invoiceDocuments = parsedDocuments.filter(doc => doc.document_type === 'invoice');
+    const skippedCount = parsedDocuments.length - invoiceDocuments.length;
+    
+    if (skippedCount > 0) {
+      console.log(`⚠️  Skipping ${skippedCount} non-invoice document(s) (document_type='other')\n`);
+    }
+    
+    if (invoiceDocuments.length === 0) {
+      console.log('⚠️  No invoices found in the file - nothing to process\n');
+      
+      return {
+        success: true,
+        fileRecordId,
+        invoicesCreated: 0,
+        invoiceIds: [],
+        details: {
+          message: 'No invoices found in file - all documents were non-invoices',
+          parsedDocuments: parsedDocuments.length,
+          invoicesFound: 0,
+        },
+      };
+    }
+    
+    console.log(`✅ Processing ${invoiceDocuments.length} invoice(s)\n`);
 
-    // Step 3: Determine if single or multiple documents
-    const isMultipleDocuments = parsedDocuments.length > 1;
+    // Step 3: Determine if single or multiple invoices
+    const isMultipleDocuments = invoiceDocuments.length > 1;
     
     if (isMultipleDocuments) {
-      console.log('📄 Multiple documents detected - will extract individual text for each\n');
+      console.log('📄 Multiple invoices detected - will extract individual text for each\n');
     } else {
-      console.log('📄 Single document detected - using full raw text\n');
+      console.log('📄 Single invoice detected - using full raw text\n');
     }
 
     // Step 4: Create Invoice records (primary entity only)
     console.log('💾 Step 3: Creating Invoice records in Invoices table...');
     const createdInvoices: { type: string; id: string }[] = [];
     
-    for (let i = 0; i < parsedDocuments.length; i++) {
-      const doc = parsedDocuments[i];
-      console.log(`\n  Processing invoice ${i + 1}/${parsedDocuments.length}...`);
+    for (let i = 0; i < invoiceDocuments.length; i++) {
+      const doc = invoiceDocuments[i];
+      console.log(`\n  Processing invoice ${i + 1}/${invoiceDocuments.length}...`);
       
       let documentRawText: string;
       
@@ -136,7 +162,7 @@ export async function processPostOCR(fileRecordId: string): Promise<ProcessFileR
       invoicesCreated: createdInvoices.length,
       invoiceIds: createdInvoices,
       details: {
-        invoices: parsedDocuments.map((doc, idx) => ({
+        invoices: invoiceDocuments.map((doc, idx) => ({
           index: idx + 1,
           type: doc.document_type,
           vendor: doc.vendor_name,
@@ -144,10 +170,13 @@ export async function processPostOCR(fileRecordId: string): Promise<ProcessFileR
           amount: doc.amount,
           freightCharge: doc.freight_charge,
           surcharge: doc.surcharge,
+          miscCharge: doc.misc_charge,
           poNumbers: doc.po_numbers,
           invoiceId: createdInvoices[idx]?.id,
-          lineItemsCount: doc.line_items?.length || 0,
         })),
+        totalParsedDocuments: parsedDocuments.length,
+        invoicesProcessed: invoiceDocuments.length,
+        nonInvoicesSkipped: skippedCount,
       },
     };
     

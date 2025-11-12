@@ -65,7 +65,7 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
         });
       } else {
         // Default sort by created date descending
-        queryParams.append('sort[0][field]', 'Created At');
+        queryParams.append('sort[0][field]', 'Created-At');
         queryParams.append('sort[0][direction]', 'desc');
       }
 
@@ -258,7 +258,7 @@ export function useInvoiceCounts() {
       const needsCoding = data.records.filter((record: AirtableRecord) => {
         const fields = record.fields;
         // Check if key fields are missing (Invoices table fields)
-        return !fields['Vendor Name'] || !fields['Invoice Number'] || !fields['Amount'];
+        return !fields['Vendor-Name'] || !fields['Invoice-Number'] || !fields['Amount'];
       }).length;
 
       setCounts({

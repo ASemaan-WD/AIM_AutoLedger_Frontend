@@ -311,3 +311,8 @@ And "Delete" and "Need help" buttons should be visible
 
 This implementation provides a comprehensive, state-aware UI for invoice details that clearly communicates the invoice's current status and available actions to users. The modular component architecture ensures maintainability and consistency across the application.
 
+
+
+
+
+

@@ -296,3 +296,8 @@ DocumentDetailsPanel
 - CompletenessChecker is hidden for Pending state (PendingStateIndicator shown instead)
 - Error state uses generic "Need Help" button that opens email (can be customized)
 
+
+
+
+
+

@@ -68,7 +68,7 @@ export function getOCR2Settings(): OCR2Settings {
       baseUrl: process.env.OPENAI_BASE_URL,
       model: process.env.OPENAI_MODEL_NAME || 'gpt-4o',
       detailMode: 'high', // Mandatory for vision OCR quality
-      timeoutSeconds: parseInt(process.env.OPENAI_TIMEOUT_SECONDS || '60'), // Reduced from 90s to 60s for better Vercel compatibility
+      timeoutSeconds: parseInt(process.env.OPENAI_TIMEOUT_SECONDS || '300'), // Default 300s (5 minutes) to match route maxDuration
       maxRetries: parseInt(process.env.MAX_VISION_RETRIES || '1'),
       retryBackoffSeconds: parseInt(process.env.RETRY_BACKOFF_SECONDS || '2'),
     },

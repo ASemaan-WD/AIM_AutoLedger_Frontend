@@ -5,7 +5,6 @@
  */
 
 import OpenAI from 'openai';
-import { Agent } from 'https';
 import { VisionAPIError, OCRResult, PDFProcessingError } from './types';
 import { getOCR2Settings } from './config';
 import { createLogger, measurePerformance } from './logger';
@@ -14,48 +13,29 @@ const logger = createLogger('VisionClientNative');
 const settings = getOCR2Settings();
 
 /**
- * HTTP Agent with keep-alive for better connection reuse
- * Reduces latency on subsequent requests by reusing TCP connections
- */
-const httpsAgent = new Agent({
-  keepAlive: true,
-  keepAliveMsecs: 30000, // Keep connections alive for 30s
-  maxSockets: 50,
-  maxFreeSockets: 10,
-  timeout: 60000, // Socket timeout
-});
-
-/**
  * OpenAI client instance
- * Using global to persist across warm serverless invocations
  */
-declare global {
-  // eslint-disable-next-line no-var
-  var openaiClient: OpenAI | undefined;
-}
+let openaiClient: OpenAI | null = null;
 
 /**
  * Get or create OpenAI client
- * Reuses client across warm starts for better performance
  */
 function getOpenAIClient(): OpenAI {
-  if (!global.openaiClient) {
-    global.openaiClient = new OpenAI({
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
       apiKey: settings.openai.apiKey,
       baseURL: settings.openai.baseUrl,
       timeout: settings.openai.timeoutSeconds * 1000,
-      httpAgent: httpsAgent, // Enable keep-alive connections
     });
     
     logger.info('OpenAI client initialized', {
       model: settings.openai.model,
       baseUrl: settings.openai.baseUrl || 'default',
-      timeout: `${settings.openai.timeoutSeconds}s`,
-      keepAlive: true
+      timeout: `${settings.openai.timeoutSeconds}s`
     });
   }
   
-  return global.openaiClient;
+  return openaiClient;
 }
 
 /**

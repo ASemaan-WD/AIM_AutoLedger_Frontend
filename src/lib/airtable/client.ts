@@ -3,7 +3,6 @@
  * Follows Airtable's rate limits: 5 req/s per base, 50 req/s per token
  */
 
-import { Agent } from 'https';
 import {
   AirtableConfig,
   AirtableListParams,
@@ -16,18 +15,6 @@ import {
   RetryConfig,
   RateLimitInfo,
 } from './types';
-
-/**
- * Shared HTTPS agent for connection pooling
- * Reuses TCP connections to Airtable API for better performance
- */
-const httpsAgent = new Agent({
-  keepAlive: true,
-  keepAliveMsecs: 30000,
-  maxSockets: 50,
-  maxFreeSockets: 10,
-  timeout: 30000,
-});
 
 export class AirtableClient {
   private config: AirtableConfig;
@@ -108,8 +95,6 @@ export class AirtableClient {
           'Content-Type': 'application/json',
           ...options.headers,
         },
-        // @ts-ignore - Node.js fetch supports agent but types don't reflect it
-        agent: httpsAgent,
       });
 
       // Handle rate limiting

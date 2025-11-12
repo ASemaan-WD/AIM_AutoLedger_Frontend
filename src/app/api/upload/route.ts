@@ -32,16 +32,13 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
     let ocrResponse;
     try {
       console.log(`📞 Making fetch request...`);
-      // Reduced timeout from 300s to 90s for faster failure detection
-      // OpenAI timeout is 60s, so 90s gives 30s buffer for overhead
-      const timeoutMs = parseInt(process.env.INTERNAL_API_TIMEOUT_MS || '90000');
       ocrResponse = await fetch(ocrEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(timeoutMs)
+        signal: AbortSignal.timeout(300000) // 300 second timeout (5 minutes)
       });
       console.log(`✅ Fetch completed`);
     } catch (fetchError) {

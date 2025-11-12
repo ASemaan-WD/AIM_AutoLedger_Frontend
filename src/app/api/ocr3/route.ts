@@ -1,11 +1,13 @@
 /**
  * OCR3 API Route
  * Accepts an Airtable record ID from the Files table
- * Uses ocr-llm for text extraction
+ * Uses ocr-llm for text extraction with serverless-compatible PDF processing
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { OcrLLM } from 'ocr-llm';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { createCanvas } from 'canvas';
 
 const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_TOKEN = process.env.AIRTABLE_PAT;
@@ -17,6 +19,49 @@ interface AirtableAttachment {
   filename: string;
   size: number;
   type: string;
+}
+
+/**
+ * Convert PDF to images using pdfjs-dist (serverless-compatible)
+ */
+async function pdfToImages(pdfBuffer: Buffer): Promise<Buffer[]> {
+  const images: Buffer[] = [];
+  
+  try {
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(pdfBuffer),
+      useSystemFonts: true,
+    });
+    
+    const pdfDocument = await loadingTask.promise;
+    const numPages = pdfDocument.numPages;
+    
+    console.log(`📄 OCR3: PDF has ${numPages} pages`);
+    
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 }); // 2x scale for better quality
+      
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const context = canvas.getContext('2d');
+      
+      await page.render({
+        canvasContext: context as any,
+        viewport: viewport,
+        canvas: canvas as any,
+      }).promise;
+      
+      const imageBuffer = canvas.toBuffer('image/png');
+      images.push(imageBuffer);
+      
+      console.log(`✅ OCR3: Rendered page ${pageNum}/${numPages}`);
+    }
+    
+    return images;
+  } catch (error) {
+    console.error('❌ OCR3: PDF to images conversion failed:', error);
+    throw new Error(`Failed to convert PDF to images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -139,14 +184,24 @@ export async function POST(request: NextRequest) {
     let pageCount = 0;
 
     if (isPdf) {
-      console.log('📄 OCR3: Processing as PDF');
-      const pdfResults = await ocrllm.pdf(fileBuffer);
-      pageCount = pdfResults.length;
+      console.log('📄 OCR3: Processing as PDF (serverless mode)');
+      
+      // Convert PDF to images first (serverless-compatible)
+      const imageBuffers = await pdfToImages(fileBuffer);
+      pageCount = imageBuffers.length;
+      
+      console.log(`🖼️  OCR3: Converted PDF to ${pageCount} images`);
+      
+      // Process each image with OCR
+      const pageResults: string[] = [];
+      for (let i = 0; i < imageBuffers.length; i++) {
+        console.log(`🔍 OCR3: Processing page ${i + 1}/${pageCount}...`);
+        const imageResult = await ocrllm.image(imageBuffers[i]);
+        pageResults.push(`--- Page ${i + 1} ---\n${imageResult.content}`);
+      }
       
       // Combine all pages
-      extractedText = pdfResults
-        .map(page => `--- Page ${page.page} ---\n${page.content}`)
-        .join('\n\n');
+      extractedText = pageResults.join('\n\n');
       
       console.log(`✅ OCR3: Processed ${pageCount} pages`);
     } else {

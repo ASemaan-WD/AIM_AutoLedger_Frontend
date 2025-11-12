@@ -2,8 +2,11 @@
   "buildCommand": "npm run build",
   "framework": "nextjs",
   "functions": {
-    "src/app/api/ocr2/process/route.ts": {
+    "src/app/api/ocr3/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/parser3/route.ts": {
+      "maxDuration": 60
     },
     "src/app/api/post-ocr/process/route.ts": {
       "maxDuration": 300

@@ -1,20 +1,21 @@
 /**
  * OCR3 API Route
  * Accepts an Airtable record ID from the Files table
- * Uses ocr-llm for text extraction with serverless-compatible PDF processing
+ * Uses PDFium WASM + GPT-4o for high-quality OCR
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { OcrLLM } from 'ocr-llm';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { createCanvas } from 'canvas';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-// Disable worker for serverless environment (use main thread)
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+import { NextRequest, NextResponse } from 'next/server';
+import OpenAI from 'openai';
+import { renderPdfToPngs } from '@/lib/ocr3/pdf-to-png';
 
 const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_TOKEN = process.env.AIRTABLE_PAT;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 interface AirtableAttachment {
   id: string;
@@ -22,52 +23,6 @@ interface AirtableAttachment {
   filename: string;
   size: number;
   type: string;
-}
-
-/**
- * Convert PDF to images using pdfjs-dist (serverless-compatible)
- */
-async function pdfToImages(pdfBuffer: Buffer): Promise<Buffer[]> {
-  const images: Buffer[] = [];
-  
-  try {
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(pdfBuffer),
-      useSystemFonts: true,
-      useWorkerFetch: false,
-      isEvalSupported: false,
-      disableWorker: true,
-    });
-    
-    const pdfDocument = await loadingTask.promise;
-    const numPages = pdfDocument.numPages;
-    
-    console.log(`📄 OCR3: PDF has ${numPages} pages`);
-    
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdfDocument.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 }); // 2x scale for better quality
-      
-      const canvas = createCanvas(viewport.width, viewport.height);
-      const context = canvas.getContext('2d');
-      
-      await page.render({
-        canvasContext: context as any,
-        viewport: viewport,
-        canvas: canvas as any,
-      }).promise;
-      
-      const imageBuffer = canvas.toBuffer('image/png');
-      images.push(imageBuffer);
-      
-      console.log(`✅ OCR3: Rendered page ${pageNum}/${numPages}`);
-    }
-    
-    return images;
-  } catch (error) {
-    console.error('❌ OCR3: PDF to images conversion failed:', error);
-    throw new Error(`Failed to convert PDF to images: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -79,13 +34,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid record ID' },
         { status: 400 }
-      );
-    }
-
-    if (!OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
-        { status: 500 }
       );
     }
 
@@ -113,29 +61,6 @@ export async function POST(request: NextRequest) {
     const record = await response.json();
     console.log('✅ OCR3: Record fetched successfully');
     console.log('📋 OCR3: Available fields:', Object.keys(record.fields || {}));
-
-    // Update status to Processing
-    console.log('🔄 OCR3: Setting status to Processing...');
-    const statusUpdateUrl = `https://api.airtable.com/v0/${BASE_ID}/Files/${recordId}`;
-    
-    const statusUpdateResponse = await fetch(statusUpdateUrl, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        fields: {
-          'Status': 'Processing'
-        }
-      })
-    });
-
-    if (!statusUpdateResponse.ok) {
-      console.error('⚠️ OCR3: Failed to update status to Processing:', statusUpdateResponse.status);
-    } else {
-      console.log('✅ OCR3: Status updated to Processing');
-    }
 
     // Get attachments
     const attachments = record.fields?.Attachments as AirtableAttachment[] | undefined;
@@ -170,61 +95,80 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
+    const fileBuffer = await fileResponse.arrayBuffer();
     console.log('✅ OCR3: Attachment downloaded successfully');
     console.log(`📊 OCR3: File size: ${fileBuffer.byteLength} bytes`);
 
-    // Initialize OcrLLM
-    const ocrllm = new OcrLLM({
-      provider: 'openai',
-      key: OPENAI_API_KEY,
-    });
+    // Check if it's a PDF
+    const isPdf = attachment.type === 'application/pdf' || 
+                  attachment.filename.toLowerCase().endsWith('.pdf');
 
-    // Process the file based on type
-    const isPdf = attachment.type === 'application/pdf' || attachment.filename.toLowerCase().endsWith('.pdf');
-    
-    console.log('🔍 OCR3: Starting OCR processing...');
-    const startTime = Date.now();
-
-    let extractedText = '';
-    let pageCount = 0;
-
-    if (isPdf) {
-      console.log('📄 OCR3: Processing as PDF (serverless mode)');
-      
-      // Convert PDF to images first (serverless-compatible)
-      const imageBuffers = await pdfToImages(fileBuffer);
-      pageCount = imageBuffers.length;
-      
-      console.log(`🖼️  OCR3: Converted PDF to ${pageCount} images`);
-      
-      // Process each image with OCR
-      const pageResults: string[] = [];
-      for (let i = 0; i < imageBuffers.length; i++) {
-        console.log(`🔍 OCR3: Processing page ${i + 1}/${pageCount}...`);
-        const imageResult = await ocrllm.image(imageBuffers[i]);
-        pageResults.push(`--- Page ${i + 1} ---\n${imageResult.content}`);
-      }
-      
-      // Combine all pages
-      extractedText = pageResults.join('\n\n');
-      
-      console.log(`✅ OCR3: Processed ${pageCount} pages`);
-    } else {
-      console.log('🖼️  OCR3: Processing as image');
-      const imageResult = await ocrllm.image(fileBuffer);
-      extractedText = imageResult.content;
-      pageCount = 1;
-      console.log('✅ OCR3: Image processed');
+    if (!isPdf) {
+      return NextResponse.json(
+        { error: 'Only PDF files are supported' },
+        { status: 400 }
+      );
     }
 
-    const processingTime = Date.now() - startTime;
-    console.log(`⏱️  OCR3: Processing completed in ${processingTime}ms`);
+    // Render PDF to high-DPI PNGs
+    console.log('🖼️  OCR3: Rendering PDF to PNGs...');
+    const startRender = Date.now();
+    const scale = 4; // 288 dpi
+    const maxPages = 50; // Cap to avoid huge requests
+    
+    const pdfBytes = new Uint8Array(fileBuffer);
+    const pngBuffers = await renderPdfToPngs(pdfBytes, scale, maxPages);
+    
+    const renderTime = Date.now() - startRender;
+    console.log(`✅ OCR3: Rendered ${pngBuffers.length} pages in ${renderTime}ms`);
+
+    // Build image inputs as base64 for GPT-4o
+    console.log('🔍 OCR3: Preparing images for OCR...');
+    const imageInputs = pngBuffers.map((buf) => ({
+      type: 'image_url' as const,
+      image_url: {
+        url: `data:image/png;base64,${buf.toString('base64')}`,
+      },
+    }));
+
+    // OCR with GPT-4o
+    console.log('🤖 OCR3: Running OCR with GPT-4o...');
+    const startOcr = Date.now();
+    
+    const prompt = 'Perform OCR on these pages. Output ONLY the raw text in reading order. No commentary.';
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            ...imageInputs,
+          ],
+        },
+      ],
+    });
+
+    const extractedText = completion.choices[0]?.message?.content ?? '';
+    const ocrTime = Date.now() - startOcr;
+    
+    console.log(`✅ OCR3: OCR completed in ${ocrTime}ms`);
     console.log(`📝 OCR3: Extracted ${extractedText.length} characters`);
 
-    // Update the Airtable record with extracted text
-    console.log('💾 OCR3: Updating Airtable record with extracted text...');
+    // Update Airtable record with extracted text
+    console.log('💾 OCR3: Updating Airtable record...');
     const updateUrl = `https://api.airtable.com/v0/${BASE_ID}/Files/${recordId}`;
+    
+    const updatePayload = {
+      fields: {
+        'Raw-Text': extractedText,
+        'Status': 'Processed',
+      }
+    };
+    
+    console.log('📤 OCR3: Update URL:', updateUrl);
+    console.log('📤 OCR3: Update payload:', JSON.stringify(updatePayload, null, 2));
     
     const updateResponse = await fetch(updateUrl, {
       method: 'PATCH',
@@ -232,19 +176,19 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        fields: {
-          'Raw-Text': extractedText
-        }
-      })
+      body: JSON.stringify(updatePayload)
     });
 
+    const updateResult = await updateResponse.json();
+    console.log('📥 OCR3: Update response status:', updateResponse.status);
+    console.log('📥 OCR3: Update response:', JSON.stringify(updateResult, null, 2));
+
     if (!updateResponse.ok) {
-      const errorText = await updateResponse.text();
-      console.error('❌ OCR3: Failed to update Airtable record:', updateResponse.status, errorText);
+      console.error('❌ OCR3: Failed to update Airtable:', updateResponse.status, updateResult);
       return NextResponse.json(
         { 
           error: `OCR succeeded but failed to update record: ${updateResponse.status}`,
+          airtableError: updateResult,
           extractedText,
           textLength: extractedText.length
         },
@@ -252,45 +196,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ OCR3: Airtable record updated successfully');
+    console.log('✅ OCR3: Record updated successfully');
 
-    // Trigger parser3 processing
-    console.log('🚀 OCR3: Triggering parser3...');
-    try {
-      const baseUrl = new URL(request.url).origin;
-      const parser3Endpoint = `${baseUrl}/api/parser3`;
-      
-      const parser3Response = await fetch(parser3Endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recordId: recordId
-        })
-      });
-
-      if (!parser3Response.ok) {
-        console.error('⚠️ OCR3: Parser3 call failed:', parser3Response.status);
-      } else {
-        console.log('✅ OCR3: Parser3 triggered successfully');
-      }
-    } catch (parser3Error) {
-      console.error('❌ OCR3: Failed to trigger parser3:', parser3Error);
-    }
-
-    // Return success with extracted text
+    // Return success
     return NextResponse.json({
       success: true,
       recordId: record.id,
       fileName: attachment.filename,
       fileType: attachment.type,
       fileSize: fileBuffer.byteLength,
-      pageCount,
-      extractedText,
+      pageCount: pngBuffers.length,
       textLength: extractedText.length,
-      processingTimeMs: processingTime,
-      message: 'OCR completed and record updated successfully'
+      renderTimeMs: renderTime,
+      ocrTimeMs: ocrTime,
+      totalTimeMs: renderTime + ocrTime,
+      message: 'OCR completed successfully'
     });
 
   } catch (error) {

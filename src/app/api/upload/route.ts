@@ -20,7 +20,7 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
   try {
     console.log(`🚀 Starting OCR3 processing for record ${recordId}`);
     const ocrEndpoint = `${baseUrl}/api/ocr3`;
-    console.log(`📍 OCR endpoint: ${ocrEndpoint}`);
+    console.log(`📍 OCR3 endpoint: ${ocrEndpoint}`);
     
     const requestBody = {
       recordId: recordId
@@ -82,7 +82,7 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
       message: result.message
     });
   } catch (error) {
-    console.error(`❌ OCR3 processing failed for record ${recordId}:`, error);
+    console.error(`❌ OCR processing failed for record ${recordId}:`, error);
     console.error(`❌ Error type: ${error?.constructor?.name}`);
     console.error(`❌ Error message: ${error instanceof Error ? error.message : String(error)}`);
     console.error(`❌ Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
@@ -268,16 +268,16 @@ export async function POST(request: NextRequest) {
         console.warn('⚠️ Record created but no attachments found');
       }
 
-      // Trigger OCR processing for PDF files
+      // Trigger OCR3 processing for PDF files
       if (file.type === 'application/pdf') {
-        console.log(`🔍 Triggering OCR processing for PDF: ${file.name}`);
+        console.log(`🔍 Triggering OCR3 processing for PDF: ${file.name}`);
         console.log(`📄 Record ID: ${airtableRecord.id}`);
         console.log(`🔗 File URL: ${blob.url}`);
         console.log(`🌐 Base URL: ${baseUrl}`);
         
-        // Trigger OCR processing asynchronously - don't wait for completion
+        // Trigger OCR3 processing asynchronously - don't wait for completion
         triggerOCRProcessing(airtableRecord.id, blob.url, baseUrl).catch(async (error) => {
-          console.error('OCR processing failed:', error);
+          console.error('OCR3 processing failed:', error);
           
           // Set appropriate error code based on the error
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
           }
         });
       } else {
-        console.log(`ℹ️ Skipping OCR for non-PDF file: ${file.name} (type: ${file.type})`);
+        console.log(`ℹ️ Skipping OCR3 for non-PDF file: ${file.name} (type: ${file.type})`);
       }
 
       return NextResponse.json({

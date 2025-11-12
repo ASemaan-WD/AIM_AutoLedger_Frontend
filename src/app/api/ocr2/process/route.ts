@@ -199,6 +199,16 @@ function handleProcessingError(error: unknown, recordId: string): ProcessFileRes
  * Process a file with OCR and update Airtable record
  */
 export async function POST(request: NextRequest) {
+  // Performance tracking
+  const perfTimings = {
+    requestStart: Date.now(),
+    validationComplete: 0,
+    pdfDownloadComplete: 0,
+    ocrComplete: 0,
+    airtableUpdateComplete: 0,
+    totalDuration: 0,
+  };
+
   try {
     console.log('🚀 OCR2 API called');
     console.log(`📋 Request URL: ${request.url}`);
@@ -213,7 +223,8 @@ export async function POST(request: NextRequest) {
       console.log(`   ✓ Starts with sk-: ${settings.openai.apiKey.startsWith('sk-')}`);
       
       validateSettings(settings);
-      console.log('   ✅ Settings validation passed');
+      perfTimings.validationComplete = Date.now() - perfTimings.requestStart;
+      console.log(`   ✅ Settings validation passed (${perfTimings.validationComplete}ms)`);
     } catch (configError) {
       console.error('❌ OCR2 configuration error:', configError);
       logger.error('OCR2 configuration error', { error: configError });
@@ -250,6 +261,7 @@ export async function POST(request: NextRequest) {
     try {
       // Process the PDF file using native PDF support (no image conversion!)
       const result = await processPDFFromURL(file_url, options as any);
+      perfTimings.ocrComplete = Date.now() - perfTimings.requestStart;
 
       if (!result.extractedText || result.extractedText.trim().length === 0) {
         logger.warn('No text extracted from file', { recordId: record_id, fileUrl: file_url });
@@ -267,6 +279,7 @@ export async function POST(request: NextRequest) {
           result.extractedText, 
           result.processingTime
         );
+        perfTimings.airtableUpdateComplete = Date.now() - perfTimings.requestStart;
       } catch (airtableError) {
         // File was processed successfully, but Airtable update failed
         logger.warn('File processed but Airtable update failed', {
@@ -275,6 +288,8 @@ export async function POST(request: NextRequest) {
           airtableError: airtableError instanceof Error ? airtableError.message : String(airtableError)
         });
       }
+
+      perfTimings.totalDuration = Date.now() - perfTimings.requestStart;
 
       const response: ProcessFileResponse = {
         status: 'success',
@@ -294,7 +309,13 @@ export async function POST(request: NextRequest) {
         textLength: result.extractedText.length,
         tokensUsed: result.summary.totalTokensUsed,
         processingTime: `${result.processingTime}ms`,
-        airtableUpdated
+        airtableUpdated,
+        perfTimings: {
+          validation: `${perfTimings.validationComplete}ms`,
+          ocr: `${perfTimings.ocrComplete}ms`,
+          airtableUpdate: `${perfTimings.airtableUpdateComplete - perfTimings.ocrComplete}ms`,
+          total: `${perfTimings.totalDuration}ms`
+        }
       });
 
       // Trigger post-OCR processing (document parsing and record creation)

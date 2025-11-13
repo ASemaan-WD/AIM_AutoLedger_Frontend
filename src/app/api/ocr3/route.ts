@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
 
     const updateResult = await updateResponse.json();
     console.log(`✅ [${requestId}] OCR3: Record updated successfully (status remains "Processing")`);
-    console.log(`📋 [${requestId}] OCR3: Raw text saved. Airtable automation will handle invoice parsing.`);
+    console.log(`ℹ️  [${requestId}] OCR3: Airtable automation will trigger parser3 to create invoice`);
 
     // Return success
     return NextResponse.json({

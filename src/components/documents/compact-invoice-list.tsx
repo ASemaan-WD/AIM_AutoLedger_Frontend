@@ -7,7 +7,7 @@ import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { cx } from "@/utils/cx";
 import type { Invoice } from "@/types/documents";
-import { INVOICE_STATUS } from "@/lib/airtable/schema-types";
+import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, type UXStatus } from "@/lib/airtable/schema-types";
 import { hasBlockingIssues, sortInvoicesByPriority } from "@/utils/invoice-validation";
 
 interface CompactInvoiceListProps {
@@ -22,32 +22,20 @@ interface CompactInvoiceListProps {
 const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoice>) => {
     if (!value) return null;
 
-    const getStatusColor = (status: Invoice['status']) => {
-        switch (status) {
-            case 'reviewed': return 'success';   // Queued (locked, green)
-            case 'queued': return 'success';     // Queued (locked, green)
-            case 'approved': return 'success';   // Also maps to Queued
-            case 'rejected': return 'error';     // Error (red)
-            case 'exported': return 'brand';     // Exported (blue/purple)
-            case 'pending': return 'warning';    // Pending (yellow/orange)
-            case 'open': return 'blue-light';    // Matched - editable (light blue)
-            default: return 'gray';
+    // Get UX-friendly status (use uxStatus from Airtable if available, otherwise map from status)
+    const getUXStatus = (): UXStatus => {
+        if (value.uxStatus) {
+            return value.uxStatus;
         }
+        // Fallback to mapping from status field
+        return UX_STATUS_MAP[value.status] || 'Processing';
     };
 
-    const getStatusDisplayName = (status: Invoice['status']) => {
-        // Display names should match Airtable exactly
-        switch (status) {
-            case 'open': return 'Matched';      // Editable state
-            case 'pending': return 'Pending';   // No edits, missing fields
-            case 'reviewed': return 'Queued';   // Locked, ready to export
-            case 'queued': return 'Queued';     // Queued state
-            case 'approved': return 'Queued';   // Also maps to Queued
-            case 'rejected': return 'Error';    // Has errors
-            case 'exported': return 'Exported'; // Already exported
-            default: return status;
-        }
+    const getStatusColor = (uxStatus: UXStatus) => {
+        return UX_STATUS_COLORS[uxStatus] || 'gray';
     };
+
+    const uxStatus = getUXStatus();
 
     const formatCurrency = (amount: number, currency?: string) => {
         return new Intl.NumberFormat('en-US', {
@@ -105,8 +93,8 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
                 
                 {/* Badge and Completeness Icon (only show alert when not complete) */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <Badge size="sm" color={getStatusColor(value.status)} type="color">
-                        {getStatusDisplayName(value.status)}
+                    <Badge size="sm" color={getStatusColor(uxStatus)} type="color">
+                        {uxStatus}
                     </Badge>
                     {hasBlockingIssues(value) && (
                         <AlertTriangle className="w-4 h-4 text-fg-warning-primary" />

@@ -7,7 +7,7 @@ import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Badge } from "@/components/base/badges/badges";
 import { AlertTriangle, CheckCircle, Trash01, RefreshCw05, Copy01 } from "@untitledui/icons";
 import { getErrorCodeDefinition, getErrorDisplayName, getErrorIcon, getErrorColor, getErrorDescription, hasErrorCode } from "@/lib/error-codes";
-import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components";
+import { DialogTrigger as AriaDialogTrigger, DialogTrigger, Heading as AriaHeading } from "react-aria-components";
 import { cx } from "@/utils/cx";
 import { LinksTab, RawContentTab } from "@/components/documents/shared-tabs";
 import { TextArea } from "@/components/base/textarea/textarea";
@@ -222,6 +222,56 @@ export const FileDetailsPanel = ({
         if (!currentFile) return null;
 
         const isQueued = currentFile.status === 'Queued';
+        const isProcessing = currentFile.status === 'Processing';
+
+        // Processing state: only show Delete button with destructive warning
+        if (isProcessing) {
+            return (
+                <div className="flex items-center gap-2">
+                    <DialogTrigger>
+                        <ButtonUtility 
+                            size="sm" 
+                            color="error"
+                            icon={Trash01}
+                            tooltip="Delete processing file"
+                        />
+                        <ModalOverlay isDismissable>
+                            <Modal>
+                                <Dialog>
+                                    {({ close }) => (
+                                        <div className="bg-white rounded-lg p-6 max-w-md">
+                                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Delete Processing File?</h2>
+                                            <p className="text-sm text-gray-600 mb-6">
+                                                Are you sure you want to delete this? It is still processing. You will need to upload the original document again.
+                                            </p>
+                                            <div className="flex justify-end gap-3">
+                                                <button
+                                                    type="button"
+                                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                                    onClick={() => close()}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700"
+                                                    onClick={() => {
+                                                        onDelete?.(currentFile);
+                                                        close();
+                                                    }}
+                                                >
+                                                    Delete File
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </Dialog>
+                            </Modal>
+                        </ModalOverlay>
+                    </DialogTrigger>
+                </div>
+            );
+        }
 
         return (
             <div className="flex items-center gap-2">
@@ -231,12 +281,12 @@ export const FileDetailsPanel = ({
                     isDisabled={isQueued}
                 />
                 
-                <Button 
+                <ButtonUtility 
                     size="sm" 
                     color="secondary"
-                    iconLeading={Trash01}
+                    icon={Trash01}
                     onClick={() => onDelete?.(currentFile)}
-                    aria-label="Delete file"
+                    tooltip="Delete file"
                 />
             </div>
         );
@@ -281,6 +331,9 @@ export const FileDetailsPanel = ({
                                 const ErrorIcon = getErrorIcon(currentFile.errorCode);
                                 return <ErrorIcon className="w-4 h-4 text-error-primary" />;
                             })()
+                        ) : currentFile?.status === 'Processing' ? (
+                            // No icon for processing state
+                            null
                         ) : currentFile && hasBlockingIssues(currentFile) ? (
                             <AlertTriangle className="w-4 h-4 text-error-primary" />
                         ) : (

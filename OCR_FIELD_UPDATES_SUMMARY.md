@@ -260,3 +260,4 @@ Following the schema documented in `AIRTABLE_SCHEMA.md`:
 **Linter Errors:** None  
 **Next Steps:** Test with real invoice uploads to verify field name updates and flexible line items parsing
 
+

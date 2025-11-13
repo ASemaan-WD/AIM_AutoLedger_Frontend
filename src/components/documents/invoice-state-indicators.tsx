@@ -26,7 +26,7 @@ export const PendingStateIndicator = ({ className }: PendingStateIndicatorProps)
                 </span>
             </div>
             <p className="text-xs">
-                We're processing this invoice. Most fields are read-only until processing is complete.
+                Your invoice is processing. All fields are read-only.
             </p>
         </div>
     );
@@ -76,23 +76,23 @@ interface QueuedIndicatorProps {
 
 /**
  * Queued State Indicator
- * Shows spinner/queued indicator for invoices waiting to be exported
+ * Shows spinner/queued indicator for invoices being exported
  */
 export const QueuedIndicator = ({ className }: QueuedIndicatorProps) => {
     return (
         <div className={cx(
             "rounded-lg border p-3",
-            "border-success bg-success-25 text-success-700",
+            "border-warning bg-warning-25 text-warning-700",
             className
         )}>
             <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-success-primary" />
+                <Clock className="w-4 h-4 text-warning-primary" />
                 <span className="text-sm font-medium">
-                    Ready for Export
+                    Exporting
                 </span>
             </div>
             <p className="text-xs">
-                This invoice is queued for export. All fields are locked.
+                This invoice is being exported. All fields are locked.
             </p>
         </div>
     );

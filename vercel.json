@@ -10,6 +10,9 @@
     },
     "src/app/api/upload/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/match-invoice/route.ts": {
+      "maxDuration": 120
     }
   },
   "headers": [

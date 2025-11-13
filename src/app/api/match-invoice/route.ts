@@ -19,7 +19,7 @@ import { TABLE_NAMES } from '@/lib/airtable/schema-types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic'; // Force dynamic rendering to prevent build-time analysis
-export const maxDuration = 60; // Allow up to 60 seconds for OpenAI processing
+export const maxDuration = 120; // Allow up to 120 seconds for OpenAI processing
 
 // Environment variables
 const AIRTABLE_TOKEN = process.env.AIRTABLE_PAT;

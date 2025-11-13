@@ -475,6 +475,22 @@
           "type": "multilineText",
           "id": "fldnH8Tqrvk52I7e9",
           "name": "Error Description"
+        },
+        {
+          "type": "formula",
+          "options": {
+            "isValid": true,
+            "formula": "SWITCH(\n  {fld8ZH6sheroClLwL},\n  \"Pending\", \"Processing\",\n  \"Matched\", \"Processed\",\n  \"Error\", \"Attention\",\n  \"Exported\", \"Exported\",\n  \"Queued\", \"Exporting\"\n)",
+            "referencedFieldIds": [
+              "fld8ZH6sheroClLwL"
+            ],
+            "result": {
+              "type": "singleLineText"
+            }
+          },
+          "id": "fldRbgpOfqRF1lis6",
+          "name": "UX-Status",
+          "description": "Maps the Status field to new workflow options: Processing, Processed, Attention, or Exported."
         }
       ],
       "views": [

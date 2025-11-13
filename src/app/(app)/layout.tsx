@@ -1,13 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { UploadCloud02, HelpCircle } from "@untitledui/icons";
+import { HelpCircle } from "@untitledui/icons";
 import { NavItemButton } from "@/components/application/app-navigation/base-components/nav-item-button";
 
 import { cx } from "@/utils/cx";
-import type { DocumentType } from "@/types/documents";
-import { useInvoiceCounts } from "@/lib/airtable";
-import { useFileCounts } from "@/lib/airtable/files-hooks";
 
 
 export default function AppLayout({
@@ -15,39 +12,22 @@ export default function AppLayout({
 }: {
     children: React.ReactNode;
 }) {
-    // Get counts from Airtable
-    const { counts: invoiceCounts, loading: invoiceCountsLoading } = useInvoiceCounts();
-    // DEPRECATED: Delivery Tickets table no longer exists
-    // const { counts: deliveryTicketCounts, loading: deliveryTicketCountsLoading } = useDeliveryTicketCounts();
-    const { counts: fileCounts, loading: fileCountsLoading } = useFileCounts();
-    
-    const documentTypes = [
-        { id: 'invoices', label: 'Invoices', badge: invoiceCountsLoading ? '...' : (invoiceCounts.total || 0) },
-        // DEPRECATED: Store Receivers and Delivery Tickets tables removed
-        // { id: 'store-receivers', label: 'Store Receivers', badge: 5 },
-        // { id: 'delivery-tickets', label: 'Delivery Tickets', badge: deliveryTicketCountsLoading ? '...' : (deliveryTicketCounts.total || 0) },
-        { id: 'files', label: 'Files', badge: fileCountsLoading ? '...' : (fileCounts.total || 0) },
-    ];
     const pathname = usePathname();
     const router = useRouter();
     
     const isCurrentPath = (href: string) => {
-        if (href === "/upload") {
-            return pathname === "/upload";
-        }
         return pathname === href;
     };
 
-    // Determine current document type from pathname
-    const currentDocumentType = (() => {
-        const segments = pathname.split('/');
-        // Check if we're on a direct document type page (e.g., /invoices, /emails)
-        const potentialType = segments[1] as DocumentType;
-        return documentTypes.find(dt => dt.id === potentialType) ? potentialType : 'invoices';
-    })();
+    // Navigation items
+    const navItems = [
+        { id: 'home', label: 'Home', href: '/home' },
+        { id: 'files', label: 'Files', href: '/files' },
+        { id: 'invoices', label: 'Invoices', href: '/invoices' },
+    ];
 
-    const handleDocumentTypeChange = (type: DocumentType) => {
-        router.push(`/${type}`);
+    const handleNavigation = (href: string) => {
+        router.push(href);
     };
 
 
@@ -55,70 +35,39 @@ export default function AppLayout({
     return (
         <div className="flex flex-col h-screen bg-primary">
 
-            {/* Document Type Navigation */}
+            {/* Navigation Bar */}
             <div className="sticky top-0 z-50 border-b border-secondary bg-primary px-6 flex-shrink-0">
-                    <div className="flex items-center justify-between relative">
-                        <div className="flex items-center gap-6">
-                            {/* Primary Document Types */}
-                            <div className="flex items-center gap-3">
-                                {documentTypes.slice(0, 1).map((item) => (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => handleDocumentTypeChange(item.id as DocumentType)}
-                                        className={cx(
-                                            "flex items-center gap-2 text-md font-semibold px-1 pt-4 pb-3 rounded-none border-b-2 border-transparent transition duration-100 ease-linear cursor-pointer",
-                                            currentDocumentType === item.id 
-                                                ? "border-fg-brand-primary_alt text-brand-secondary" 
-                                                : "text-quaternary hover:border-fg-brand-primary_alt hover:text-brand-secondary"
-                                        )}
-                                    >
-                                        {item.label}
-                                    </button>
-                                ))}
-                            </div>
-                            
-                            {/* Divider */}
-                            <div className="h-6 w-px bg-border-secondary"></div>
-                            
-                            {/* Files */}
-                            <div className="flex items-center gap-3">
-                                {documentTypes.slice(1).map((item) => (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => handleDocumentTypeChange(item.id as DocumentType)}
-                                        className={cx(
-                                            "flex items-center gap-2 text-md font-semibold px-1 pt-4 pb-3 rounded-none border-b-2 border-transparent transition duration-100 ease-linear cursor-pointer",
-                                            currentDocumentType === item.id 
-                                                ? "border-fg-brand-primary_alt text-brand-secondary" 
-                                                : "text-quaternary hover:border-fg-brand-primary_alt hover:text-brand-secondary"
-                                        )}
-                                    >
-                                        {item.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                <div className="flex items-center justify-between relative h-16">
+                    {/* Centered Navigation Items */}
+                    <div className="absolute left-1/2 -translate-x-1/2 flex items-center h-full gap-8">
+                        {navItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => handleNavigation(item.href)}
+                                className={cx(
+                                    "flex items-center h-full gap-2 text-md font-semibold px-1 rounded-none border-b-2 transition duration-100 ease-linear cursor-pointer",
+                                    isCurrentPath(item.href) 
+                                        ? "border-fg-brand-primary_alt text-brand-secondary" 
+                                        : "border-transparent text-quaternary hover:border-fg-brand-primary_alt hover:text-brand-secondary"
+                                )}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-1">
-                            <NavItemButton 
-                                size="md" 
-                                icon={UploadCloud02} 
-                                label="Upload Files" 
-                                href="/upload" 
-                                current={isCurrentPath("/upload")}
-                                tooltipPlacement="bottom" 
-                            />
-                            <NavItemButton 
-                                size="md" 
-                                icon={HelpCircle} 
-                                label="Help" 
-                                href="#" 
-                                tooltipPlacement="bottom" 
-                            />
-                        </div>
+                    {/* Help Button (Right Side) */}
+                    <div className="ml-auto flex items-center gap-1">
+                        <NavItemButton 
+                            size="md" 
+                            icon={HelpCircle} 
+                            label="Help" 
+                            href="#" 
+                            tooltipPlacement="bottom" 
+                        />
                     </div>
                 </div>
+            </div>
 
             {/* Main Content Area */}
             <main className="flex-1 min-h-0">

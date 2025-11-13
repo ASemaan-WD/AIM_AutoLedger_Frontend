@@ -11,18 +11,17 @@ import { Select } from "@/components/base/select/select";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Badge } from "@/components/base/badges/badges";
-import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02, HelpCircle, RefreshCcw01, DotsVertical } from "@untitledui/icons";
+import { AlertTriangle, CheckCircle, Clock, User01, LinkExternal01, Trash01, Copy01, Mail01, File01, MessageChatCircle, FileCheck02, Receipt, CreditCard01, Package, Edit03, FileDownload02, HelpCircle } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 import { LinksTab, RawContentTab } from "@/components/documents/shared-tabs";
 import { InvoiceCodingInterface } from "@/components/documents/invoice-coding-interface";
 import { DialogTrigger, ModalOverlay, Modal, Dialog } from "@/components/application/modals/modal";
-import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { PendingStateIndicator, BalanceAlert, QueuedIndicator, ErrorAlert, ExportedIndicator } from "@/components/documents/invoice-state-indicators";
 // DEPRECATED: Teams table no longer exists in new schema
 // import { useTeams } from "@/lib/airtable";
 import { useDocumentLinks } from "@/lib/airtable/linked-documents-hooks";
 import type { Invoice, DeliveryTicket, DocumentLink, StoreReceiver } from "@/types/documents";
-import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, type UXStatus } from "@/lib/airtable/schema-types";
+import { INVOICE_STATUS } from "@/lib/airtable/schema-types";
 import { validateInvoice, getMissingFieldsMessage, isMultiLineMode } from "@/utils/invoice-validation";
 
 
@@ -47,7 +46,7 @@ const CompletenessChecker = ({ document }: { document?: Invoice }) => {
     if (!document) return null;
 
     // Don't show completeness checker for Pending state - use PendingStateIndicator instead
-    if (document.status === 'pending') {
+    if (document.status === INVOICE_STATUS.PENDING) {
         return null;
     }
 
@@ -158,17 +157,31 @@ export const DocumentDetailsPanel = ({
     };
 
     // Status display helpers
-    // Get UX-friendly status (use uxStatus from Airtable if available, otherwise map from status)
-    const getUXStatus = (invoice: Invoice): UXStatus => {
-        if (invoice.uxStatus) {
-            return invoice.uxStatus;
+    const getStatusColor = (status: Invoice['status']) => {
+        switch (status) {
+            case 'reviewed': return 'success';   // Queued (locked, green)
+            case 'queued': return 'success';     // Queued (locked, green)
+            case 'approved': return 'success';   // Also maps to Queued
+            case 'rejected': return 'error';     // Error (red)
+            case 'exported': return 'brand';     // Exported (blue/purple)
+            case 'pending': return 'warning';    // Pending (yellow/orange)
+            case 'open': return 'blue-light';    // Matched - editable (light blue)
+            default: return 'gray';
         }
-        // Fallback to mapping from status field
-        return UX_STATUS_MAP[invoice.status] || 'Processing';
     };
 
-    const getStatusColor = (uxStatus: UXStatus) => {
-        return UX_STATUS_COLORS[uxStatus] || 'gray';
+    const getStatusDisplayName = (status: Invoice['status']) => {
+        // Display names should match Airtable exactly
+        switch (status) {
+            case 'open': return 'Matched';      // Editable state
+            case 'pending': return 'Pending';   // Locked, missing fields
+            case 'reviewed': return 'Queued';   // Locked, ready for export
+            case 'queued': return 'Queued';     // Queued state
+            case 'approved': return 'Queued';   // Also maps to Queued
+            case 'rejected': return 'Error';    // Has errors
+            case 'exported': return 'Exported'; // Already exported
+            default: return status;
+        }
     };
 
     // Dirty check: enable Save when edited fields differ from original
@@ -262,25 +275,25 @@ export const DocumentDetailsPanel = ({
         const status = currentDoc.status;
 
         switch (status) {
-            case 'pending':
+            case INVOICE_STATUS.PENDING:
                 return <PendingStateIndicator />;
 
-            case 'open':
+            case INVOICE_STATUS.OPEN:
                 // Show balance alert if balance exists
                 if (currentDoc.balance !== undefined && currentDoc.balance !== null && currentDoc.balance !== 0) {
                     return <BalanceAlert balance={currentDoc.balance} explanation={currentDoc.balanceExplanation} />;
                 }
                 return null;
 
-            case 'reviewed':
-            case 'queued':
-            case 'approved':
+            case INVOICE_STATUS.REVIEWED:
+            case INVOICE_STATUS.QUEUED:
+            case INVOICE_STATUS.APPROVED:
                 return <QueuedIndicator />;
 
-            case 'exported':
+            case INVOICE_STATUS.EXPORTED:
                 return <ExportedIndicator />;
 
-            case 'rejected':
+            case INVOICE_STATUS.REJECTED:
                 return <ErrorAlert errorCode={currentDoc.errorCode} errorMessage={currentDoc.errorMessage} />;
 
             default:
@@ -296,12 +309,12 @@ export const DocumentDetailsPanel = ({
         const validation = validateInvoice(currentDoc);
 
         switch (status) {
-            case 'pending': // Pending - processing
+            case INVOICE_STATUS.PENDING: // Pending - processing
                 return (
                     <div className="flex items-center gap-2">
                         <Button 
                             size="sm" 
-                            color="secondary-destructive"
+                            color="secondary"
                             iconLeading={Trash01}
                             onClick={() => onDelete?.(currentDoc)}
                             className="flex-1"
@@ -311,7 +324,7 @@ export const DocumentDetailsPanel = ({
                     </div>
                 );
 
-            case 'open': // Matched/Processed - editable
+            case INVOICE_STATUS.OPEN: // Matched - editable
                 return (
                     <div className="flex items-center gap-2">
                         <Button 
@@ -339,44 +352,37 @@ export const DocumentDetailsPanel = ({
                         >
                             Save
                         </Button>
-                        <Dropdown.Root>
-                            <ButtonUtility 
-                                size="sm" 
-                                color="secondary"
-                                icon={DotsVertical}
-                                tooltip="More actions"
-                            />
-                            <Dropdown.Popover>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item
-                                        label="Reprocess"
-                                        icon={RefreshCcw01}
-                                        onAction={() => {
-                                            // TODO: Implement reprocess logic
-                                            console.log('Reprocess invoice:', currentDoc.id);
-                                        }}
-                                    />
-                                    <Dropdown.Item
-                                        label="Delete"
-                                        icon={Trash01}
-                                        onAction={() => onDelete?.(currentDoc)}
-                                    />
-                                </Dropdown.Menu>
-                            </Dropdown.Popover>
-                        </Dropdown.Root>
+                        <ButtonUtility 
+                            size="sm" 
+                            color="secondary"
+                            icon={Trash01}
+                            onClick={() => onDelete?.(currentDoc)}
+                            tooltip="Delete"
+                        />
                     </div>
                 );
 
-            case 'reviewed': // Queued - waiting for export
-            case 'queued': // Queued - waiting for export
-            case 'approved': // Also maps to Queued
+            case INVOICE_STATUS.REVIEWED: // Queued - waiting for export
+            case INVOICE_STATUS.QUEUED: // Queued - waiting for export
+            case INVOICE_STATUS.APPROVED: // Also maps to Queued
                 return null; // No action buttons for queued state
 
-            case 'exported': // Exported
-                return null; // No action buttons for exported state
+            case INVOICE_STATUS.EXPORTED: // Exported
+                return (
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            size="sm" 
+                            color="primary"
+                            className="flex-1"
+                            iconLeading={LinkExternal01}
+                            onClick={() => onViewInOracle?.(currentDoc)}
+                        >
+                            View in AIM Vision
+                        </Button>
+                    </div>
+                );
 
-
-            case 'rejected': // Error state
+            case INVOICE_STATUS.REJECTED: // Error state
                 return (
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2">
@@ -512,8 +518,7 @@ export const DocumentDetailsPanel = ({
 
     const tabs = [
         { id: "extracted", label: "Header" },
-        // Details tab hidden for all invoice states per user requirements
-        // { id: "coding", label: "Details" },
+        { id: "coding", label: "Details" },
         { id: "raw", label: "Raw" },
         { id: "links", label: "Links" }
     ];
@@ -539,7 +544,7 @@ export const DocumentDetailsPanel = ({
         );
     }
     // Only allow editing when status is 'open' (displays as "Matched" in Airtable)
-    const canEdit = currentDoc?.status === 'open';
+    const canEdit = currentDoc?.status === INVOICE_STATUS.OPEN;
 
     return (
         <div ref={panelRef} className={cx("border-l border-secondary bg-primary flex flex-col h-full overflow-hidden", className)} style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}>
@@ -552,15 +557,12 @@ export const DocumentDetailsPanel = ({
                     <div className="flex items-center gap-2">
                         <Badge 
                             size="sm" 
-                            color={getStatusColor(getUXStatus(currentDoc as Invoice))}
+                            color={getStatusColor(currentDoc?.status || 'open')}
                             type="color"
                         >
-                            {getUXStatus(currentDoc as Invoice)}
+                            {getStatusDisplayName(currentDoc?.status || 'open')}
                         </Badge>
-                        {currentDoc?.status === 'pending' || currentDoc?.status === 'queued' || currentDoc?.status === 'reviewed' || currentDoc?.status === 'approved' ? (
-                            // No icon for processing, exporting, or queued states
-                            null
-                        ) : validation.canMarkAsReviewed ? (
+                        {validation.canMarkAsReviewed ? (
                             <CheckCircle className="w-4 h-4 text-success-primary" />
                         ) : (
                             <AlertTriangle className="w-4 h-4 text-warning-primary" />

@@ -57,14 +57,6 @@ const invoiceSchema = {
     "Misc-Charge": {
       type: ["number", "null"],
       description: "Miscellaneous charges in dollars"
-    },
-    "Discount-Amount": {
-      type: ["number", "null"],
-      description: "Discount amount in dollars"
-    },
-    "Discount-Date": {
-      type: ["string", "null"],
-      description: "Date for discount eligibility in ISO format"
     }
   },
   required: [
@@ -74,9 +66,7 @@ const invoiceSchema = {
     "Date",
     "Freight-Charge",
     "Surcharge",
-    "Misc-Charge",
-    "Discount-Amount",
-    "Discount-Date"
+    "Misc-Charge"
   ],
   additionalProperties: false
 };
@@ -145,12 +135,6 @@ export async function POST(req: NextRequest) {
     }
     if (parsedData['Misc-Charge'] !== null && parsedData['Misc-Charge'] !== undefined) {
       invoiceFields['Misc-Charge'] = parsedData['Misc-Charge'];
-    }
-    if (parsedData['Discount-Amount'] !== null && parsedData['Discount-Amount'] !== undefined) {
-      invoiceFields['Discount-Amount'] = parsedData['Discount-Amount'];
-    }
-    if (parsedData['Discount-Date']) {
-      invoiceFields['Discount-Date'] = parsedData['Discount-Date'];
     }
 
     // Set default status to 'Pending'

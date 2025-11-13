@@ -13,7 +13,7 @@ import { FILE_STATUS } from "@/lib/airtable/schema-types";
 // Helper function to check if a file has blocking issues
 const hasBlockingIssues = (file: AirtableFile) => {
     // Files need attention if they're in attention state or have error codes
-    return hasErrorCode(file.errorCode) || file.status === FILE_STATUS.ATTENTION;
+    return hasErrorCode(file.errorCode) || file.status === 'Attention';
 };
 
 interface CompactFilesListProps {

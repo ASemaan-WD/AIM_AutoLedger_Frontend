@@ -88,8 +88,6 @@ async function testParser3Real() {
       console.log('  Freight Charge:', data.parsedData['Freight-Charge']);
       console.log('  Surcharge:', data.parsedData['Surcharge']);
       console.log('  Misc Charge:', data.parsedData['Misc-Charge']);
-      console.log('  Discount Amount:', data.parsedData['Discount-Amount']);
-      console.log('  Discount Date:', data.parsedData['Discount-Date']);
       console.log('\n✨ Actions completed:');
       console.log('  1. ✅ Parsed invoice with OpenAI');
       console.log('  2. ✅ Created Invoice record in Airtable');

@@ -135,38 +135,40 @@ export default function UploadPage() {
     return (
         <div className="container mx-auto max-w-4xl p-6">
             <div className="mb-8">
-                <h1 className="text-2xl font-semibold text-secondary mb-2">Upload Files</h1>
+                <h1 className="text-2xl font-semibold text-secondary mb-2">Upload File</h1>
                 <p className="text-tertiary mb-4">
-                    Upload your documents, images, and other files. Drag and drop files or click to browse.
+                    Upload your document or invoice. Drag and drop a file or click to browse.
                 </p>
                 
                 {hasActiveUploads && (
                     <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-4">
                         <p className="text-sm font-medium text-brand-800 mb-1">Upload in progress</p>
                         <p className="text-sm text-brand-700">
-                            Please keep this page open while your files are uploading. Do not close the browser or navigate away.
+                            Please keep this page open while your file is uploading. Do not close the browser or navigate away.
                         </p>
                     </div>
                 )}
 
                 {allFilesComplete && (
-                    <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-success-800 mb-1">All uploads complete!</p>
+                    <div className="bg-success-50 border border-success-200 rounded-lg p-6 mb-6">
+                        <div className="flex flex-col gap-4">
+                            <div className="text-center">
+                                <p className="text-lg font-semibold text-success-900 mb-2">All uploads complete</p>
                                 <p className="text-sm text-success-700">
-                                    Your files have been successfully uploaded.
+                                    Your file has been successfully uploaded and is ready to view.
                                 </p>
                             </div>
-                            <Button 
-                                color="primary" 
-                                size="sm"
-                                onClick={() => router.push('/documents/files')}
-                                className="flex items-center gap-2"
-                            >
-                                <Folder className="size-4" />
-                                View Files
-                            </Button>
+                            <div className="flex justify-center">
+                                <Button 
+                                    color="primary" 
+                                    size="lg"
+                                    onClick={() => router.push('/home')}
+                                    className="flex items-center gap-2 min-w-[200px] justify-center"
+                                >
+                                    <Folder className="size-5" />
+                                    View File
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -174,9 +176,9 @@ export default function UploadPage() {
 
             <FileUpload.Root>
                 <FileUpload.DropZone
-                    hint="All document types accepted - PDF, DOC, XLS, images, and more up to 50MB each"
+                    hint="All document types accepted - PDF, DOC, XLS, images, and more up to 50MB"
                     maxSize={50 * 1024 * 1024} // 50MB
-                    allowsMultiple={true}
+                    allowsMultiple={false}
                     onDropFiles={uploadFiles}
                     onDropUnacceptedFiles={(rejectedFiles) => {
                         console.log("Rejected files:", rejectedFiles);
@@ -191,7 +193,7 @@ export default function UploadPage() {
                 {files.length > 0 && (
                     <div>
                         <h2 className="text-lg font-medium text-secondary mb-4">
-                            Uploading {files.length} file{files.length !== 1 ? 's' : ''}
+                            Recently Uploaded
                         </h2>
                         <FileUpload.List>
                             {files.map((file) => (

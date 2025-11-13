@@ -1,7 +1,7 @@
 /**
  * OCR3 API Route
  * Accepts an Airtable record ID from the Files table
- * Uses PDFium WASM + GPT-4o for high-quality OCR
+ * Uses OpenAI's native PDF processing via Responses API
  */
 
 export const runtime = 'nodejs';
@@ -9,13 +9,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for large PDFs
 
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 
 const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_TOKEN = process.env.AIRTABLE_PAT;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 interface AirtableAttachment {
   id: string;
@@ -26,6 +23,8 @@ interface AirtableAttachment {
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7);
+  
   try {
     const body = await request.json();
     const { recordId } = body;
@@ -37,30 +36,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔵 OCR3: Fetching record:', recordId);
+    console.log(`🔵 [${requestId}] OCR3: Fetching record:`, recordId);
+    console.log(`🔵 [${requestId}] OCR3: BASE_ID:`, BASE_ID);
+    console.log(`🔵 [${requestId}] OCR3: AIRTABLE_TOKEN present:`, !!AIRTABLE_TOKEN);
+    console.log(`🔵 [${requestId}] OCR3: AIRTABLE_TOKEN length:`, AIRTABLE_TOKEN?.length);
+
+    // Add a small delay to allow for Airtable propagation
+    console.log(`⏳ [${requestId}] OCR3: Waiting 2 seconds for Airtable record propagation...`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Fetch the record from Airtable Files table
     const url = `https://api.airtable.com/v0/${BASE_ID}/Files/${recordId}`;
+    console.log(`🔵 [${requestId}] OCR3: Fetch URL:`, url);
     
-    const response = await fetch(url, {
+    const airtableResponse = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
         'Content-Type': 'application/json',
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ OCR3: Airtable fetch error:', response.status, errorText);
+    if (!airtableResponse.ok) {
+      const errorText = await airtableResponse.text();
+      console.error(`❌ [${requestId}] OCR3: Airtable fetch error:`, airtableResponse.status, errorText);
+      console.error(`❌ [${requestId}] OCR3: Record ID:`, recordId);
+      console.error(`❌ [${requestId}] OCR3: BASE_ID:`, BASE_ID);
+      console.error(`❌ [${requestId}] OCR3: Full URL:`, url);
       return NextResponse.json(
-        { error: `Failed to fetch record: ${response.status}` },
-        { status: response.status }
+        { error: `Failed to fetch record: ${airtableResponse.status}`, details: errorText },
+        { status: airtableResponse.status }
       );
     }
 
-    const record = await response.json();
-    console.log('✅ OCR3: Record fetched successfully');
-    console.log('📋 OCR3: Available fields:', Object.keys(record.fields || {}));
+    const record = await airtableResponse.json();
+    console.log(`✅ [${requestId}] OCR3: Record fetched successfully`);
+    console.log(`📋 [${requestId}] OCR3: Available fields:`, Object.keys(record.fields || {}));
 
     // Get attachments
     const attachments = record.fields?.Attachments as AirtableAttachment[] | undefined;
@@ -72,11 +82,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`📎 OCR3: Found ${attachments.length} attachment(s)`);
+    console.log(`📎 [${requestId}] OCR3: Found ${attachments.length} attachment(s)`);
     
     // Get the first attachment
     const attachment = attachments[0];
-    console.log('📄 OCR3: Processing attachment:', {
+    console.log(`📄 [${requestId}] OCR3: Processing attachment:`, {
       filename: attachment.filename,
       type: attachment.type,
       size: attachment.size,
@@ -84,11 +94,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Download the attachment
-    console.log('⬇️  OCR3: Downloading attachment...');
+    console.log(`⬇️  [${requestId}] OCR3: Downloading attachment...`);
     const fileResponse = await fetch(attachment.url);
     
     if (!fileResponse.ok) {
-      console.error('❌ OCR3: Failed to download attachment:', fileResponse.status);
+      console.error(`❌ [${requestId}] OCR3: Failed to download attachment:`, fileResponse.status);
       return NextResponse.json(
         { error: 'Failed to download attachment' },
         { status: 500 }
@@ -96,8 +106,8 @@ export async function POST(request: NextRequest) {
     }
 
     const fileBuffer = await fileResponse.arrayBuffer();
-    console.log('✅ OCR3: Attachment downloaded successfully');
-    console.log(`📊 OCR3: File size: ${fileBuffer.byteLength} bytes`);
+    console.log(`✅ [${requestId}] OCR3: Attachment downloaded successfully`);
+    console.log(`📊 [${requestId}] OCR3: File size: ${fileBuffer.byteLength} bytes`);
 
     // Check if it's a PDF
     const isPdf = attachment.type === 'application/pdf' || 
@@ -110,53 +120,111 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert PDF to base64 for GPT-4o
-    console.log('🔍 OCR3: Preparing PDF for GPT-4o...');
-    const startOcr = Date.now();
-    const pdfBase64 = Buffer.from(fileBuffer).toString('base64');
-    
-    // Send PDF directly to GPT-4o (it can handle PDFs natively)
-    console.log('🤖 OCR3: Running OCR with GPT-4o on PDF...');
-    
-    const prompt = 'Perform OCR on this PDF document. Extract ALL text in reading order. Output ONLY the raw text, no commentary or formatting.';
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:application/pdf;base64,${pdfBase64}`,
-              },
-            },
-          ],
-        },
-      ],
+    // Update status to "Processing" before starting OCR
+    console.log(`📝 [${requestId}] OCR3: Setting status to Processing...`);
+    const statusUpdateUrl = `https://api.airtable.com/v0/${BASE_ID}/Files/${recordId}`;
+    const statusUpdateResponse = await fetch(statusUpdateUrl, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fields: {
+          'Status': 'Processing'
+        }
+      })
     });
 
-    const extractedText = completion.choices[0]?.message?.content ?? '';
-    const ocrTime = Date.now() - startOcr;
-    
-    console.log(`✅ OCR3: OCR completed in ${ocrTime}ms`);
-    console.log(`📝 OCR3: Extracted ${extractedText.length} characters`);
+    if (!statusUpdateResponse.ok) {
+      console.warn(`⚠️ [${requestId}] OCR3: Failed to update status to Processing:`, statusUpdateResponse.status);
+    } else {
+      console.log(`✅ [${requestId}] OCR3: Status set to Processing`);
+    }
 
-    // Update Airtable record with extracted text
-    console.log('💾 OCR3: Updating Airtable record...');
+    // Use OpenAI's native PDF processing via Responses API
+    // Following the exact format from OpenAI docs
+    console.log(`🤖 [${requestId}] OCR3: Processing PDF with OpenAI Responses API...`);
+    const startOcr = Date.now();
+
+    const openaiResponse = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-5',
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: 'Extract all text from this PDF document. Return only the raw text content in reading order, with no additional commentary or formatting.'
+              },
+              {
+                type: 'input_file',
+                file_url: attachment.url
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      console.error(`❌ [${requestId}] OCR3: OpenAI API error:`, openaiResponse.status);
+      console.error(`❌ [${requestId}] OCR3: Error details:`, errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText };
+      }
+      
+      return NextResponse.json(
+        { 
+          error: `OpenAI API error: ${openaiResponse.status}`,
+          details: errorData
+        },
+        { status: 500 }
+      );
+    }
+
+    const completion = await openaiResponse.json();
+    console.log(`🔍 [${requestId}] OCR3: OpenAI response structure:`, JSON.stringify(completion, null, 2));
+    
+    // Extract text from the Responses API format
+    // The output array contains: [0] = reasoning, [1] = message with content
+    let extractedText = '';
+    if (completion.output && Array.isArray(completion.output)) {
+      // Find the message output (type: "message")
+      const messageOutput = completion.output.find((item: any) => item.type === 'message');
+      if (messageOutput?.content && Array.isArray(messageOutput.content)) {
+        // Find the text content (type: "output_text")
+        const textContent = messageOutput.content.find((item: any) => item.type === 'output_text');
+        extractedText = textContent?.text || '';
+      }
+    }
+    const ocrTime = Date.now() - startOcr;
+
+    console.log(`✅ [${requestId}] OCR3: OCR completed in ${ocrTime}ms`);
+    console.log(`📝 [${requestId}] OCR3: Extracted ${extractedText.length} characters`);
+    console.log(`📄 [${requestId}] OCR3: Preview: ${extractedText.substring(0, 200)}...`);
+
+    // Update Airtable record with extracted text (keep status as "Processing")
+    console.log(`💾 [${requestId}] OCR3: Updating Airtable record with extracted text...`);
     const updateUrl = `https://api.airtable.com/v0/${BASE_ID}/Files/${recordId}`;
     
     const updatePayload = {
       fields: {
-        'Raw-Text': extractedText,
-        'Status': 'Processed',
+        'Raw-Text': extractedText
+        // Note: Status remains "Processing" - not changing it to "Processed"
       }
     };
-    
-    console.log('📤 OCR3: Update URL:', updateUrl);
-    console.log('📤 OCR3: Update payload:', JSON.stringify(updatePayload, null, 2));
     
     const updateResponse = await fetch(updateUrl, {
       method: 'PATCH',
@@ -167,16 +235,13 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(updatePayload)
     });
 
-    const updateResult = await updateResponse.json();
-    console.log('📥 OCR3: Update response status:', updateResponse.status);
-    console.log('📥 OCR3: Update response:', JSON.stringify(updateResult, null, 2));
-
     if (!updateResponse.ok) {
-      console.error('❌ OCR3: Failed to update Airtable:', updateResponse.status, updateResult);
+      const errorData = await updateResponse.json();
+      console.error(`❌ [${requestId}] OCR3: Failed to update Airtable:`, updateResponse.status, errorData);
       return NextResponse.json(
         { 
           error: `OCR succeeded but failed to update record: ${updateResponse.status}`,
-          airtableError: updateResult,
+          airtableError: errorData,
           extractedText,
           textLength: extractedText.length
         },
@@ -184,7 +249,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ OCR3: Record updated successfully');
+    const updateResult = await updateResponse.json();
+    console.log(`✅ [${requestId}] OCR3: Record updated successfully (status remains "Processing")`);
 
     // Return success
     return NextResponse.json({
@@ -195,11 +261,11 @@ export async function POST(request: NextRequest) {
       fileSize: fileBuffer.byteLength,
       textLength: extractedText.length,
       ocrTimeMs: ocrTime,
-      message: 'OCR completed successfully'
+      message: 'OCR completed and record updated successfully'
     });
 
   } catch (error) {
-    console.error('❌ OCR3: Error:', error);
+    console.error(`❌ [${requestId}] OCR3: Error:`, error);
     return NextResponse.json(
       { 
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -209,4 +275,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 

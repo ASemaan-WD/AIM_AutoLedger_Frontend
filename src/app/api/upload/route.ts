@@ -14,7 +14,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 /**
- * Trigger OCR processing for a file using OCR3
+ * Trigger OCR3 processing for a file
  */
 async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: string): Promise<void> {
   try {
@@ -41,15 +41,15 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
       console.log(`✅ Fetch completed`);
     } catch (fetchError) {
       console.error(`❌ Fetch failed:`, fetchError);
-      throw new Error(`Failed to call OCR API: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
+      throw new Error(`Failed to call OCR3 API: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
     }
 
-    console.log(`📡 OCR API response status: ${ocrResponse.status}`);
-    console.log(`📡 OCR API response status text: ${ocrResponse.statusText}`);
+    console.log(`📡 OCR3 API response status: ${ocrResponse.status}`);
+    console.log(`📡 OCR3 API response status text: ${ocrResponse.statusText}`);
     
     try {
       const headers = Object.fromEntries(ocrResponse.headers.entries());
-      console.log(`📡 OCR API response headers:`, JSON.stringify(headers));
+      console.log(`📡 OCR3 API response headers:`, JSON.stringify(headers));
     } catch (e) {
       console.log(`⚠️ Could not log headers`);
     }
@@ -59,7 +59,7 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
     try {
       console.log(`📖 Reading response body...`);
       responseText = await ocrResponse.text();
-      console.log(`📡 OCR API raw response body (length ${responseText.length}):`, responseText.substring(0, 1000));
+      console.log(`📡 OCR3 API raw response body (length ${responseText.length}):`, responseText.substring(0, 1000));
     } catch (readError) {
       console.error(`❌ Failed to read response body:`, readError);
     }
@@ -71,18 +71,18 @@ async function triggerOCRProcessing(recordId: string, fileUrl: string, baseUrl: 
       } catch {
         errorData = { rawResponse: responseText };
       }
-      console.error(`❌ OCR API error response:`, errorData);
-      throw new Error(`OCR API responded with ${ocrResponse.status}: ${JSON.stringify(errorData)}`);
+      console.error(`❌ OCR3 API error response:`, errorData);
+      throw new Error(`OCR3 API responded with ${ocrResponse.status}: ${JSON.stringify(errorData)}`);
     }
 
     const result = JSON.parse(responseText);
     console.log(`✅ OCR3 processing completed for record ${recordId}:`, {
       textLength: result.textLength,
-      ocrTimeMs: result.ocrTimeMs,
+      fileName: result.fileName,
       message: result.message
     });
   } catch (error) {
-    console.error(`❌ OCR processing failed for record ${recordId}:`, error);
+    console.error(`❌ OCR3 processing failed for record ${recordId}:`, error);
     console.error(`❌ Error type: ${error?.constructor?.name}`);
     console.error(`❌ Error message: ${error instanceof Error ? error.message : String(error)}`);
     console.error(`❌ Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
@@ -274,6 +274,10 @@ export async function POST(request: NextRequest) {
         console.log(`📄 Record ID: ${airtableRecord.id}`);
         console.log(`🔗 File URL: ${blob.url}`);
         console.log(`🌐 Base URL: ${baseUrl}`);
+        
+        // Add a delay to allow Airtable record to propagate
+        console.log('⏳ Waiting 3 seconds before triggering OCR3...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Trigger OCR3 processing asynchronously - don't wait for completion
         triggerOCRProcessing(airtableRecord.id, blob.url, baseUrl).catch(async (error) => {

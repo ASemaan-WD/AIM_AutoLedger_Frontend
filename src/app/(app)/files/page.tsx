@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CompactFilesList } from "@/components/documents/compact-files-list";
 import { PDFViewer } from "@/components/documents/pdf-viewer";
 import { FileDetailsPanel } from "@/components/documents/file-details-panel";
 import { useFiles } from "@/lib/airtable/files-hooks";
+import { useFilePolling } from "@/lib/airtable/use-file-polling";
 // Activity logging removed - Activities table no longer exists
 import type { AirtableFile } from "@/lib/airtable/files-hooks";
 
@@ -18,8 +19,28 @@ function FilesPageContent() {
     const [activeTab, setActiveTab] = useState('overview');
     
     // Use Airtable hook for files
-    const { files, loading, error, updateFile, deleteFile, archiveFile } = useFiles({
+    const { files, loading, error, updateFile, deleteFile, archiveFile, updateFilesInPlace } = useFiles({
         autoFetch: true
+    });
+
+    // Poll for file updates every 8 seconds
+    const handleUpdatesDetected = useCallback((updatedFiles: AirtableFile[]) => {
+        console.log(`🔄 Detected ${updatedFiles.length} file(s) with recent status changes`);
+        
+        // Update files in place without re-fetching (no flicker)
+        updateFilesInPlace(updatedFiles);
+        
+        // Log the updated file IDs for debugging
+        updatedFiles.forEach(file => {
+            console.log(`  - File ${file.id}: Status updated`);
+        });
+    }, [updateFilesInPlace]);
+
+    const { updatedFileIds, isPolling, lastPollTime } = useFilePolling({
+        interval: 8000, // Poll every 8 seconds
+        updateWindow: 10000, // Check for updates in past 10 seconds
+        enabled: true,
+        onUpdatesDetected: handleUpdatesDetected,
     });
 
     // Sync URL with selectedFileId

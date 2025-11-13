@@ -1,7 +1,7 @@
 # Airtable Schema Documentation
 
 **Last Updated:** 2025-01-27  
-**Schema Version:** 3.0.0
+**Schema Version:** 3.0.1
 
 This document provides comprehensive documentation of the current Airtable schema, including all tables, fields, relationships, and status values.
 
@@ -23,7 +23,7 @@ The database consists of **4 tables** that work together to manage invoice proce
 | Table | Purpose | Primary Field | Fields | Relationships |
 |-------|---------|---------------|--------|---------------|
 | [Files](#files-table) | Document file management | FileID | 14 | Links to Invoices (many-to-many) |
-| [Invoices](#invoices-table) 🆕 | **Primary invoice entity** | RecordID | 28 | Links to Files, POInvoiceHeaders |
+| [Invoices](#invoices-table) 🆕 | **Primary invoice entity** | RecordID | 29 | Links to Files, POInvoiceHeaders |
 | [POInvoiceHeaders](#poinvoiceheaders-table) | PO-matched invoice headers | RecordID | 68 | Links to Invoices, POInvoiceDetails |
 | [POInvoiceDetails](#poinvoicedetails-table) | Line-level invoice details | RecordID | 56 | Links to POInvoiceHeaders |
 
@@ -85,6 +85,7 @@ File Upload → OCR Processing → Invoice Created → POInvoiceHeader Created �
 | Created-At | `fldUFewWxBBP9D5bv` | createdTime | File creation timestamp |
 | Modified-At | `fldnSfYc4IRnK3pHQ` | lastModifiedTime | Last modification timestamp |
 | **Invoices** 🆕 | `flduJO35gW8Lo6Mh9` | multipleRecordLinks | **Links to Invoices table** |
+| Status-Modified-Time | `fldacexiDeUtwmKCV` | lastModifiedTime | Timestamp when Status field was last modified |
 
 ### File Status Values
 
@@ -134,6 +135,7 @@ File Upload → OCR Processing → Invoice Created → POInvoiceHeader Created �
 | Headers-Sum | `fldI5H4YHsu4VPPjg` | rollup | Sum of Total-Invoice-Amount from linked POInvoiceHeaders |
 | Line Items | `fldHPkRk05SqNzF2W` | multilineText | Line items data |
 | Error Description | `fldnH8Tqrvk52I7e9` | multilineText | Detailed error description |
+| Status-Modified-Time | `fldGcJS6M2X2TPHbS` | lastModifiedTime | Timestamp when Status field was last modified |
 
 ### Invoice Status Values
 
@@ -410,8 +412,124 @@ The TypeScript types provide runtime validation for:
 - **Exported**: Status = Exported
 - **Error**: Status = Error
 
+## Status-Modified-Time Field Usage
+
+Both the **Invoices** and **Files** tables have a `Status-Modified-Time` field that tracks when the `Status` field was last modified. This is useful for:
+
+- Finding recently updated items
+- Monitoring status change activity
+- Building real-time dashboards
+- Triggering workflows based on status changes
+
+### Query Examples
+
+#### Find invoices with status updated in the past 10 seconds
+
+```typescript
+const tenSecondsAgo = new Date(Date.now() - 10 * 1000).toISOString();
+const formula = `IS_AFTER({Status-Modified-Time}, "${tenSecondsAgo}")`;
+const response = await fetch(`/api/airtable/Invoices?filterByFormula=${encodeURIComponent(formula)}`);
+```
+
+#### Find files with status updated in the past 10 seconds
+
+```typescript
+const tenSecondsAgo = new Date(Date.now() - 10 * 1000).toISOString();
+const formula = `IS_AFTER({Status-Modified-Time}, "${tenSecondsAgo}")`;
+const response = await fetch(`/api/airtable/Files?filterByFormula=${encodeURIComponent(formula)}`);
+```
+
+#### Find invoices with status updated in the past hour
+
+```typescript
+const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+const formula = `IS_AFTER({Status-Modified-Time}, "${oneHourAgo}")`;
+const response = await fetch(`/api/airtable/Invoices?filterByFormula=${encodeURIComponent(formula)}`);
+```
+
+#### Find invoices with status updated in the past 24 hours
+
+```typescript
+const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+const formula = `IS_AFTER({Status-Modified-Time}, "${oneDayAgo}")`;
+const response = await fetch(`/api/airtable/Invoices?filterByFormula=${encodeURIComponent(formula)}`);
+```
+
+#### Check if an invoice has a Status-Modified-Time value
+
+```typescript
+const formula = `{Status-Modified-Time}`;
+const response = await fetch(`/api/airtable/Invoices?filterByFormula=${encodeURIComponent(formula)}`);
+```
+
+### Using in React Hooks
+
+#### Invoices Polling
+
+```typescript
+import { useInvoices } from '@/lib/airtable/invoice-hooks';
+import { useInvoicePolling } from '@/lib/airtable/use-invoice-polling';
+
+function RecentStatusUpdates() {
+  const { invoices, updateInvoicesInPlace } = useInvoices({ autoFetch: true });
+  
+  const { updatedInvoiceIds } = useInvoicePolling({
+    interval: 8000, // Poll every 8 seconds
+    updateWindow: 10000, // Check past 10 seconds
+    enabled: true,
+    onUpdatesDetected: (updatedInvoices) => {
+      // Update in place without re-fetching (no flicker)
+      updateInvoicesInPlace(updatedInvoices);
+    }
+  });
+  
+  return (
+    <div>
+      <h2>Recently Updated Invoices</h2>
+      {invoices.map(invoice => (
+        <div key={invoice.id}>
+          {invoice.invoiceNumber} - Status: {invoice.status}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Files Polling
+
+```typescript
+import { useFiles } from '@/lib/airtable/files-hooks';
+import { useFilePolling } from '@/lib/airtable/use-file-polling';
+
+function RecentFileUpdates() {
+  const { files, updateFilesInPlace } = useFiles({ autoFetch: true });
+  
+  const { updatedFileIds } = useFilePolling({
+    interval: 8000, // Poll every 8 seconds
+    updateWindow: 10000, // Check past 10 seconds
+    enabled: true,
+    onUpdatesDetected: (updatedFiles) => {
+      // Update in place without re-fetching (no flicker)
+      updateFilesInPlace(updatedFiles);
+    }
+  });
+  
+  return (
+    <div>
+      <h2>Recently Updated Files</h2>
+      {files.map(file => (
+        <div key={file.id}>
+          {file.name} - Status: {file.status}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
 ---
 
-*This documentation reflects schema version 3.0.0 with Invoices as primary entity. For migration assistance, see SCHEMA_MIGRATION_ANALYSIS.md.*
+*This documentation reflects schema version 3.0.1 with Invoices as primary entity. For migration assistance, see SCHEMA_MIGRATION_ANALYSIS.md.*
 
 *Last schema fetch: 2025-01-27*

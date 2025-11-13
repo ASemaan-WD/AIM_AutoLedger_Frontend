@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CompactInvoiceList } from "@/components/documents/compact-invoice-list";
 import { PDFViewer } from "@/components/documents/pdf-viewer";
 import { DocumentDetailsPanel } from "@/components/documents/document-details-panel";
 import { useInvoices } from "@/lib/airtable";
+import { useInvoicePolling } from "@/lib/airtable/use-invoice-polling";
 // Activity logging removed - Activities table no longer exists
 import { hasBlockingIssues, sortInvoicesByPriority, validateInvoice, getMissingFieldsMessage } from "@/utils/invoice-validation";
 import type { Invoice } from "@/types/documents";
@@ -19,8 +20,28 @@ function InvoicesPageContent() {
     const [activeTab, setActiveTab] = useState('extracted');
     
     // Use Airtable hook for invoices
-    const { invoices, loading, error, updateInvoice } = useInvoices({
+    const { invoices, loading, error, updateInvoice, updateInvoicesInPlace } = useInvoices({
         autoFetch: true
+    });
+
+    // Poll for invoice updates every 8 seconds
+    const handleUpdatesDetected = useCallback((updatedInvoices: Invoice[]) => {
+        console.log(`🔄 Detected ${updatedInvoices.length} invoice(s) with recent status changes`);
+        
+        // Update invoices in place without re-fetching (no flicker)
+        updateInvoicesInPlace(updatedInvoices);
+        
+        // Log the updated invoice IDs for debugging
+        updatedInvoices.forEach(inv => {
+            console.log(`  - Invoice ${inv.id}: Status updated`);
+        });
+    }, [updateInvoicesInPlace]);
+
+    const { updatedInvoiceIds, isPolling, lastPollTime } = useInvoicePolling({
+        interval: 8000, // Poll every 8 seconds
+        updateWindow: 10000, // Check for updates in past 10 seconds
+        enabled: true,
+        onUpdatesDetected: handleUpdatesDetected,
     });
 
     // Sync URL with selectedInvoiceId
@@ -94,9 +115,25 @@ function InvoicesPageContent() {
                 return;
             }
 
-            await updateInvoice(invoice.id, { status: 'reviewed' });
+            // Optimistic update: immediately show Exporting status in UI
+            updateInvoicesInPlace([{ 
+                ...invoice, 
+                status: 'queued' 
+            }]);
+
+            // Actual API call to update status in Airtable
+            await updateInvoice(invoice.id, { status: 'queued' });
+            
+            // The polling mechanism will confirm the update from Airtable
+            // and show the visual indicator for recently updated invoices
         } catch (err) {
             console.error('Failed to mark as queued:', err);
+            
+            // Revert optimistic update on error by reverting to original status
+            updateInvoicesInPlace([invoice]);
+            
+            // Show error to user
+            alert('Failed to export invoice. Please try again.');
         }
     };
 
@@ -183,6 +220,7 @@ function InvoicesPageContent() {
                     onSelectionChange={updateSelectedInvoiceId}
                     subView={subView}
                     onSubViewChange={setSubView}
+                    updatedInvoiceIds={updatedInvoiceIds}
                 />
             </div>
 
@@ -205,6 +243,7 @@ function InvoicesPageContent() {
                     onReopen={handleReopen}
                     activeTab={activeTab}
                     onTabChange={setActiveTab}
+                    isRecentlyUpdated={updatedInvoiceIds.has(selectedInvoiceId)}
                 />
             </div>
         </div>

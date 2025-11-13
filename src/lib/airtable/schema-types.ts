@@ -22,6 +22,7 @@ export const FIELD_IDS = {
     CREATED_AT: 'fldUFewWxBBP9D5bv',
     MODIFIED_AT: 'fldnSfYc4IRnK3pHQ',
     INVOICES: 'flduJO35gW8Lo6Mh9',
+    STATUS_MODIFIED_TIME: 'fldacexiDeUtwmKCV',
   },
   INVOICES: {
     RECORDID: 'fldvQzw4GlIefZTPy',
@@ -52,6 +53,7 @@ export const FIELD_IDS = {
     HEADERS_SUM: 'fldI5H4YHsu4VPPjg',
     LINE_ITEMS: 'fldHPkRk05SqNzF2W',
     ERROR_DESCRIPTION: 'fldnH8Tqrvk52I7e9',
+    STATUS_MODIFIED_TIME: 'fldGcJS6M2X2TPHbS',
   },
   POINVOICEHEADERS: {
     RECORDID: 'fldhszvX1XbN0cGah',
@@ -191,63 +193,6 @@ export const TABLE_NAMES = {
   POINVOICEDETAILS: 'POInvoiceDetails',
 } as const;
 
-// Status constants for Invoices
-export const INVOICE_STATUS = {
-  PENDING: 'Pending',
-  MATCHED: 'Matched',
-  QUEUED: 'Queued',
-  EXPORTED: 'Exported',
-  ERROR: 'Error',
-  // Legacy aliases for backward compatibility
-  OPEN: 'Matched', // Open is now called Matched
-  REVIEWED: 'Queued', // Reviewed is now called Queued
-  REJECTED: 'Error', // Rejected is now called Error
-  APPROVED: 'Queued', // Approved is also Queued
-} as const;
-
-// Status constants for Files
-export const FILE_STATUS = {
-  QUEUED: 'Queued',
-  PROCESSING: 'Processing',
-  PROCESSED: 'Processed',
-  ATTENTION: 'Attention',
-} as const;
-
-// Status display mapping - maps Airtable Status values to user-friendly display text
-// This mapping is applied on the frontend only, no UX-Status field needed from Airtable
-// Usage: UX_STATUS_MAP['Pending'] = 'Processing'
-export const UX_STATUS_MAP = {
-  'Pending': 'Processing',
-  'Matched': 'Processed',
-  'Error': 'Attention',
-  'Exported': 'Exported',
-  'Queued': 'Exporting',
-} as const;
-
-// Internal status to Airtable status mapping (for display purposes)
-// Used to reverse the transform mapping
-export const INTERNAL_TO_AIRTABLE_STATUS: Record<string, keyof typeof UX_STATUS_MAP> = {
-  'pending': 'Pending',
-  'open': 'Matched',
-  'queued': 'Queued',
-  'reviewed': 'Queued',
-  'approved': 'Queued',
-  'exported': 'Exported',
-  'rejected': 'Error',
-};
-
-// Display status types (what users see in the UI)
-export type UXStatus = 'Processing' | 'Processed' | 'Attention' | 'Exported' | 'Exporting';
-
-// Status color mapping for display
-export const UX_STATUS_COLORS = {
-  'Processing': 'blue',
-  'Processed': 'success',
-  'Exported': 'brand',
-  'Attention': 'error',
-  'Exporting': 'warning',
-} as const;
-
 // Airtable attachment type
 export interface AirtableAttachment {
   id: string;
@@ -277,6 +222,7 @@ export interface FilesFields {
   createdAt: string;
   modifiedAt?: string;
   invoices?: string[];
+  statusModifiedTime?: string;
 }
 
 export interface InvoicesFields {
@@ -308,6 +254,7 @@ export interface InvoicesFields {
   headersSum?: any;
   lineItems?: string;
   errorDescription?: string;
+  statusModifiedTime?: string;
 }
 
 export interface POInvoiceHeadersFields {
@@ -455,6 +402,7 @@ export interface FilesRecord {
   createdAt: string;
   modifiedAt?: string;
   invoices?: string[];
+  statusModifiedTime?: string;
 }
 
 export interface InvoicesRecord {
@@ -486,6 +434,7 @@ export interface InvoicesRecord {
   headersSum?: any;
   lineItems?: string;
   errorDescription?: string;
+  statusModifiedTime?: string;
 }
 
 export interface POInvoiceHeadersRecord {
@@ -618,3 +567,62 @@ export interface POInvoiceDetailsRecord {
   txblAmt03?: number;
 }
 
+// =============================================================================
+// MANUALLY ADDED CONSTANTS (preserved after schema regeneration)
+// =============================================================================
+
+// Invoice Status Constants (Airtable values)
+export const INVOICE_STATUS = {
+  PENDING: 'Pending',
+  OPEN: 'Matched',
+  REVIEWED: 'Reviewed',
+  QUEUED: 'Queued',
+  APPROVED: 'Approved',
+  EXPORTED: 'Exported',
+  REJECTED: 'Error',
+} as const;
+
+// File Status Constants
+export const FILE_STATUS = {
+  UPLOADED: 'Uploaded',
+  PROCESSING: 'Processing',
+  PROCESSED: 'Processed',
+  ERROR: 'Error',
+} as const;
+
+// User-facing display text for invoice statuses
+export type UXStatus = 
+  | 'Processing'
+  | 'Processed'
+  | 'Attention'
+  | 'Exported'
+  | 'Exporting';
+
+// Maps Airtable status values to user-friendly display text
+export const UX_STATUS_MAP = {
+  'Pending': 'Processing',
+  'Matched': 'Processed',
+  'Error': 'Attention',
+  'Exported': 'Exported',
+  'Queued': 'Exporting',
+} as const;
+
+// Maps internal DocumentStatus values to Airtable status values
+export const INTERNAL_TO_AIRTABLE_STATUS: Record<string, keyof typeof UX_STATUS_MAP> = {
+  'pending': 'Pending',
+  'open': 'Matched',
+  'queued': 'Queued',
+  'reviewed': 'Queued',
+  'approved': 'Queued',
+  'exported': 'Exported',
+  'rejected': 'Error',
+};
+
+// Maps user-facing display text to badge colors
+export const UX_STATUS_COLORS = {
+  'Processing': 'blue',
+  'Processed': 'success',
+  'Exported': 'brand',
+  'Attention': 'error',
+  'Exporting': 'warning',
+} as const;

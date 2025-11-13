@@ -6,7 +6,7 @@ import { Badge } from "@/components/base/badges/badges";
 import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { cx } from "@/utils/cx";
-import type { Invoice } from "@/types/documents";
+import type { Invoice, DocumentStatus } from "@/types/documents";
 import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, INTERNAL_TO_AIRTABLE_STATUS, type UXStatus } from "@/lib/airtable/schema-types";
 import { hasBlockingIssues, sortInvoicesByPriority } from "@/utils/invoice-validation";
 
@@ -17,9 +17,10 @@ interface CompactInvoiceListProps {
     onSelectionChange?: (invoiceId: string) => void;
     subView?: string;
     onSubViewChange?: (subView: string) => void;
+    updatedInvoiceIds?: Set<string>; // Recently updated invoice IDs
 }
 
-const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoice>) => {
+const InvoiceItem = ({ value, className, isRecentlyUpdated, ...otherProps }: ListBoxItemProps<Invoice> & { isRecentlyUpdated?: boolean }) => {
     if (!value) return null;
 
     // Map status to user-friendly display text
@@ -109,7 +110,8 @@ export const CompactInvoiceList = ({
     selectedInvoiceId,
     onSelectionChange,
     subView = 'all',
-    onSubViewChange
+    onSubViewChange,
+    updatedInvoiceIds = new Set()
 }: CompactInvoiceListProps) => {
 
     const subViews = [
@@ -212,7 +214,7 @@ export const CompactInvoiceList = ({
                         onSelectionChange?.(selectedId);
                     }}
                 >
-                    {(item) => <InvoiceItem key={item.id} value={item} />}
+                    {(item) => <InvoiceItem key={item.id} value={item} isRecentlyUpdated={updatedInvoiceIds.has(item.id)} />}
                 </ListBox>
 
                 {/* Empty State */}

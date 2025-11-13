@@ -153,6 +153,31 @@
           },
           "id": "flduJO35gW8Lo6Mh9",
           "name": "Invoices"
+        },
+        {
+          "type": "lastModifiedTime",
+          "options": {
+            "isValid": true,
+            "referencedFieldIds": [
+              "fldV1n0WIjvaQVFjz"
+            ],
+            "result": {
+              "type": "dateTime",
+              "options": {
+                "dateFormat": {
+                  "name": "local",
+                  "format": "l"
+                },
+                "timeFormat": {
+                  "name": "12hour",
+                  "format": "h:mma"
+                },
+                "timeZone": "client"
+              }
+            }
+          },
+          "id": "fldacexiDeUtwmKCV",
+          "name": "Status-Modified-Time"
         }
       ],
       "views": [
@@ -477,20 +502,29 @@
           "name": "Error Description"
         },
         {
-          "type": "formula",
+          "type": "lastModifiedTime",
           "options": {
             "isValid": true,
-            "formula": "SWITCH(\n  {fld8ZH6sheroClLwL},\n  \"Pending\", \"Processing\",\n  \"Matched\", \"Processed\",\n  \"Error\", \"Attention\",\n  \"Exported\", \"Exported\",\n  \"Queued\", \"Exporting\"\n)",
             "referencedFieldIds": [
               "fld8ZH6sheroClLwL"
             ],
             "result": {
-              "type": "singleLineText"
+              "type": "dateTime",
+              "options": {
+                "dateFormat": {
+                  "name": "local",
+                  "format": "l"
+                },
+                "timeFormat": {
+                  "name": "12hour",
+                  "format": "h:mma"
+                },
+                "timeZone": "client"
+              }
             }
           },
-          "id": "fldRbgpOfqRF1lis6",
-          "name": "UX-Status",
-          "description": "Maps the Status field to new workflow options: Processing, Processed, Attention, or Exported."
+          "id": "fldGcJS6M2X2TPHbS",
+          "name": "Status-Modified-Time"
         }
       ],
       "views": [

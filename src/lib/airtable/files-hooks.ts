@@ -55,6 +55,7 @@ export interface UseFilesResult {
     archiveFile: (fileId: string) => Promise<void>;
     linkToDocument: (fileId: string, documentId: string, documentType: string) => Promise<void>;
     unlinkFromDocument: (fileId: string, documentId: string) => Promise<void>;
+    updateFilesInPlace: (updatedFiles: AirtableFile[]) => void;
 }
 
 export interface UseFileCountsResult {
@@ -334,6 +335,26 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
         });
     }, [files, updateFile]);
 
+    /**
+     * Update files in place without re-fetching (for real-time updates)
+     */
+    const updateFilesInPlace = useCallback((updatedFiles: AirtableFile[]) => {
+        setFiles(prevFiles => {
+            const updatedMap = new Map(updatedFiles.map(file => [file.id, file]));
+            
+            // Update existing files or add new ones
+            const updated = prevFiles.map(file => 
+                updatedMap.has(file.id) ? updatedMap.get(file.id)! : file
+            );
+            
+            // Add any new files that weren't in the list
+            const existingIds = new Set(prevFiles.map(f => f.id));
+            const newFiles = updatedFiles.filter(f => !existingIds.has(f.id));
+            
+            return [...newFiles, ...updated];
+        });
+    }, []);
+
     // Auto-fetch on mount if enabled
     useEffect(() => {
         if (autoFetch) {
@@ -352,6 +373,7 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
         archiveFile,
         linkToDocument,
         unlinkFromDocument,
+        updateFilesInPlace,
     };
 }
 

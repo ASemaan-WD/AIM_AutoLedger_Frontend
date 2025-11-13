@@ -27,6 +27,7 @@ interface UseInvoicesResult {
   fetchMore: () => Promise<void>;
   updateInvoice: (invoiceId: string, updates: Partial<Invoice>) => Promise<void>;
   createInvoice: (invoice: Partial<Invoice>) => Promise<Invoice>;
+  updateInvoicesInPlace: (updatedInvoices: Invoice[]) => void;
 }
 
 /**
@@ -181,6 +182,26 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
     }
   }, []);
 
+  /**
+   * Update invoices in place without re-fetching (for real-time updates)
+   */
+  const updateInvoicesInPlace = useCallback((updatedInvoices: Invoice[]) => {
+    setInvoices(prevInvoices => {
+      const updatedMap = new Map(updatedInvoices.map(inv => [inv.id, inv]));
+      
+      // Update existing invoices or add new ones
+      const updated = prevInvoices.map(invoice => 
+        updatedMap.has(invoice.id) ? updatedMap.get(invoice.id)! : invoice
+      );
+      
+      // Add any new invoices that weren't in the list
+      const existingIds = new Set(prevInvoices.map(inv => inv.id));
+      const newInvoices = updatedInvoices.filter(inv => !existingIds.has(inv.id));
+      
+      return [...newInvoices, ...updated];
+    });
+  }, []);
+
   return {
     invoices,
     loading,
@@ -189,7 +210,8 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
     refresh,
     fetchMore,
     updateInvoice,
-    createInvoice
+    createInvoice,
+    updateInvoicesInPlace
   };
 }
 

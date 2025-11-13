@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Clock, CheckCircle, AlertCircle, HelpCircle } from "@untitledui/icons";
+import { AlertTriangle, CheckCircle, AlertCircle, HelpCircle } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 import type { Invoice } from "@/types/documents";
 
@@ -86,7 +86,7 @@ export const QueuedIndicator = ({ className }: QueuedIndicatorProps) => {
             className
         )}>
             <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-warning-primary" />
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-warning-600 border-t-transparent"></div>
                 <span className="text-sm font-medium">
                     Exporting
                 </span>

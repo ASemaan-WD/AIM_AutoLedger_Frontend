@@ -21,7 +21,7 @@ import { PendingStateIndicator, BalanceAlert, QueuedIndicator, ErrorAlert, Expor
 // DEPRECATED: Teams table no longer exists in new schema
 // import { useTeams } from "@/lib/airtable";
 import { useDocumentLinks } from "@/lib/airtable/linked-documents-hooks";
-import type { Invoice, DeliveryTicket, DocumentLink, StoreReceiver } from "@/types/documents";
+import type { Invoice, DeliveryTicket, DocumentLink, StoreReceiver, DocumentStatus } from "@/types/documents";
 import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, INTERNAL_TO_AIRTABLE_STATUS, type UXStatus } from "@/lib/airtable/schema-types";
 import { validateInvoice, getMissingFieldsMessage, isMultiLineMode } from "@/utils/invoice-validation";
 
@@ -41,6 +41,7 @@ interface DocumentDetailsPanelProps {
     onDelete?: (document: Invoice | DeliveryTicket) => void;
     activeTab?: string;
     onTabChange?: (tab: string) => void;
+    isRecentlyUpdated?: boolean; // Indicator for recently updated invoices
 }
 
 const CompletenessChecker = ({ document }: { document?: Invoice }) => {
@@ -92,7 +93,8 @@ export const DocumentDetailsPanel = ({
     onViewInOracle,
     onDelete,
     activeTab = "extracted",
-    onTabChange
+    onTabChange,
+    isRecentlyUpdated = false
 }: DocumentDetailsPanelProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedDocument, setEditedDocument] = useState<Invoice | DeliveryTicket | undefined>(document);
@@ -100,6 +102,7 @@ export const DocumentDetailsPanel = ({
     const [editingVendorName, setEditingVendorName] = useState('');
     const [isUpdatingVendor, setIsUpdatingVendor] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     
     // Refs for scroll delegation
     const panelRef = useRef<HTMLDivElement>(null);
@@ -316,14 +319,22 @@ export const DocumentDetailsPanel = ({
                             size="sm" 
                             color="primary"
                             className="flex-1"
-                            onClick={() => {
-                                // Export = Save + Export
-                                if (isDirty) {
-                                    handleSave();
+                            onClick={async () => {
+                                // Export = Save (if dirty) + Export
+                                setIsExporting(true);
+                                try {
+                                    if (isDirty) {
+                                        await handleSave();
+                                    }
+                                    await onSendForApproval?.(currentDoc);
+                                } catch (error) {
+                                    console.error('Export failed:', error);
+                                } finally {
+                                    setIsExporting(false);
                                 }
-                                onSendForApproval?.(currentDoc);
                             }}
-                            isDisabled={!validation.canMarkAsReviewed}
+                            isDisabled={!validation.canMarkAsReviewed || isExporting}
+                            isLoading={isExporting}
                         >
                             Export
                         </Button>
@@ -332,7 +343,7 @@ export const DocumentDetailsPanel = ({
                             color="secondary"
                             className="flex-1"
                             onClick={handleSave}
-                            isDisabled={!isDirty || isSaving}
+                            isDisabled={!isDirty || isSaving || isExporting}
                             isLoading={isSaving}
                         >
                             Save

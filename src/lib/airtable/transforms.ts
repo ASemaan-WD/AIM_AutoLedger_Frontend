@@ -6,7 +6,6 @@ import { FIELD_IDS, TABLE_NAMES } from './schema-types';
 export const INVOICE_ENTITY_FIELDS = {
   INVOICE_NUMBER: 'Invoice-Number',
   STATUS: 'Status',
-  UX_STATUS: 'UX-Status',
   CREATED_AT: 'Created-At',
   UPDATED_AT: 'Modified-At',
   VENDOR_NAME: 'Vendor-Name',
@@ -122,14 +121,10 @@ export function transformAirtableToInvoiceEntity(record: AirtableRecord): Invoic
   // Read server-side validation from Airtable (formula field)
   const missingFieldsMessage = fields[INVOICE_ENTITY_FIELDS.MISSING_FIELDS] || '';
 
-  // Read UX-Status formula field (user-friendly status)
-  const uxStatus = fields[INVOICE_ENTITY_FIELDS.UX_STATUS] as 'Processing' | 'Processed' | 'Attention' | 'Exported' | undefined;
-
   return {
     id: record.id,
     type: 'invoices',
     status: mapStatus(fields[INVOICE_ENTITY_FIELDS.STATUS] || 'Pending'),
-    uxStatus, // User-friendly status from Airtable formula
     missingFields: [], // Deprecated - kept for compatibility
     missingFieldsMessage, // Server-side validation message
     invoiceNumber: fields[INVOICE_ENTITY_FIELDS.INVOICE_NUMBER] || '',

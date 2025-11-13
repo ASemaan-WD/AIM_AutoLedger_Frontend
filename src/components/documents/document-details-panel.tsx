@@ -22,7 +22,7 @@ import { PendingStateIndicator, BalanceAlert, QueuedIndicator, ErrorAlert, Expor
 // import { useTeams } from "@/lib/airtable";
 import { useDocumentLinks } from "@/lib/airtable/linked-documents-hooks";
 import type { Invoice, DeliveryTicket, DocumentLink, StoreReceiver } from "@/types/documents";
-import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, type UXStatus } from "@/lib/airtable/schema-types";
+import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, INTERNAL_TO_AIRTABLE_STATUS, type UXStatus } from "@/lib/airtable/schema-types";
 import { validateInvoice, getMissingFieldsMessage, isMultiLineMode } from "@/utils/invoice-validation";
 
 
@@ -158,13 +158,11 @@ export const DocumentDetailsPanel = ({
     };
 
     // Status display helpers
-    // Get UX-friendly status (use uxStatus from Airtable if available, otherwise map from status)
-    const getUXStatus = (invoice: Invoice): UXStatus => {
-        if (invoice.uxStatus) {
-            return invoice.uxStatus;
-        }
-        // Fallback to mapping from status field
-        return UX_STATUS_MAP[invoice.status] || 'Processing';
+    // Map status to user-friendly display text
+    const getDisplayStatus = (status: DocumentStatus): UXStatus => {
+        // Convert internal status to Airtable status, then to display text
+        const airtableStatus = INTERNAL_TO_AIRTABLE_STATUS[status] || 'Pending';
+        return UX_STATUS_MAP[airtableStatus] || 'Processing';
     };
 
     const getStatusColor = (uxStatus: UXStatus) => {
@@ -552,13 +550,13 @@ export const DocumentDetailsPanel = ({
                     <div className="flex items-center gap-2">
                         <Badge 
                             size="sm" 
-                            color={getStatusColor(getUXStatus(currentDoc as Invoice))}
+                            color={getStatusColor(getDisplayStatus(currentDoc.status))}
                             type="color"
                         >
-                            {getUXStatus(currentDoc as Invoice)}
+                            {getDisplayStatus(currentDoc.status)}
                         </Badge>
-                        {currentDoc?.status === 'pending' || currentDoc?.status === 'queued' || currentDoc?.status === 'reviewed' || currentDoc?.status === 'approved' ? (
-                            // No icon for processing, exporting, or queued states
+                        {currentDoc?.status === 'pending' || currentDoc?.status === 'queued' || currentDoc?.status === 'reviewed' || currentDoc?.status === 'approved' || currentDoc?.status === 'rejected' || currentDoc?.status === 'exported' ? (
+                            // No icon for processing, exporting, queued, error, or exported states
                             null
                         ) : validation.canMarkAsReviewed ? (
                             <CheckCircle className="w-4 h-4 text-success-primary" />

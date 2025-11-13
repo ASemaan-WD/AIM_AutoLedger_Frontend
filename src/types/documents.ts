@@ -45,7 +45,6 @@ export interface Invoice extends BaseDocument {
     errorMessage?: string; // Error message for Error state
     isMultilineCoding?: boolean; // Whether invoice uses multi-line coding
     lines?: InvoiceLine[]; // Line items for multi-line coding
-    uxStatus?: 'Processing' | 'Processed' | 'Attention' | 'Exported'; // UX-friendly status from Airtable formula
 }
 
 // Invoice Line Item (for multi-line coding)

@@ -52,7 +52,6 @@ export const FIELD_IDS = {
     HEADERS_SUM: 'fldI5H4YHsu4VPPjg',
     LINE_ITEMS: 'fldHPkRk05SqNzF2W',
     ERROR_DESCRIPTION: 'fldnH8Tqrvk52I7e9',
-    UX_STATUS: 'fldRbgpOfqRF1lis6',
   },
   POINVOICEHEADERS: {
     RECORDID: 'fldhszvX1XbN0cGah',
@@ -214,25 +213,39 @@ export const FILE_STATUS = {
   ATTENTION: 'Attention',
 } as const;
 
-// UX-Status mapping (user-friendly labels)
+// Status display mapping - maps Airtable Status values to user-friendly display text
+// This mapping is applied on the frontend only, no UX-Status field needed from Airtable
+// Usage: UX_STATUS_MAP['Pending'] = 'Processing'
 export const UX_STATUS_MAP = {
   'Pending': 'Processing',
   'Matched': 'Processed',
   'Error': 'Attention',
   'Exported': 'Exported',
-  'Queued': 'Exporting',  // Updated: Queued now maps to "Exporting"
+  'Queued': 'Exporting',
 } as const;
 
-// UX-Status types
+// Internal status to Airtable status mapping (for display purposes)
+// Used to reverse the transform mapping
+export const INTERNAL_TO_AIRTABLE_STATUS: Record<string, keyof typeof UX_STATUS_MAP> = {
+  'pending': 'Pending',
+  'open': 'Matched',
+  'queued': 'Queued',
+  'reviewed': 'Queued',
+  'approved': 'Queued',
+  'exported': 'Exported',
+  'rejected': 'Error',
+};
+
+// Display status types (what users see in the UI)
 export type UXStatus = 'Processing' | 'Processed' | 'Attention' | 'Exported' | 'Exporting';
 
-// Status color mapping for UX
+// Status color mapping for display
 export const UX_STATUS_COLORS = {
   'Processing': 'blue',
   'Processed': 'success',
   'Exported': 'brand',
   'Attention': 'error',
-  'Exporting': 'warning',  // Added color for Exporting status
+  'Exporting': 'warning',
 } as const;
 
 // Airtable attachment type
@@ -295,7 +308,6 @@ export interface InvoicesFields {
   headersSum?: any;
   lineItems?: string;
   errorDescription?: string;
-  uXStatus?: any;
 }
 
 export interface POInvoiceHeadersFields {
@@ -474,7 +486,6 @@ export interface InvoicesRecord {
   headersSum?: any;
   lineItems?: string;
   errorDescription?: string;
-  uXStatus?: any;
 }
 
 export interface POInvoiceHeadersRecord {

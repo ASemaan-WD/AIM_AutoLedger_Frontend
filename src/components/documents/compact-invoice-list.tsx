@@ -7,7 +7,7 @@ import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { cx } from "@/utils/cx";
 import type { Invoice } from "@/types/documents";
-import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, type UXStatus } from "@/lib/airtable/schema-types";
+import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, INTERNAL_TO_AIRTABLE_STATUS, type UXStatus } from "@/lib/airtable/schema-types";
 import { hasBlockingIssues, sortInvoicesByPriority } from "@/utils/invoice-validation";
 
 interface CompactInvoiceListProps {
@@ -22,20 +22,18 @@ interface CompactInvoiceListProps {
 const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoice>) => {
     if (!value) return null;
 
-    // Get UX-friendly status (use uxStatus from Airtable if available, otherwise map from status)
-    const getUXStatus = (): UXStatus => {
-        if (value.uxStatus) {
-            return value.uxStatus;
-        }
-        // Fallback to mapping from status field
-        return UX_STATUS_MAP[value.status] || 'Processing';
+    // Map status to user-friendly display text
+    const getDisplayStatus = (status: DocumentStatus): UXStatus => {
+        // Convert internal status to Airtable status, then to display text
+        const airtableStatus = INTERNAL_TO_AIRTABLE_STATUS[status] || 'Pending';
+        return UX_STATUS_MAP[airtableStatus] || 'Processing';
     };
 
     const getStatusColor = (uxStatus: UXStatus) => {
         return UX_STATUS_COLORS[uxStatus] || 'gray';
     };
 
-    const uxStatus = getUXStatus();
+    const displayStatus = getDisplayStatus(value.status);
 
     const formatCurrency = (amount: number, currency?: string) => {
         return new Intl.NumberFormat('en-US', {
@@ -93,8 +91,8 @@ const InvoiceItem = ({ value, className, ...otherProps }: ListBoxItemProps<Invoi
                 
                 {/* Badge and Completeness Icon (only show alert when not complete) */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <Badge size="sm" color={getStatusColor(uxStatus)} type="color">
-                        {uxStatus}
+                    <Badge size="sm" color={getStatusColor(displayStatus)} type="color">
+                        {displayStatus}
                     </Badge>
                     {hasBlockingIssues(value) && (
                         <AlertTriangle className="w-4 h-4 text-fg-warning-primary" />

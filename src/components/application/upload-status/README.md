@@ -134,6 +134,23 @@ This component reuses these Untitled UI components:
 
 View all states at `/upload-status-demo`
 
+## Fixtures
+
+The component uses a centralized fixtures system for easy testing and development. See [FIXTURES_GUIDE.md](./FIXTURES_GUIDE.md) for details on how to use fixtures.
+
+Quick example:
+```tsx
+import { uploadStatusFixtures } from "@/components/application/upload-status/fixtures"
+
+<UploadStatusCard {...uploadStatusFixtures.success} />
+```
+
+## Documentation
+
+- **[FIXTURES_GUIDE.md](./FIXTURES_GUIDE.md)** - How to use fixtures for testing and development
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Technical reference and quick start guide
+- **[COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md)** - Detailed component architecture and sub-components
+
 
 
 

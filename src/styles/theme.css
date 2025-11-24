@@ -1,8 +1,11 @@
 @theme {
-    /* FONT FAMILY */
-    --font-body: var(--font-inter, "Inter"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    /* FONT FAMILY - AutoLedger Typography System */
+    /* Headings: Inter Semi-Bold with -2% tracking for authority */
+    /* Body: Public Sans - developed by US Government (GSA), neutral and accessible */
+    /* Numbers/Data: JetBrains Mono for clarity in financial data */
+    --font-body: var(--font-public-sans, "Public Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     --font-display: var(--font-inter, "Inter"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    --font-mono: ui-monospace, "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-mono: var(--font-jetbrains-mono, "JetBrains Mono"), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
     /* FONT SIZE */
     --text-xs: calc(var(--spacing) * 3);
@@ -28,19 +31,19 @@
 
     --text-display-md: calc(var(--spacing) * 9);
     --text-display-md--line-height: calc(var(--spacing) * 11);
-    --text-display-md--letter-spacing: -0.72px;
+    --text-display-md--letter-spacing: -0.02em;
 
     --text-display-lg: calc(var(--spacing) * 12);
     --text-display-lg--line-height: calc(var(--spacing) * 15);
-    --text-display-lg--letter-spacing: -0.96px;
+    --text-display-lg--letter-spacing: -0.02em;
 
     --text-display-xl: calc(var(--spacing) * 15);
     --text-display-xl--line-height: calc(var(--spacing) * 18);
-    --text-display-xl--letter-spacing: -1.2px;
+    --text-display-xl--letter-spacing: -0.02em;
 
     --text-display-2xl: calc(var(--spacing) * 18);
     --text-display-2xl--line-height: calc(var(--spacing) * 22.5);
-    --text-display-2xl--letter-spacing: -1.44px;
+    --text-display-2xl--letter-spacing: -0.02em;
 
     /* MAX WIDTH */
     --max-width-container: 1280px;
@@ -50,42 +53,45 @@
     /* This must match the breakpoint in Sonner: https://github.com/emilkowalski/sonner/blob/main/src/styles.css */
     --breakpoint-xs: 600px;
 
-    /* RADIUS */
+    /* RADIUS - AutoLedger: Sharp, technical, precision-engineered */
+    /* Buttons: 2px (almost square) - matches Ledger Blue sharpness */
+    /* Cards/Panels: 6px - soft enough to handle, hard enough to feel engineered */
     --radius-none: 0px;
-    --radius-xs: 0.125rem;
-    --radius-sm: 0.25rem;
-    --radius-DEFAULT: 0.25rem;
-    --radius-md: 0.375rem;
-    --radius-lg: 0.5rem;
-    --radius-xl: 0.75rem;
-    --radius-2xl: 1rem;
-    --radius-3xl: 1.5rem;
+    --radius-xs: 0.125rem;  /* 2px - for buttons */
+    --radius-sm: 0.125rem;  /* 2px - for buttons */
+    --radius-DEFAULT: 0.125rem;  /* 2px - for buttons */
+    --radius-md: 0.375rem;  /* 6px - for cards/panels */
+    --radius-lg: 0.375rem;  /* 6px - for cards/panels */
+    --radius-xl: 0.5rem;    /* 8px - for larger containers */
+    --radius-2xl: 0.75rem;  /* 12px */
+    --radius-3xl: 1rem;     /* 16px */
     --radius-full: 9999px;
 
-    /* SHADOW */
-    --shadow-xs: 0px 1px 2px rgba(10, 13, 18, 0.05);
-    --shadow-sm: 0px 1px 3px rgba(10, 13, 18, 0.1), 0px 1px 2px -1px rgba(10, 13, 18, 0.1);
-    --shadow-md: 0px 4px 6px -1px rgba(10, 13, 18, 0.1), 0px 2px 4px -2px rgba(10, 13, 18, 0.06);
-    --shadow-lg: 0px 12px 16px -4px rgba(10, 13, 18, 0.08), 0px 4px 6px -2px rgba(10, 13, 18, 0.03), 0px 2px 2px -1px rgba(10, 13, 18, 0.04);
-    --shadow-xl: 0px 20px 24px -4px rgba(10, 13, 18, 0.08), 0px 8px 8px -4px rgba(10, 13, 18, 0.03), 0px 3px 3px -1.5px rgba(10, 13, 18, 0.04);
-    --shadow-2xl: 0px 24px 48px -12px rgba(10, 13, 18, 0.18), 0px 4px 4px -2px rgba(10, 13, 18, 0.04);
-    --shadow-3xl: 0px 32px 64px -12px rgba(10, 13, 18, 0.14), 0px 5px 5px -2.5px rgba(10, 13, 18, 0.04);
+    /* SHADOW - AutoLedger: Using Ledger Blue (#1554C0) at low opacity for crisp, "air-conditioned" feel */
+    /* Blue shadows on Audit Bone background create clean, precise appearance */
+    --shadow-xs: 0px 1px 2px rgba(21, 84, 192, 0.05);
+    --shadow-sm: 0px 1px 3px rgba(21, 84, 192, 0.08), 0px 1px 2px -1px rgba(21, 84, 192, 0.06);
+    --shadow-md: 0px 4px 6px -1px rgba(21, 84, 192, 0.08), 0px 2px 4px -2px rgba(21, 84, 192, 0.05);
+    --shadow-lg: 0px 12px 16px -4px rgba(21, 84, 192, 0.07), 0px 4px 6px -2px rgba(21, 84, 192, 0.03), 0px 2px 2px -1px rgba(21, 84, 192, 0.03);
+    --shadow-xl: 0px 20px 24px -4px rgba(21, 84, 192, 0.07), 0px 8px 8px -4px rgba(21, 84, 192, 0.03), 0px 3px 3px -1.5px rgba(21, 84, 192, 0.03);
+    --shadow-2xl: 0px 24px 48px -12px rgba(21, 84, 192, 0.15), 0px 4px 4px -2px rgba(21, 84, 192, 0.04);
+    --shadow-3xl: 0px 32px 64px -12px rgba(21, 84, 192, 0.12), 0px 5px 5px -2.5px rgba(21, 84, 192, 0.04);
 
-    --shadow-skeumorphic: 0px 0px 0px 1px rgba(10, 13, 18, 0.18) inset, 0px -2px 0px 0px rgba(10, 13, 18, 0.05) inset;
+    --shadow-skeumorphic: 0px 0px 0px 1px rgba(21, 84, 192, 0.12) inset, 0px -2px 0px 0px rgba(21, 84, 192, 0.04) inset;
     --shadow-xs-skeumorphic: var(--shadow-skeumorphic), var(--shadow-xs);
 
-    --shadow-modern-mockup-inner-lg: 0px 0px 3.765px 1.255px rgba(10, 13, 18, 0.08) inset, 0px 0px 2.51px 1.255px rgba(10, 13, 18, 0.03) inset;
-    --shadow-modern-mockup-inner-md: 0px 0px 1.692px 0.564px rgba(10, 13, 18, 0.08) inset, 0px 0px 1.128px 0.564px rgba(10, 13, 18, 0.03) inset;
-    --shadow-modern-mockup-inner-sm: 0px 0px 4.48px 1.493px rgba(10, 13, 18, 0.08) inset, 0px 0px 2.987px 1.493px rgba(10, 13, 18, 0.03) inset;
+    --shadow-modern-mockup-inner-lg: 0px 0px 3.765px 1.255px rgba(21, 84, 192, 0.06) inset, 0px 0px 2.51px 1.255px rgba(21, 84, 192, 0.03) inset;
+    --shadow-modern-mockup-inner-md: 0px 0px 1.692px 0.564px rgba(21, 84, 192, 0.06) inset, 0px 0px 1.128px 0.564px rgba(21, 84, 192, 0.03) inset;
+    --shadow-modern-mockup-inner-sm: 0px 0px 4.48px 1.493px rgba(21, 84, 192, 0.06) inset, 0px 0px 2.987px 1.493px rgba(21, 84, 192, 0.03) inset;
 
     --shadow-modern-mockup-outer-lg:
-        0px 7.529px 10.039px -2.51px rgba(10, 13, 18, 0.08), 0px 2.51px 3.765px -1.255px rgba(10, 13, 18, 0.03),
-        0px 1.255px 1.255px -0.627px rgba(10, 13, 18, 0.04);
+        0px 7.529px 10.039px -2.51px rgba(21, 84, 192, 0.06), 0px 2.51px 3.765px -1.255px rgba(21, 84, 192, 0.03),
+        0px 1.255px 1.255px -0.627px rgba(21, 84, 192, 0.03);
     --shadow-modern-mockup-outer-md:
-        0px 3.385px 4.513px -1.128px rgba(10, 13, 18, 0.08), 0px 1.128px 1.692px -0.564px rgba(10, 13, 18, 0.03),
-        0px 0.564px 0.564px -0.282px rgba(10, 13, 18, 0.04);
+        0px 3.385px 4.513px -1.128px rgba(21, 84, 192, 0.06), 0px 1.128px 1.692px -0.564px rgba(21, 84, 192, 0.03),
+        0px 0.564px 0.564px -0.282px rgba(21, 84, 192, 0.03);
 
-    --drop-shadow-iphone-mockup: 20px 12px 18px rgba(16, 24, 40, 0.2);
+    --drop-shadow-iphone-mockup: 20px 12px 18px rgba(21, 84, 192, 0.15);
 
     /* ANIMATIONS */
     --animate-marquee: marquee 60s linear infinite;
@@ -121,18 +127,23 @@
     --color-alpha-white: rgb(255 255 255);
     --color-alpha-black: rgb(0 0 0);
 
-    --color-brand-25: rgb(252 250 255);
-    --color-brand-50: rgb(249 245 255);
-    --color-brand-100: rgb(244 235 255);
-    --color-brand-200: rgb(233 215 254);
-    --color-brand-300: rgb(214 187 251);
-    --color-brand-400: rgb(182 146 246);
-    --color-brand-500: rgb(158 119 237);
-    --color-brand-600: rgb(127 86 217);
-    --color-brand-700: rgb(105 65 198);
-    --color-brand-800: rgb(83 56 158);
-    --color-brand-900: rgb(66 48 125);
-    --color-brand-950: rgb(44 28 95);
+    /* AutoLedger Brand: "Ledger Blue" #1554C0 - International Blue
+     * HSL: 220°, 75% saturation, 45% lightness
+     * Deep, authoritative blue like a Bic pen or official stamp
+     * Commands attention without looking like a cheap SaaS "Start Free Trial" button
+     */
+    --color-brand-25: rgb(245 248 254);
+    --color-brand-50: rgb(238 244 253);
+    --color-brand-100: rgb(220 232 250);
+    --color-brand-200: rgb(186 210 245);
+    --color-brand-300: rgb(140 178 237);
+    --color-brand-400: rgb(89 140 224);
+    --color-brand-500: rgb(47 106 207);
+    --color-brand-600: rgb(21 84 192);   /* Primary: #1554C0 - Ledger Blue */
+    --color-brand-700: rgb(17 67 154);
+    --color-brand-800: rgb(16 56 125);
+    --color-brand-900: rgb(18 49 102);
+    --color-brand-950: rgb(12 32 68);
 
     --color-error-25: rgb(255 251 250);
     --color-error-50: rgb(254 243 242);
@@ -147,44 +158,58 @@
     --color-error-900: rgb(122 39 26);
     --color-error-950: rgb(85 22 12);
 
-    --color-warning-25: rgb(255 252 245);
-    --color-warning-50: rgb(255 250 235);
-    --color-warning-100: rgb(254 240 199);
-    --color-warning-200: rgb(254 223 137);
-    --color-warning-300: rgb(254 200 75);
-    --color-warning-400: rgb(253 176 34);
-    --color-warning-500: rgb(247 144 9);
-    --color-warning-600: rgb(220 104 3);
-    --color-warning-700: rgb(181 71 8);
-    --color-warning-800: rgb(147 55 13);
-    --color-warning-900: rgb(122 46 14);
-    --color-warning-950: rgb(78 29 9);
+    /* AutoLedger Warning: Ochre/Alert Amber #D97706
+     * Moves away from traffic cone orange to a more "file folder" orange
+     * Professional, not alarming
+     */
+    --color-warning-25: rgb(255 251 243);
+    --color-warning-50: rgb(255 247 230);
+    --color-warning-100: rgb(254 236 199);
+    --color-warning-200: rgb(253 217 140);
+    --color-warning-300: rgb(252 191 81);
+    --color-warning-400: rgb(251 161 40);
+    --color-warning-500: rgb(245 134 13);
+    --color-warning-600: rgb(217 119 6);    /* Primary: #D97706 - Ochre */
+    --color-warning-700: rgb(180 83 9);
+    --color-warning-800: rgb(146 64 14);
+    --color-warning-900: rgb(120 53 15);
+    --color-warning-950: rgb(77 33 9);
 
-    --color-success-25: rgb(246 254 249);
-    --color-success-50: rgb(236 253 243);
-    --color-success-100: rgb(220 250 230);
-    --color-success-200: rgb(171 239 198);
-    --color-success-300: rgb(117 224 167);
-    --color-success-400: rgb(71 205 137);
-    --color-success-500: rgb(23 178 106);
-    --color-success-600: rgb(7 148 85);
-    --color-success-700: rgb(6 118 71);
-    --color-success-800: rgb(8 93 58);
-    --color-success-900: rgb(7 77 49);
-    --color-success-950: rgb(5 51 33);
+    /* AutoLedger Success: Emerald Green #059669
+     * Slightly darker than standard green for better readability on Audit Bone background
+     */
+    --color-success-25: rgb(243 253 248);
+    --color-success-50: rgb(232 252 241);
+    --color-success-100: rgb(209 247 226);
+    --color-success-200: rgb(161 237 199);
+    --color-success-300: rgb(102 221 165);
+    --color-success-400: rgb(52 199 130);
+    --color-success-500: rgb(16 170 102);
+    --color-success-600: rgb(5 150 105);   /* Primary: #059669 - Emerald */
+    --color-success-700: rgb(4 120 87);
+    --color-success-800: rgb(6 95 70);
+    --color-success-900: rgb(6 78 59);
+    --color-success-950: rgb(3 51 38);
 
-    --color-gray-25: rgb(253 253 253);
-    --color-gray-50: rgb(250 250 250);
-    --color-gray-100: rgb(245 245 245);
-    --color-gray-200: rgb(233 234 235);
-    --color-gray-300: rgb(213 215 218);
-    --color-gray-400: rgb(164 167 174);
-    --color-gray-500: rgb(113 118 128);
-    --color-gray-600: rgb(83 88 98);
-    --color-gray-700: rgb(65 70 81);
-    --color-gray-800: rgb(37 43 55);
-    --color-gray-900: rgb(24 29 39);
-    --color-gray-950: rgb(10 13 18);
+    /* AutoLedger Grays: Warm "Audit Bone" palette
+     * Background: #FDFBF7 "Paper White" - HSL 35°, 8% saturation, 98% lightness
+     * Creates subconscious link to physical paper invoices
+     * Reduces blue light glare for AP clerks staring at screens all day
+     * Borders: #E2E0DC "Warm Grey" - matches Bone hue at 85% lightness
+     * Creates "paper creases" rather than digital lines
+     */
+    --color-gray-25: rgb(254 253 251);   /* Warmest white */
+    --color-gray-50: rgb(253 251 247);   /* #FDFBF7 - Audit Bone / Paper White */
+    --color-gray-100: rgb(250 248 243);  /* Slightly darker bone */
+    --color-gray-200: rgb(226 224 220);  /* #E2E0DC - Warm Grey borders */
+    --color-gray-300: rgb(209 206 200);  /* Warm grey */
+    --color-gray-400: rgb(161 157 150);  /* Mid warm grey */
+    --color-gray-500: rgb(113 109 102);  /* Warm grey text */
+    --color-gray-600: rgb(82 78 72);     /* Darker warm grey */
+    --color-gray-700: rgb(51 65 85);     /* #334155 - Slate 700 for body text */
+    --color-gray-800: rgb(30 41 59);     /* Slate 800 */
+    --color-gray-900: rgb(15 23 42);     /* #0F172A - "The Ink" - Slate 900 */
+    --color-gray-950: rgb(10 15 28);     /* Deepest ink */
 
     --color-gray-blue-25: rgb(252 252 253);
     --color-gray-blue-50: rgb(248 249 252);
@@ -912,20 +937,20 @@
         --color-alpha-white: rgb(12 14 18);
         --color-alpha-black: rgb(255 255 255);
 
-        /* UTILITY COLORS */
+        /* UTILITY COLORS - Dark mode with warm undertones to match AutoLedger identity */
 
-        --color-gray-25: rgb(250 250 250);
-        --color-gray-50: rgb(247 247 247);
-        --color-gray-100: rgb(240 240 241);
-        --color-gray-200: rgb(236 236 237);
-        --color-gray-300: rgb(206 207 210);
-        --color-gray-400: rgb(148 151 156);
-        --color-gray-500: rgb(133 136 142);
-        --color-gray-600: rgb(97 101 108);
-        --color-gray-700: rgb(55 58 65);
-        --color-gray-800: rgb(34 38 47);
-        --color-gray-900: rgb(19 22 27);
-        --color-gray-950: rgb(12 14 18);
+        --color-gray-25: rgb(250 249 247);
+        --color-gray-50: rgb(245 243 240);
+        --color-gray-100: rgb(238 236 232);
+        --color-gray-200: rgb(226 224 220);
+        --color-gray-300: rgb(200 197 192);
+        --color-gray-400: rgb(145 141 135);
+        --color-gray-500: rgb(128 124 118);
+        --color-gray-600: rgb(92 88 82);
+        --color-gray-700: rgb(52 50 46);
+        --color-gray-800: rgb(32 30 27);
+        --color-gray-900: rgb(18 17 15);
+        --color-gray-950: rgb(12 11 10);
 
         --color-utility-blue-50: var(--color-blue-950);
         --color-utility-blue-100: var(--color-blue-900);

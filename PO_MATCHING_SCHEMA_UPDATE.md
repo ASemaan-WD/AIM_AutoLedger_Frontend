@@ -262,3 +262,19 @@ Example error messages:
 Existing POInvoiceHeaders and POInvoiceDetails records are not affected - this only changes how new records are created.
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

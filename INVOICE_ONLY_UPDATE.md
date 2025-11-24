@@ -108,3 +108,19 @@ All invoices are parsed with these fields:
 - This approach provides better logging and metrics vs. filtering at schema level
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

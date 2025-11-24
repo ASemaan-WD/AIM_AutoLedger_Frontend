@@ -118,6 +118,15 @@ ${JSON.stringify(matchPayload, null, 2)}
 - Never split one invoice line across multiple receipts.
 - If any invoice line fails item match, add a concise message to \`error\`. Still return matches for other lines if any. If no matches, return an empty header.
 
+# VENDOR FIELD MAPPING
+Populate header fields from the vendor object in matchPayload as follows:
+- APAcct: use vendor.apAcct (NOT apapAcct)
+- APSub: use vendor.apSub (NOT apapSub)
+- Freight-Account: use vendor.freightAccount
+- Freight-Subaccount: use vendor.freightSubAccount
+- Misc-Charge-Account: use vendor.miscChargeAccount
+- Misc-Charge-Subaccount: use vendor.miscChargeSubAccount
+
 # Output formatting
 - JSON only. No comments. No trailing commas. Keep numbers as numbers, not strings.
 

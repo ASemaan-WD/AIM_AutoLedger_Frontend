@@ -235,6 +235,7 @@ export async function POST(request: NextRequest) {
         'Status': isDuplicateFile ? 'Attention' : 'Queued',
         'FileHash': fileHash, // Changed from 'File Hash' to 'FileHash' (no space)
         'UploadedDate': new Date().toISOString().split('T')[0], // Add upload date (correct field name)
+        'FileURL': blob.url, // Store the Vercel Blob URL
         'Attachments': [
           {
             url: blob.url,

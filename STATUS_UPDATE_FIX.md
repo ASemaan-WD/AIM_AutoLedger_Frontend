@@ -87,3 +87,19 @@ If parser3 fails:
 - This fix simply automates the trigger from OCR3 to parser3
 - The status update happens in parser3 (lines 164-189) after invoice creation succeeds
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

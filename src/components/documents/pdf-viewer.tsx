@@ -26,7 +26,7 @@ export const PDFViewer = ({ document, className }: PDFViewerProps) => {
         
         // Check for attachments property on the document
         if ('attachments' in document && document.attachments) {
-            return document.attachments;
+            return (document as Invoice | AirtableFile).attachments;
         }
         
         return [];

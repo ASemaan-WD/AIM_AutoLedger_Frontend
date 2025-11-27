@@ -119,7 +119,6 @@ export const InputBase = ({
 
             {/* Input field */}
             <AriaInput
-                {...(inputProps as AriaInputProps)}
                 ref={ref}
                 placeholder={placeholder}
                 className={cx(

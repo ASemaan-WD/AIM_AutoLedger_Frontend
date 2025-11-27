@@ -41,7 +41,7 @@ export async function uploadImage(
   return {
     url: result.url,
     filename: image.name,
-    size: result.size,
+    size: image.size,
     pathname: result.pathname,
   };
 }
@@ -66,7 +66,7 @@ export async function uploadImages(
     const uploadResults: ImageUploadResult[] = results.map((result, index) => ({
       url: result.url,
       filename: images[index].name,
-      size: result.size,
+      size: images[index].size,
       pathname: result.pathname,
     }));
     

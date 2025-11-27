@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createAirtableClient, buildFilter, filters } from './index';
 import type { AirtableAttachment } from './types';
+import type { FilterCondition, LogicalFilter } from './formula';
 
 const BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
 
@@ -14,7 +15,7 @@ export interface AirtableFile {
     name: string;
     uploadDate?: Date;
     source: 'Email' | 'Upload';
-    status: 'Queued' | 'Processing' | 'Processed' | 'Error';
+    status: 'Queued' | 'Processing' | 'Processed' | 'Attention';
     processingStatus?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR'; // New field
     pages?: number;
     isDuplicate: boolean;
@@ -31,6 +32,7 @@ export interface AirtableFile {
     isLinked: boolean; // Calculated field based on relationships
     createdAt?: Date;
     updatedAt?: Date;
+    amount?: number;
 }
 
 export interface FileFilters {
@@ -137,7 +139,7 @@ function transformToAirtableUpdate(file: Partial<AirtableFile>): any {
  * Build filter for files based on FileFilters
  */
 function buildFileFilter(fileFilters: FileFilters): string {
-    const filterParts: string[] = [];
+    const filterParts: (FilterCondition | LogicalFilter)[] = [];
     
     if (fileFilters.status && fileFilters.status.length > 0) {
         if (fileFilters.status.length === 1) {

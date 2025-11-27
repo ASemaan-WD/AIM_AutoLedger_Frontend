@@ -196,14 +196,14 @@ export const LinksTab: React.FC<LinksTabProps> = ({
 }) => {
     
     // Helper function to find the actual document data for a linked item
-    const findDocumentData = (item: LinkedItem): Invoice | AirtableFile | Record<string, unknown> | undefined => {
+    const findDocumentData = (item: LinkedItem): Invoice | AirtableFile | undefined => {
         // Try to match by ID in files
         const file = files.find(f => f.id === item.id);
         if (file) return file;
         
-        // Try to match by ID in emails
+        // Try to match by ID in emails (emails deprecated, but keep for compatibility)
         const email = emails.find(e => e.id === item.id);
-        if (email) return email;
+        if (email) return email as any; // Email type no longer exists, cast to any
         
         // Try to match by ID in invoices
         const invoice = invoices.find(i => i.id === item.id);

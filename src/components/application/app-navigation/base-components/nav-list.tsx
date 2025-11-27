@@ -41,7 +41,7 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                                 setCurrentItem(item);
                             }}
                         >
-                            <NavItemBase href={item.href} badge={item.badge} icon={item.icon} type="collapsible">
+                            <NavItemBase href={item.href} badge={item.badge} icon={'icon' in item ? item.icon : undefined} type="collapsible">
                                 {item.label}
                             </NavItemBase>
 
@@ -70,7 +70,7 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                         <NavItemBase
                             type="link"
                             badge={item.badge}
-                            icon={item.icon}
+                            icon={'icon' in item ? item.icon : undefined}
                             href={item.href}
                             current={currentItem?.href === item.href}
                             open={open && currentItem?.href === item.href}

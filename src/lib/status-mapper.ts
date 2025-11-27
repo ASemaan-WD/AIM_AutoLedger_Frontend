@@ -27,8 +27,8 @@ export function mapFileStatusToUI(
   status: string,
   processingStatus?: string
 ): UploadStatus {
-  // Handle error state
-  if (status === FILE_STATUS.ERROR || processingStatus === PROCESSING_STATUS.ERROR) {
+  // Handle error state (via processing status or attention status)
+  if (status === FILE_STATUS.ATTENTION || processingStatus === PROCESSING_STATUS.ERROR) {
     return 'error';
   }
 

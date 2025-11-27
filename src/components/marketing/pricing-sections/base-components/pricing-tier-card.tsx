@@ -102,7 +102,7 @@ export const PricingTierCardIcon = ({
                 <div className="pt-2">
                     <Button
                         size="md"
-                        variant={isPopular || badge ? "primary" : "secondary"}
+                        color={isPopular || badge ? "primary" : "secondary"}
                         className="w-full"
                     >
                         {buttonText}

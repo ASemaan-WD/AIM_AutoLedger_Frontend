@@ -84,6 +84,17 @@ export type ParsedDocument = {
   surcharge: number | null;
   misc_charge: number | null;
   po_numbers: string[];
+  team?: string | null;
+  line_items?: Array<{
+    line_number: string | null;
+    item_no: string | null;
+    item_description: string | null;
+    quantity_invoiced: number | null;
+    invoice_price: number | null;
+    line_amount: number | null;
+    po_number: string | null;
+    expacct: string | null;
+  }>;
 };
 
 export type DocumentArrayResponse = {

@@ -8,14 +8,15 @@
 
 import type { UploadStatusCardProps } from "./upload-status-card"
 
-// Sample invoice data
-export const sampleInvoiceInfo = {
+// Sample invoice data (converted to array format for multiple invoice support)
+export const sampleInvoices = [{
+  recordId: "recSample123",
   vendor: "Acme Corporation",
   date: "Mar 15, 2024",
   daysAgo: 5,
   amount: "$2,450.00",
   description: "Fastener nuts assortment including SPAC HGLF Os, Lt, and SPL types"
-}
+}]
 
 // Sample caveats for warning states (deprecated - use sampleIssues)
 export const sampleCaveats = [
@@ -49,32 +50,32 @@ export const uploadStatusFixtures: Record<string, Omit<UploadStatusCardProps, 'o
     filename: "invoice-march-2024.pdf",
     status: "processing",
     pageCount: 4,
-    invoiceInfo: sampleInvoiceInfo,
+    invoices: sampleInvoices,
   },
   
   connecting: {
     filename: "invoice-march-2024.pdf",
     status: "connecting",
-    invoiceInfo: sampleInvoiceInfo,
+    invoices: sampleInvoices,
   },
   
   success: {
     filename: "invoice-march-2024.pdf",
     status: "success",
-    invoiceInfo: sampleInvoiceInfo,
+    invoices: sampleInvoices,
   },
   
   successWithCaveats: {
     filename: "invoice-march-2024.pdf",
     status: "success-with-caveats",
-    invoiceInfo: sampleInvoiceInfo,
+    invoices: sampleInvoices,
     issues: sampleIssues,
   },
   
   exported: {
     filename: "invoice-march-2024.pdf",
     status: "exported",
-    invoiceInfo: sampleInvoiceInfo,
+    invoices: sampleInvoices,
   },
   
   error: {
@@ -92,14 +93,14 @@ export const uploadStatusFixtures: Record<string, Omit<UploadStatusCardProps, 'o
   duplicate: {
     filename: "invoice-march-2024.pdf",
     status: "duplicate",
-    invoiceInfo: sampleInvoiceInfo,
+    invoices: sampleInvoices,
     duplicateInfo: sampleDuplicateInfo,
   },
   
   noMatch: {
     filename: "invoice-march-2024.pdf",
     status: "no-match",
-    invoiceInfo: sampleInvoiceInfo,
+    invoices: sampleInvoices,
   },
 }
 

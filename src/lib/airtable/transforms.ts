@@ -70,6 +70,7 @@ export const DELIVERY_TICKET_FIELDS = {
   VENDOR_NAME: 'Vendor Name',
   VENDOR_CODE: 'Vendor Code',
   INVOICE_DATE: 'Date',
+  DUE_DATE: 'Due Date',
   AMOUNT: 'Amount',
   GL_ACCOUNT: 'GL Account',
   RAW_TEXT_OCR: 'Raw Text OCR',
@@ -333,10 +334,11 @@ export function transformAirtableToDeliveryTicket(record: AirtableRecord): Deliv
   };
 
   // Read server-side validation from Airtable (formula field)
-  const missingFieldsMessage = fields[DELIVERY_TICKET_FIELDS.MISSING_FIELDS] || '';
+  const missingFieldsMessage = fields[DELIVERY_TICKET_FIELDS.HAS_MISSING_FIELDS] || '';
 
   return {
     id: record.id,
+    recordId: record.id, // Add recordId for consistency with other document types
     type: 'delivery-tickets',
     status: mapStatus(fields[DELIVERY_TICKET_FIELDS.STATUS] || 'open'),
     missingFields: [], // Deprecated - kept for compatibility
@@ -347,10 +349,6 @@ export function transformAirtableToDeliveryTicket(record: AirtableRecord): Deliv
     amount: fields[DELIVERY_TICKET_FIELDS.AMOUNT] || 0,
     invoiceDate: parseDate(fields[DELIVERY_TICKET_FIELDS.INVOICE_DATE]) || new Date(),
     dueDate: parseDate(fields[DELIVERY_TICKET_FIELDS.DUE_DATE]),
-    isMultilineCoding: false, // Delivery tickets don't have multiline coding for now
-    erpAttribute1: fields[DELIVERY_TICKET_FIELDS.ERP_ATTRIBUTE_1] || '',
-    erpAttribute2: fields[DELIVERY_TICKET_FIELDS.ERP_ATTRIBUTE_2] || '',
-    erpAttribute3: fields[DELIVERY_TICKET_FIELDS.ERP_ATTRIBUTE_3] || '',
     glAccount: fields[DELIVERY_TICKET_FIELDS.GL_ACCOUNT] || '',
     rawTextOcr: fields[DELIVERY_TICKET_FIELDS.RAW_TEXT_OCR] || '',
     rejectionCode: fields[DELIVERY_TICKET_FIELDS.REJECTION_CODE] || '',
@@ -361,7 +359,6 @@ export function transformAirtableToDeliveryTicket(record: AirtableRecord): Deliv
     // New schema fields
     attachments: fields[DELIVERY_TICKET_FIELDS.ATTACHMENTS] || [],
     files: fields[DELIVERY_TICKET_FIELDS.FILES] || [],
-    emails: fields[DELIVERY_TICKET_FIELDS.EMAILS] || [],
     
     // Additional computed fields
     createdAt: parseDate(fields[DELIVERY_TICKET_FIELDS.CREATED_AT]) || new Date(),
@@ -386,14 +383,8 @@ export function transformDeliveryTicketToAirtable(ticket: Partial<DeliveryTicket
   if (ticket.invoiceDate) {
     fields[DELIVERY_TICKET_FIELDS.INVOICE_DATE] = ticket.invoiceDate.toISOString().split('T')[0];
   }
-  if (ticket.dueDate) {
-    fields[DELIVERY_TICKET_FIELDS.DUE_DATE] = ticket.dueDate.toISOString().split('T')[0];
-  }
 
   // Coding fields
-  if (ticket.erpAttribute1) fields[DELIVERY_TICKET_FIELDS.ERP_ATTRIBUTE_1] = ticket.erpAttribute1;
-  if (ticket.erpAttribute2) fields[DELIVERY_TICKET_FIELDS.ERP_ATTRIBUTE_2] = ticket.erpAttribute2;
-  if (ticket.erpAttribute3) fields[DELIVERY_TICKET_FIELDS.ERP_ATTRIBUTE_3] = ticket.erpAttribute3;
   if (ticket.glAccount) fields[DELIVERY_TICKET_FIELDS.GL_ACCOUNT] = ticket.glAccount;
 
   // Text fields

@@ -1,12 +1,12 @@
 "use client"
 
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon"
-import type { ComponentType, ReactNode } from "react"
+import type { FC, ReactNode } from "react"
 
 type IconColor = "brand" | "success" | "warning" | "error"
 
 interface CardLayoutProps {
-  icon: ComponentType<{ className?: string }>
+  icon: FC<{ className?: string }>
   iconColor: IconColor
   children: ReactNode
 }

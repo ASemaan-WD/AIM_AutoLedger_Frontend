@@ -9,13 +9,14 @@ interface UploadedFile {
   size: number;
   status: UploadStatus;
   pageCount?: number;
-  invoiceInfo?: {
+  invoices?: Array<{
+    recordId: string;
     vendor: string;
     date: string;
     daysAgo: number;
     amount: string;
     description: string;
-  };
+  }>;
   caveats?: string[];
   errorMessage?: string;
 }
@@ -75,13 +76,14 @@ export default function Home2Page() {
               ? {
                   ...f,
                   status: 'connecting' as UploadStatus,
-                  invoiceInfo: {
+                  invoices: [{
+                    recordId: 'recSample' + uploadFile.id,
                     vendor: 'Acme Corporation',
                     date: 'Mar 15, 2024',
                     daysAgo: 5,
                     amount: '$2,450.00',
                     description: 'Fastener nuts assortment including SPAC HGLF Os, Lt, and SPL types',
-                  },
+                  }],
                 }
               : f
           )
@@ -188,7 +190,7 @@ export default function Home2Page() {
                   status={file.status}
                   fileSize={file.size}
                   pageCount={file.pageCount}
-                  invoiceInfo={file.invoiceInfo}
+                  invoices={file.invoices || []}
                   caveats={file.caveats}
                   errorMessage={file.errorMessage}
                   onCancel={() => handleCancel(file.id)}

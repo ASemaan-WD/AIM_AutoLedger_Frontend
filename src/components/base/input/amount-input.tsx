@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FocusEvent } from "react";
 import { Input } from "@/components/base/input/input";
 
 interface AmountInputProps {
@@ -58,7 +58,7 @@ export const AmountInput = ({
     }
   };
 
-  const handleBlur = (e?: FocusEvent) => {
+  const handleBlur = (e?: FocusEvent<HTMLInputElement, Element>) => {
     // Reformat on blur
     setInputValue(formatAmount(value));
     onBlur?.(e);

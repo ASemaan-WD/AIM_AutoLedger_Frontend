@@ -117,13 +117,13 @@ export const CompactInvoiceList = ({
     const subViews = [
         { id: 'all', label: 'All', count: invoices.length },
         { id: 'missing_fields', label: 'Missing Fields', count: invoices.filter(inv => hasBlockingIssues(inv)).length },
-        { id: 'open', label: 'Open', count: invoices.filter(inv => inv.status === INVOICE_STATUS.OPEN).length },
-        { id: 'reviewed', label: 'Queued', count: invoices.filter(inv => inv.status === INVOICE_STATUS.REVIEWED || inv.status === INVOICE_STATUS.QUEUED).length },
-        { id: 'queued', label: 'Queued', count: invoices.filter(inv => inv.status === INVOICE_STATUS.QUEUED).length },
-        { id: 'pending', label: 'Pending', count: invoices.filter(inv => inv.status === INVOICE_STATUS.PENDING).length },
-        { id: 'approved', label: 'Approved', count: invoices.filter(inv => inv.status === INVOICE_STATUS.APPROVED).length },
-        { id: 'rejected', label: 'Rejected', count: invoices.filter(inv => inv.status === INVOICE_STATUS.REJECTED).length },
-        { id: 'exported', label: 'Exported', count: invoices.filter(inv => inv.status === INVOICE_STATUS.EXPORTED).length },
+        { id: 'open', label: 'Open', count: invoices.filter(inv => inv.status === 'open').length },
+        { id: 'reviewed', label: 'Queued', count: invoices.filter(inv => inv.status === 'reviewed' || inv.status === 'queued').length },
+        { id: 'queued', label: 'Queued', count: invoices.filter(inv => inv.status === 'queued').length },
+        { id: 'pending', label: 'Pending', count: invoices.filter(inv => inv.status === 'pending').length },
+        { id: 'approved', label: 'Approved', count: invoices.filter(inv => inv.status === 'approved').length },
+        { id: 'rejected', label: 'Rejected', count: invoices.filter(inv => inv.status === 'rejected').length },
+        { id: 'exported', label: 'Exported', count: invoices.filter(inv => inv.status === 'exported').length },
     ];
 
     // Use filtered invoices from props if provided, otherwise do our own filtering
@@ -133,13 +133,13 @@ export const CompactInvoiceList = ({
                 // Apply sub-view filter
                 switch (subView) {
                     case 'missing_fields': return hasBlockingIssues(invoice);
-                    case 'open': return invoice.status === INVOICE_STATUS.OPEN;
-                    case 'reviewed': return invoice.status === INVOICE_STATUS.REVIEWED;
-                    case 'queued': return invoice.status === INVOICE_STATUS.QUEUED;
-                    case 'pending': return invoice.status === INVOICE_STATUS.PENDING;
-                    case 'approved': return invoice.status === INVOICE_STATUS.APPROVED;
-                    case 'rejected': return invoice.status === INVOICE_STATUS.REJECTED;
-                    case 'exported': return invoice.status === INVOICE_STATUS.EXPORTED;
+                    case 'open': return invoice.status === 'open';
+                    case 'reviewed': return invoice.status === 'reviewed';
+                    case 'queued': return invoice.status === 'queued';
+                    case 'pending': return invoice.status === 'pending';
+                    case 'approved': return invoice.status === 'approved';
+                    case 'rejected': return invoice.status === 'rejected';
+                    case 'exported': return invoice.status === 'exported';
                     default: return true;
                 }
             })
@@ -214,7 +214,7 @@ export const CompactInvoiceList = ({
                         onSelectionChange?.(selectedId);
                     }}
                 >
-                    {(item) => <InvoiceItem key={item.id} value={item} isRecentlyUpdated={updatedInvoiceIds.has(item.id)} />}
+                    {(item: Invoice) => <InvoiceItem key={item.id} value={item} isRecentlyUpdated={updatedInvoiceIds.has(item.id)} />}
                 </ListBox>
 
                 {/* Empty State */}

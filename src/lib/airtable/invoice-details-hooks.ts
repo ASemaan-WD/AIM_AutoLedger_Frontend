@@ -22,13 +22,13 @@ function transformInvoiceDetailToLine(record: AirtableRecord): DocumentLine {
   
   console.log('[InvoiceDetails] Raw record fields:', fields);
   console.log('[InvoiceDetails] Field IDs being used:');
-  console.log('  - ITEM_DESCRIPTION:', FIELD_IDS.INVOICEDETAILS.ITEM_DESCRIPTION);
-  console.log('  - LINE_AMOUNT:', FIELD_IDS.INVOICEDETAILS.LINE_AMOUNT);
-  console.log('  - LINE_NUMBER:', FIELD_IDS.INVOICEDETAILS.LINE_NUMBER);
+  console.log('  - ITEM_DESCRIPTION:', FIELD_IDS.POINVOICEDETAILS.ITEM_DESCRIPTION);
+  console.log('  - LINE_AMOUNT:', FIELD_IDS.POINVOICEDETAILS.LINE_AMOUNT);
+  console.log('  - LINE_NUMBER:', FIELD_IDS.POINVOICEDETAILS.LINE_NUMBER);
   
-  const description = fields[FIELD_IDS.INVOICEDETAILS.ITEM_DESCRIPTION] || fields['Item-Description'] || '';
-  const lineAmount = fields[FIELD_IDS.INVOICEDETAILS.LINE_AMOUNT] || fields['Line-Amount'] || 0;
-  const lineNumber = fields[FIELD_IDS.INVOICEDETAILS.LINE_NUMBER] || fields['Line-Number'] || '';
+  const description = fields[FIELD_IDS.POINVOICEDETAILS.ITEM_DESCRIPTION] || fields['Item-Description'] || '';
+  const lineAmount = fields[FIELD_IDS.POINVOICEDETAILS.LINE_AMOUNT] || fields['Line-Amount'] || 0;
+  const lineNumber = fields[FIELD_IDS.POINVOICEDETAILS.LINE_NUMBER] || fields['Line-Number'] || '';
   
   console.log('[InvoiceDetails] Extracted values:');
   console.log('  - description:', description);
@@ -40,12 +40,12 @@ function transformInvoiceDetailToLine(record: AirtableRecord): DocumentLine {
     lineNumber: lineNumber,
     description: description,
     amount: Number(lineAmount) || 0,
-    glAccount: fields[FIELD_IDS.INVOICEDETAILS.EXPACCT] || '',
-    itemNo: fields[FIELD_IDS.INVOICEDETAILS.ITEM_NO],
-    quantity: fields[FIELD_IDS.INVOICEDETAILS.QUANTITY_INVOICED],
-    unitPrice: fields[FIELD_IDS.INVOICEDETAILS.INVOICE_PRICE],
-    poNumber: fields[FIELD_IDS.INVOICEDETAILS.PO_NUMBER],
-    poLineNumber: fields[FIELD_IDS.INVOICEDETAILS.PO_LINE_NUMBER],
+    glAccount: fields[FIELD_IDS.POINVOICEDETAILS.EXPACCT] || '',
+    itemNo: fields[FIELD_IDS.POINVOICEDETAILS.ITEM_NO],
+    quantity: fields[FIELD_IDS.POINVOICEDETAILS.QUANTITY_INVOICED],
+    unitPrice: fields[FIELD_IDS.POINVOICEDETAILS.INVOICE_PRICE],
+    poNumber: fields[FIELD_IDS.POINVOICEDETAILS.PO_NUMBER],
+    poLineNumber: fields[FIELD_IDS.POINVOICEDETAILS.PO_LINE_NUMBER],
   };
 }
 
@@ -78,7 +78,7 @@ export function useInvoiceDetails(options: UseInvoiceDetailsOptions = {}): UseIn
         console.log('[InvoiceDetails] Fetching record:', recordId);
         
         try {
-          const data = await client.getRecord(TABLE_NAMES.INVOICEDETAILS, recordId);
+          const data = await client.getRecord(TABLE_NAMES.POINVOICEDETAILS, recordId);
           return data;
         } catch (err) {
           console.error('[InvoiceDetails] Failed to fetch record:', recordId, err);

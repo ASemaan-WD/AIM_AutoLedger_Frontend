@@ -104,7 +104,7 @@ export const HeaderNavigationBase = ({
                         <div className="flex flex-1 items-center gap-4">
                             <Link
                                 aria-label="Go to homepage"
-                                href="/"
+                                to="/"
                                 className="rounded-xs outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
                             >
                                 <UntitledLogo className="h-12" />

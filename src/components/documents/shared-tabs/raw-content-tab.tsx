@@ -13,7 +13,7 @@ interface RawContentTabProps {
     className?: string;
 }
 
-const formatKeyValue = (key: string, value: string | number | null | undefined): string => {
+const formatKeyValue = (key: string, value: string | number | Date | null | undefined): string => {
     if (value === null || value === undefined || value === '') {
         return '';
     }

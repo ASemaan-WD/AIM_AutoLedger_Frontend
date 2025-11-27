@@ -22,6 +22,7 @@ import { PendingStateIndicator, BalanceAlert, QueuedIndicator, ErrorAlert, Expor
 // import { useTeams } from "@/lib/airtable";
 import { useDocumentLinks } from "@/lib/airtable/linked-documents-hooks";
 import type { Invoice, DeliveryTicket, DocumentLink, StoreReceiver, DocumentStatus } from "@/types/documents";
+import { isInvoice, isDeliveryTicket, isStoreReceiver, hasLines } from "@/types/documents";
 import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, INTERNAL_TO_AIRTABLE_STATUS, type UXStatus } from "@/lib/airtable/schema-types";
 import { validateInvoice, getMissingFieldsMessage, isMultiLineMode } from "@/utils/invoice-validation";
 
@@ -97,7 +98,7 @@ export const DocumentDetailsPanel = ({
     isRecentlyUpdated = false
 }: DocumentDetailsPanelProps) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [editedDocument, setEditedDocument] = useState<Invoice | DeliveryTicket | undefined>(document);
+    const [editedDocument, setEditedDocument] = useState<Invoice | DeliveryTicket | StoreReceiver | undefined>(document);
     const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
     const [editingVendorName, setEditingVendorName] = useState('');
     const [isUpdatingVendor, setIsUpdatingVendor] = useState(false);
@@ -177,7 +178,7 @@ export const DocumentDetailsPanel = ({
         if (!document || !editedDocument) return false;
         
         // Check all editable fields
-        const fieldsToCheck: (keyof (Invoice | DeliveryTicket))[] = [
+        const fieldsToCheck: (keyof (Invoice & DeliveryTicket))[] = [
             "vendorName", "invoiceNumber", "invoiceDate", "amount", "freightCharge", "surcharge", "glAccount", "team"
         ];
         
@@ -214,8 +215,8 @@ export const DocumentDetailsPanel = ({
         
         // Check lines array for changes (multiline coding)
         const linesChanged = (() => {
-            const originalLines = document.lines || [];
-            const editedLines = editedDocument.lines || [];
+            const originalLines = hasLines(document) ? document.lines || [] : [];
+            const editedLines = hasLines(editedDocument) ? editedDocument.lines || [] : [];
             
             // Different number of lines
             if (originalLines.length !== editedLines.length) {
@@ -267,8 +268,8 @@ export const DocumentDetailsPanel = ({
                 return <PendingStateIndicator />;
 
             case 'open':
-                // Show balance alert if balance exists
-                if (currentDoc.balance !== undefined && currentDoc.balance !== null && currentDoc.balance !== 0) {
+                // Show balance alert if balance exists (only for invoices)
+                if (isInvoice(currentDoc) && currentDoc.balance !== undefined && currentDoc.balance !== null && currentDoc.balance !== 0) {
                     return <BalanceAlert balance={currentDoc.balance} explanation={currentDoc.balanceExplanation} />;
                 }
                 return null;
@@ -282,7 +283,8 @@ export const DocumentDetailsPanel = ({
                 return <ExportedIndicator />;
 
             case 'rejected':
-                return <ErrorAlert errorCode={currentDoc.errorCode} errorMessage={currentDoc.errorMessage} />;
+                // Error details are only on invoices
+                return isInvoice(currentDoc) ? <ErrorAlert errorCode={currentDoc.errorCode} errorMessage={currentDoc.errorMessage} /> : null;
 
             default:
                 return null;
@@ -292,9 +294,12 @@ export const DocumentDetailsPanel = ({
     // Render action buttons based on invoice status
     const renderActionButtons = () => {
         if (!currentDoc) return null;
+        
+        // Guard against StoreReceiver for functions that don't support it
+        const isInvoiceOrTicket = isInvoice(currentDoc) || isDeliveryTicket(currentDoc);
 
         const status = currentDoc.status;
-        const validation = validateInvoice(currentDoc);
+        const validation = isInvoiceOrTicket ? validateInvoice(currentDoc) : { canMarkAsReviewed: false, issues: [] };
 
         switch (status) {
             case 'pending': // Pending - processing
@@ -304,7 +309,7 @@ export const DocumentDetailsPanel = ({
                             size="sm" 
                             color="secondary-destructive"
                             iconLeading={Trash01}
-                            onClick={() => onDelete?.(currentDoc)}
+                            onClick={() => isInvoiceOrTicket && onDelete?.(currentDoc)}
                             className="flex-1"
                         >
                             Delete
@@ -368,7 +373,7 @@ export const DocumentDetailsPanel = ({
                                     <Dropdown.Item
                                         label="Delete"
                                         icon={Trash01}
-                                        onAction={() => onDelete?.(currentDoc)}
+                                        onAction={() => isInvoiceOrTicket && onDelete?.(currentDoc)}
                                     />
                                 </Dropdown.Menu>
                             </Dropdown.Popover>
@@ -393,7 +398,7 @@ export const DocumentDetailsPanel = ({
                                 size="sm" 
                                 color="secondary"
                                 iconLeading={Trash01}
-                                onClick={() => onDelete?.(currentDoc)}
+                                onClick={() => isInvoiceOrTicket && onDelete?.(currentDoc)}
                                 className="flex-1"
                             >
                                 Delete
@@ -520,7 +525,10 @@ export const DocumentDetailsPanel = ({
     // Move all hooks before any conditional returns
     const currentDoc = editedDocument || document;
     const validation = useMemo(() => {
-        return currentDoc ? validateInvoice(currentDoc) : { canMarkAsReviewed: false, isValid: false, issues: [] };
+        // Only validate if it's an Invoice or DeliveryTicket (not StoreReceiver)
+        return currentDoc && (currentDoc.type === 'invoices' || currentDoc.type === 'delivery-tickets') 
+            ? validateInvoice(currentDoc) 
+            : { canMarkAsReviewed: false, isValid: false, issues: [] };
     }, [currentDoc]);
 
     // Ensure activeTab is valid - default to "extracted" if invalid
@@ -571,7 +579,9 @@ export const DocumentDetailsPanel = ({
                 {renderStateIndicator()}
                 
                 {/* Completeness checker (not shown for Pending state) */}
-                <CompletenessChecker document={currentDoc} />
+                {currentDoc.type === 'invoices' && (
+                    <CompletenessChecker document={currentDoc} />
+                )}
                 
                 {/* Primary Actions */}
                 {renderActionButtons()}
@@ -651,55 +661,58 @@ export const DocumentDetailsPanel = ({
                                     isDisabled={!canEdit}
                                 />
                             </div>
-                            <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">Freight Charge</label>
-                                <Input 
-                                    value={currentDoc?.freightCharge != null ? `$${currentDoc.freightCharge.toFixed(2)}` : ''}
-                                    onChange={(value) => {
-                                        // Remove dollar sign and parse as float
-                                        const numericValue = value.toString().replace(/[$,]/g, '');
-                                        const parsedValue = parseFloat(numericValue);
-                                        if (!isNaN(parsedValue)) {
-                                            updateField('freightCharge', parsedValue);
-                                        } else if (numericValue === '') {
-                                            updateField('freightCharge', undefined);
-                                        }
-                                    }}
-                                    size="sm"
-                                    placeholder="0.00"
-                                    isDisabled={!canEdit}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-tertiary mb-1 block">Surcharge</label>
-                                <Input 
-                                    value={currentDoc?.surcharge != null ? `$${currentDoc.surcharge.toFixed(2)}` : ''}
-                                    onChange={(value) => {
-                                        // Remove dollar sign and parse as float
-                                        const numericValue = value.toString().replace(/[$,]/g, '');
-                                        const parsedValue = parseFloat(numericValue);
-                                        if (!isNaN(parsedValue)) {
-                                            updateField('surcharge', parsedValue);
-                                        } else if (numericValue === '') {
-                                            updateField('surcharge', undefined);
-                                        }
-                                    }}
-                                    size="sm"
-                                    placeholder="0.00"
-                                    isDisabled={!canEdit}
-                                />
-                            </div>
+                            {isInvoice(currentDoc) && (
+                                <>
+                                    <div>
+                                        <label className="text-xs font-medium text-tertiary mb-1 block">Freight Charge</label>
+                                        <Input 
+                                            value={currentDoc.freightCharge != null ? `$${currentDoc.freightCharge.toFixed(2)}` : ''}
+                                            onChange={(value) => {
+                                                // Remove dollar sign and parse as float
+                                                const numericValue = value.toString().replace(/[$,]/g, '');
+                                                const parsedValue = parseFloat(numericValue);
+                                                if (!isNaN(parsedValue)) {
+                                                    updateField('freightCharge', parsedValue);
+                                                } else if (numericValue === '') {
+                                                    updateField('freightCharge', undefined);
+                                                }
+                                            }}
+                                            size="sm"
+                                            placeholder="0.00"
+                                            isDisabled={!canEdit}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-tertiary mb-1 block">Surcharge</label>
+                                        <Input 
+                                            value={currentDoc.surcharge != null ? `$${currentDoc.surcharge.toFixed(2)}` : ''}
+                                            onChange={(value) => {
+                                                // Remove dollar sign and parse as float
+                                                const numericValue = value.toString().replace(/[$,]/g, '');
+                                                const parsedValue = parseFloat(numericValue);
+                                                if (!isNaN(parsedValue)) {
+                                                    updateField('surcharge', parsedValue);
+                                                } else if (numericValue === '') {
+                                                    updateField('surcharge', undefined);
+                                                }
+                                            }}
+                                            size="sm"
+                                            placeholder="0.00"
+                                            isDisabled={!canEdit}
+                                        />
+                                    </div>
+                                </>
+                            )}
                     </TabPanel>
 
                     <TabPanel id="coding" className="space-y-4">
                         {currentDoc?.type === 'invoices' ? (
                             <InvoiceCodingInterface 
                                 invoice={currentDoc as Invoice}
-                                onCodingChange={(invoiceCoding) => {
-                                    // Update the invoice with new coding data
-                                    if (invoiceCoding.glAccount !== undefined) {
-                                        updateField('glAccount', invoiceCoding.glAccount);
-                                    }
+                                onCodingChange={(lineId, glAccount) => {
+                                    // Update the line's GL account
+                                    // This would typically update a specific line item
+                                    console.log(`Line ${lineId} GL Account changed to ${glAccount}`);
                                 }}
                                 disabled={!canEdit}
                             />

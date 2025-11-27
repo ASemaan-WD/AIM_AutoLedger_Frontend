@@ -18,6 +18,7 @@ import { AlertFloating } from "@/components/application/alerts/alerts";
 import { useFileLinks } from "@/lib/airtable/linked-documents-hooks";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import type { AirtableFile } from "@/lib/airtable/files-hooks";
+import type { Invoice } from "@/types/documents";
 
 interface FileDetailsPanelProps {
     file?: AirtableFile;
@@ -519,7 +520,7 @@ export const FileDetailsPanel = ({
                             <LinksTab 
                                 linkedItems={linkedItems}
                                 files={linkedFiles}
-                                invoices={invoices as Array<{ id: string; [key: string]: unknown }>}
+                                invoices={invoices as Invoice[]}
                                 emails={emails}
                                 emptyStateMessage="No documents linked to this file"
                             />

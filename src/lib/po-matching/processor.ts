@@ -49,7 +49,7 @@ export async function processPOMatching(
 
     // Step 3: Extract and parse MatchPayloadJSON
     console.log('\n📦 Step 3: Extracting MatchPayloadJSON...');
-    const matchPayloadRaw = nonNullFields[FIELD_NAMES.INVOICES.MATCH_PAYLOAD_JSON] || 
+    const matchPayloadRaw = nonNullFields[FIELD_NAMES.INVOICES.MATCHPAYLOADJSON] || 
                             nonNullFields['MatchPayloadJSON'];
     
     if (!matchPayloadRaw) {
@@ -70,7 +70,7 @@ export async function processPOMatching(
     }
 
     // Remove MatchPayloadJSON from invoice fields to avoid duplication
-    delete nonNullFields[FIELD_NAMES.INVOICES.MATCH_PAYLOAD_JSON];
+    delete nonNullFields[FIELD_NAMES.INVOICES.MATCHPAYLOADJSON];
     delete nonNullFields['MatchPayloadJSON'];
 
     // Step 4: Call OpenAI to generate PO matches

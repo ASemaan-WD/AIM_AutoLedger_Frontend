@@ -1,4 +1,5 @@
 import type { Invoice, DeliveryTicket } from "@/types/documents";
+import { isInvoice, hasLines } from "@/types/documents";
 
 export interface ValidationIssue {
     type: 'missing_field' | 'line_total_mismatch' | 'currency_invalid' | 'advisory';
@@ -18,15 +19,15 @@ export interface ValidationResult {
  * Uses the isMultilineCoding flag to determine coding behavior
  */
 export function isMultiLineMode(invoice: Invoice | DeliveryTicket): boolean {
-    return invoice.isMultilineCoding || false;
+    return isInvoice(invoice) && (invoice.isMultilineCoding || false);
 }
 
 /**
  * Validates line total integrity for multi-line invoices
  */
 export function validateLineTotals(invoice: Invoice | DeliveryTicket): ValidationIssue | null {
-    if (!isMultiLineMode(invoice)) {
-        return null; // Not applicable to single-line mode
+    if (!isMultiLineMode(invoice) || !hasLines(invoice)) {
+        return null; // Not applicable to single-line mode or if no lines
     }
 
     const lineSum = (invoice.lines || []).reduce((sum, line) => sum + line.amount, 0);
@@ -120,8 +121,10 @@ export function validateInvoice(invoice: Invoice | DeliveryTicket): ValidationRe
             issues.push(lineTotalIssue);
         }
 
-        // Advisory issues
-        issues.push(...getAdvisoryIssues(invoice));
+        // Advisory issues (invoices only)
+        if (isInvoice(invoice)) {
+            issues.push(...getAdvisoryIssues(invoice));
+        }
     }
 
     const blockingIssues = issues.filter(issue => issue.blocking);

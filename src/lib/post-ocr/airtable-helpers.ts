@@ -143,30 +143,26 @@ export async function findTeamByName(teamName: string): Promise<string | null> {
 function getTableConfig(documentType: string): {
   tableName: string;
   fields: any;
-  rawTextField: string;
 } {
   switch (documentType) {
     case 'invoice':
       return {
-        tableName: TABLE_NAMES.INVOICEHEADERS, // Updated to new table name
-        fields: FIELD_IDS.INVOICEHEADERS,
-        rawTextField: FIELD_IDS.INVOICEHEADERS.DOCUMENT_RAW_TEXT,
+        tableName: TABLE_NAMES.POINVOICEHEADERS, // Updated to new table name
+        fields: FIELD_IDS.POINVOICEHEADERS,
       };
     case 'delivery_ticket':
       console.warn('⚠️ Delivery Tickets table no longer exists - treating as invoice');
       // Fall through to invoice case
       return {
-        tableName: TABLE_NAMES.INVOICEHEADERS,
-        fields: FIELD_IDS.INVOICEHEADERS,
-        rawTextField: FIELD_IDS.INVOICEHEADERS.DOCUMENT_RAW_TEXT,
+        tableName: TABLE_NAMES.POINVOICEHEADERS,
+        fields: FIELD_IDS.POINVOICEHEADERS,
       };
     case 'store_receiver':
       console.warn('⚠️ Store Receivers table no longer exists - treating as invoice');
       // Fall through to invoice case
       return {
-        tableName: TABLE_NAMES.INVOICEHEADERS,
-        fields: FIELD_IDS.INVOICEHEADERS,
-        rawTextField: FIELD_IDS.INVOICEHEADERS.DOCUMENT_RAW_TEXT,
+        tableName: TABLE_NAMES.POINVOICEHEADERS,
+        fields: FIELD_IDS.POINVOICEHEADERS,
       };
     default:
       throw new Error(`Unknown document type: ${documentType}`);
@@ -326,11 +322,11 @@ export async function createDocumentRecord(
   fields['Files'] = [fileRecordId];
   
   // Set the document raw text based on document type
+  // Note: ParsedDocument.document_type is now "invoice" | "other" only
   if (doc.document_type === 'invoice') {
     fields['Document-Raw-Text'] = documentRawText;
-  } else if (doc.document_type === 'delivery_ticket') {
-    fields['Raw Text OCR'] = documentRawText;
-  } else if (doc.document_type === 'store_receiver') {
+  } else {
+    // For "other" types, also use Document-Raw-Text (they all go to POInvoiceHeaders now)
     fields['Document-Raw-Text'] = documentRawText;
   }
   
@@ -523,7 +519,7 @@ export async function createInvoiceDetails(
     console.log(`  Creating detail ${i + 1}/${doc.line_items.length}: Line ${lineItem.line_number || 'N/A'} - ${lineItem.item_description || 'N/A'}`);
     
     try {
-      const data = await client.createRecords(TABLE_NAMES.INVOICEDETAILS, {
+      const data = await client.createRecords(TABLE_NAMES.POINVOICEDETAILS, {
         records: [{ fields }]
       });
 

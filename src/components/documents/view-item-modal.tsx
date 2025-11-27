@@ -52,14 +52,14 @@ export const ViewItemModal = ({ item, documentData, trigger, className }: ViewIt
     const getDocumentType = () => {
         if (isInvoice(documentData)) return 'Invoice';
         if (isFile(documentData)) return 'File';
-        if (isEmail(documentData)) return 'Email';
+        // Email table no longer exists in schema
         return item.type;
     };
 
     const getDocumentName = () => {
         if (isInvoice(documentData)) return documentData.invoiceNumber;
         if (isFile(documentData)) return documentData.name;
-        if (isEmail(documentData)) return documentData.subject;
+        // Email table no longer exists in schema
         return item.name;
     };
 
@@ -86,7 +86,7 @@ export const ViewItemModal = ({ item, documentData, trigger, className }: ViewIt
                                         color="secondary"
                                         iconLeading={X}
                                         aria-label="Close modal"
-                                        onPress={() => state.close()}
+                                        onClick={() => state.close()}
                                     />
                                 </div>
 

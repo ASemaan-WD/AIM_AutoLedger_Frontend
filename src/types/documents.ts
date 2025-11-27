@@ -1,7 +1,7 @@
 import type { AirtableAttachment } from '@/lib/airtable/types';
 
 // Document Types
-export type DocumentType = 'invoices' | 'files' | 'store-receivers' | 'delivery-tickets';
+export type DocumentType = 'invoices' | 'files' | 'store-receivers' | 'delivery-tickets' | 'pos' | 'shipping' | 'bank';
 
 // Document Status (from Airtable schema)
 export type DocumentStatus = 'open' | 'reviewed' | 'queued' | 'exported' | 'pending' | 'approved' | 'rejected';
@@ -12,6 +12,7 @@ export type CompletenessStatus = 'complete' | 'incomplete' | 'missing_fields';
 // Base Document Interface
 export interface BaseDocument {
     id: string;
+    recordId?: string; // Airtable record ID
     type: DocumentType;
     status: DocumentStatus;
     missingFields?: string[]; // Deprecated - kept for compatibility
@@ -50,10 +51,19 @@ export interface Invoice extends BaseDocument {
 // Invoice Line Item (for multi-line coding)
 export interface InvoiceLine {
     id: string;
+    lineNumber?: string;
+    itemNo?: string;
     description: string;
+    quantity?: number;
+    unitPrice?: number;
     amount: number;
     glAccount?: string;
+    poNumber?: string;
+    poLineNumber?: string;
 }
+
+// Alias for backward compatibility
+export type DocumentLine = InvoiceLine;
 
 // Purchase Order Document
 export interface PurchaseOrder extends BaseDocument {
@@ -111,6 +121,7 @@ export interface DeliveryTicket extends BaseDocument {
     vendorCode?: string;
     invoiceNumber: string;
     invoiceDate: Date;
+    dueDate?: Date;
     amount: number;
     glAccount?: string;
     rawTextOcr?: string;
@@ -132,6 +143,7 @@ export interface StoreReceiver extends BaseDocument {
     amount: number;
     glAccount?: string;
     documentRawText?: string;
+    rawTextOcr?: string; // Alias for documentRawText
     rejectionCode?: string;
     rejectionReason?: string;
     attachments?: AirtableAttachment[];
@@ -199,6 +211,59 @@ export const INVOICE_SUB_VIEWS: DocumentSubView[] = [
         filter: (docs: Document[]) => docs.filter(doc => doc.status === 'exported')
     }
 ];
+
+// ============================================================================
+// TYPE GUARDS
+// ============================================================================
+
+/**
+ * Type guard to check if a document is an Invoice
+ */
+export function isInvoice(doc: Document | Invoice | DeliveryTicket | StoreReceiver): doc is Invoice {
+    return doc.type === 'invoices';
+}
+
+/**
+ * Type guard to check if a document is a DeliveryTicket
+ */
+export function isDeliveryTicket(doc: Document | Invoice | DeliveryTicket | StoreReceiver): doc is DeliveryTicket {
+    return doc.type === 'delivery-tickets';
+}
+
+/**
+ * Type guard to check if a document is a StoreReceiver
+ */
+export function isStoreReceiver(doc: Document | Invoice | DeliveryTicket | StoreReceiver): doc is StoreReceiver {
+    return doc.type === 'store-receivers';
+}
+
+/**
+ * Type guard to check if a document has lines (multi-line coding)
+ */
+export function hasLines(doc: Invoice | DeliveryTicket | StoreReceiver): doc is Invoice {
+    return isInvoice(doc) && (doc.isMultilineCoding === true || (doc.lines !== undefined && doc.lines.length > 0));
+}
+
+/**
+ * Type guard to check if a document has balance fields
+ */
+export function hasBalance(doc: Invoice | DeliveryTicket | StoreReceiver): doc is Invoice {
+    return isInvoice(doc) && doc.balance !== undefined;
+}
+
+/**
+ * Type guard to check if a document has error fields
+ */
+export function hasErrorInfo(doc: Invoice | DeliveryTicket | StoreReceiver): doc is Invoice {
+    return isInvoice(doc) && (doc.errorCode !== undefined || doc.errorMessage !== undefined);
+}
+
+/**
+ * Type guard to check if a document has freight/surcharge
+ */
+export function hasCharges(doc: Invoice | DeliveryTicket | StoreReceiver): doc is Invoice {
+    return isInvoice(doc) && (doc.freightCharge !== undefined || doc.surcharge !== undefined);
+}
 
 export const PO_SUB_VIEWS: DocumentSubView[] = [
     {

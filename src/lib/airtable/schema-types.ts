@@ -515,7 +515,7 @@ export const FILE_STATUS = {
   QUEUED: 'Queued',
   PROCESSING: 'Processing',
   PROCESSED: 'Processed',
-  ERROR: 'Error',
+  ATTENTION: 'Attention',
 } as const;
 
 // File Processing Status Constants (substatus - shows current operation)
@@ -565,3 +565,60 @@ export const UX_STATUS_COLORS = {
   'Exported': 'gray',
   'Exporting': 'warning',
 } as const;
+
+// ============================================================================
+// RECORD TYPES - TypeScript types for Airtable records
+// ============================================================================
+
+/**
+ * POInvoiceHeaders record type
+ * Represents a single PO invoice header record from Airtable
+ */
+export interface POInvoiceHeadersRecord {
+  id: string;
+  fields: {
+    [key: string]: any;
+    'RecordID'?: string;
+    'Invoice'?: string[];
+    'InvoiceRecordID'?: string;
+    'Details'?: string[];
+    'Company-Code'?: string;
+    'VendId'?: string;
+    'AP-Invoice-Number'?: string;
+    'Remit-Name'?: string;
+    'Invoice-Date'?: string;
+    'TermsId'?: string;
+    'Due-Date'?: string;
+    'Total-Invoice-Amount'?: number;
+    'Freight-Charge'?: number;
+    'Surcharge'?: number;
+    'PO-Number'?: string;
+    'Status'?: string;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+  };
+  createdTime?: string;
+}
+
+/**
+ * POInvoiceDetails record type
+ * Represents a single PO invoice line item record from Airtable
+ */
+export interface POInvoiceDetailsRecord {
+  id: string;
+  fields: {
+    [key: string]: any;
+    'RecordID'?: string;
+    'InvoiceHeaders'?: string[];
+    'Line-Number'?: string;
+    'Item-No'?: string;
+    'Item-Description'?: string;
+    'Quantity-Invoiced'?: number;
+    'Invoice-Price'?: number;
+    'Line-Amount'?: number;
+    'PO-Number'?: string;
+    'Expacct'?: string;
+    'AP-Invoice-Number'?: string;
+  };
+  createdTime?: string;
+}

@@ -1,11 +1,17 @@
 {
-    "name": "untitledui-nextjs-starter-kit",
+    "name": "autoledger-frontend",
     "version": "0.0.0",
     "private": true,
+    "type": "module",
     "scripts": {
-        "dev": "next dev --turbopack",
-        "build": "next build",
-        "start": "next start"
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "lint": "eslint .",
+        "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
+        "schema:fetch": "node scripts/fetch-airtable-schema.js",
+        "schema:generate": "node scripts/generate-schema-types.js",
+        "schema:update": "node scripts/fetch-airtable-schema.js && node scripts/generate-schema-types.js"
     },
     "dependencies": {
         "@hyzyla/pdfium": "^2.1.9",
@@ -19,19 +25,19 @@
         "@vercel/blob": "^2.0.0",
         "dotenv": "^17.2.1",
         "motion": "^12.23.12",
-        "next": "^15.4.6",
-        "next-themes": "^0.4.6",
         "ocr-llm": "^0.4.15",
         "openai": "^6.0.0",
         "pdf-poppler": "^0.2.2",
         "pdf-to-images-browser": "^0.1.8",
         "pdf2pic": "^3.2.0",
+        "pdfjs-dist": "^5.4.394",
         "pngjs": "^7.0.0",
         "react": "19.1.1",
         "react-aria": "^3.42.0",
         "react-aria-components": "^1.12.0",
         "react-dom": "19.1.1",
         "react-hotkeys-hook": "^5.1.0",
+        "react-router-dom": "^7.1.3",
         "sharp": "^0.34.4",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.3.1",
@@ -44,13 +50,14 @@
         "@types/node": "^24.2.1",
         "@types/react": "^19.1.9",
         "@types/react-dom": "^19.1.7",
+        "@vitejs/plugin-react": "^4.3.4",
         "eslint": "9.34.0",
-        "eslint-config-next": "15.5.2",
         "postcss": "^8.5.6",
         "postcss-loader": "^8.1.1",
         "prettier": "^3.6.2",
         "prettier-plugin-tailwindcss": "^0.6.14",
         "tsx": "^4.20.6",
-        "typescript": "^5.9.2"
+        "typescript": "^5.9.2",
+        "vite": "^6.0.11"
     }
 }

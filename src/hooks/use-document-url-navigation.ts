@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 /**
  * Hook for managing document selection with URL synchronization
@@ -7,56 +7,56 @@ import { useRouter, useSearchParams } from 'next/navigation';
  * @returns Object with selectedId, updateSelectedId function, and URL sync logic
  */
 export function useDocumentUrlNavigation(basePath: string) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const [selectedId, setSelectedId] = useState<string>('');
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<string>('');
 
-    // Sync URL with selectedId on mount and URL changes
-    useEffect(() => {
-        const urlId = searchParams.get('id');
-        if (urlId && urlId !== selectedId) {
-            setSelectedId(urlId);
-        }
-    }, [searchParams, selectedId]);
+  // Sync URL with selectedId on mount and URL changes
+  useEffect(() => {
+    const urlId = searchParams.get('id');
+    if (urlId && urlId !== selectedId) {
+      setSelectedId(urlId);
+    }
+  }, [searchParams, selectedId]);
 
-    // Update both state and URL when selection changes
-    const updateSelectedId = useCallback((id: string) => {
-        setSelectedId(id);
-        
-        const newSearchParams = new URLSearchParams(searchParams.toString());
-        if (id) {
-            newSearchParams.set('id', id);
-        } else {
-            newSearchParams.delete('id');
-        }
-        
-        const newUrl = `${basePath}?${newSearchParams.toString()}`;
-        router.replace(newUrl, { scroll: false });
-    }, [basePath, router, searchParams]);
+  // Update both state and URL when selection changes
+  const updateSelectedId = useCallback(
+    (id: string) => {
+      setSelectedId(id);
 
-    // Helper to initialize selection with first item if none selected
-    const initializeSelection = useCallback((items: Array<{ id: string }>) => {
-        if (items.length > 0 && !selectedId) {
-            updateSelectedId(items[0].id);
-        }
-    }, [selectedId, updateSelectedId]);
+      if (id) {
+        setSearchParams({ id });
+      } else {
+        setSearchParams({});
+      }
+    },
+    [setSearchParams]
+  );
 
-    // Helper for when deleting the currently selected item
-    const handleDeletedSelection = useCallback((deletedId: string, remainingItems: Array<{ id: string }>) => {
-        if (selectedId === deletedId) {
-            updateSelectedId(remainingItems.length > 0 ? remainingItems[0].id : '');
-        }
-    }, [selectedId, updateSelectedId]);
+  // Helper to initialize selection with first item if none selected
+  const initializeSelection = useCallback(
+    (items: Array<{ id: string }>) => {
+      if (items.length > 0 && !selectedId) {
+        updateSelectedId(items[0].id);
+      }
+    },
+    [selectedId, updateSelectedId]
+  );
 
-    return {
-        selectedId,
-        updateSelectedId,
-        initializeSelection,
-        handleDeletedSelection
-    };
+  // Helper for when deleting the currently selected item
+  const handleDeletedSelection = useCallback(
+    (deletedId: string, remainingItems: Array<{ id: string }>) => {
+      if (selectedId === deletedId) {
+        updateSelectedId(remainingItems.length > 0 ? remainingItems[0].id : '');
+      }
+    },
+    [selectedId, updateSelectedId]
+  );
+
+  return {
+    selectedId,
+    updateSelectedId,
+    initializeSelection,
+    handleDeletedSelection,
+  };
 }
-
-
-
-
-

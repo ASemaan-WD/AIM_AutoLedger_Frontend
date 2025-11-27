@@ -167,7 +167,7 @@ export class AirtableClient {
     if (params.offset) queryParams.offset = params.offset;
     if (params.maxRecords) queryParams.maxRecords = params.maxRecords;
     if (params.filterByFormula) queryParams.filterByFormula = params.filterByFormula;
-    if (params.fields) params.fields.forEach(field => queryParams['fields[]'] = field);
+    if (params.fields) queryParams['fields[]'] = params.fields;
     
     if (params.sort) {
       params.sort.forEach((sortField, index) => {
@@ -246,20 +246,22 @@ export class AirtableClient {
 
 /**
  * Create Airtable client instance
+ * Uses Vite environment variables (import.meta.env)
  */
-export function createAirtableClient(baseId: string, token?: string): AirtableClient {
-  const pat = token || process.env.AIRTABLE_PAT;
+export function createAirtableClient(baseId?: string, token?: string): AirtableClient {
+  const pat = token || import.meta.env.VITE_AIRTABLE_PAT;
+  const base = baseId || import.meta.env.VITE_AIRTABLE_BASE_ID;
   
   if (!pat) {
-    throw new Error('Airtable Personal Access Token (PAT) is required. Set AIRTABLE_PAT environment variable.');
+    throw new Error('Airtable Personal Access Token (PAT) is required. Set VITE_AIRTABLE_PAT in .env file.');
   }
 
-  if (!baseId) {
-    throw new Error('Airtable Base ID is required.');
+  if (!base) {
+    throw new Error('Airtable Base ID is required. Set VITE_AIRTABLE_BASE_ID in .env file or provide as parameter.');
   }
 
   return new AirtableClient({
-    baseId,
+    baseId: base,
     token: pat,
   });
 }

@@ -5,12 +5,13 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createAirtableClient } from './client';
 import { transformAirtableToInvoiceEntity, transformInvoiceToAirtableEntity } from './transforms';
 import { TABLE_NAMES } from './schema-types';
 import type { Invoice } from '@/types/documents';
 import type { AirtableRecord } from './types';
 
-const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
+const BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
 
 interface UseInvoicesOptions {
   filter?: string;
@@ -50,36 +51,25 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
     setError(null);
 
     try {
-      // Build query parameters
-      const queryParams = new URLSearchParams({
-        baseId: BASE_ID,
-      });
+      const client = createAirtableClient(BASE_ID);
+      
+      const listParams: any = {
+        pageSize: 50
+      };
 
       if (filter) {
-        queryParams.append('filterByFormula', filter);
+        listParams.filterByFormula = filter;
       }
 
       if (sort) {
-        sort.forEach((sortItem, index) => {
-          queryParams.append(`sort[${index}][field]`, sortItem.field);
-          queryParams.append(`sort[${index}][direction]`, sortItem.direction);
-        });
+        listParams.sort = sort;
       } else {
         // Default sort by created date descending
-        queryParams.append('sort[0][field]', 'Created-At');
-        queryParams.append('sort[0][direction]', 'desc');
+        listParams.sort = [{ field: 'Created-At', direction: 'desc' as const }];
       }
-
-      queryParams.append('pageSize', '50');
 
       // Fetch invoices from Invoices table (primary entity)
-      const invoicesResponse = await fetch(`/api/airtable/Invoices?${queryParams}`);
-
-      if (!invoicesResponse.ok) {
-        throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
-      }
-
-      const invoicesData = await invoicesResponse.json();
+      const invoicesData = await client.listRecords('Invoices', listParams);
 
       // Transform the data using Invoice entity transform
       const transformedInvoices = invoicesData.records.map((invoiceRecord: AirtableRecord) => {
@@ -96,7 +86,7 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
     } finally {
       setLoading(false);
     }
-  }, [filter, sort]);
+  }, [filter, sort, loading]);
 
   // Auto-fetch only once when component mounts or key dependencies change
   useEffect(() => {
@@ -125,19 +115,12 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
    */
   const updateInvoice = useCallback(async (invoiceId: string, updates: Partial<Invoice>) => {
     try {
+      const client = createAirtableClient(BASE_ID);
       const airtableFields = transformInvoiceToAirtableEntity(updates);
       
-      const response = await fetch(`/api/airtable/Invoices`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          records: [{ id: invoiceId, fields: airtableFields }]
-        }),
+      await client.updateRecords('Invoices', {
+        records: [{ id: invoiceId, fields: airtableFields }]
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update invoice: ${response.status}`);
-      }
 
       // Optimistically update local state
       setInvoices(prevInvoices => 
@@ -158,19 +141,13 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
    */
   const createInvoice = useCallback(async (invoice: Partial<Invoice>): Promise<Invoice> => {
     try {
+      const client = createAirtableClient(BASE_ID);
       const airtableFields = transformInvoiceToAirtableEntity(invoice);
       
-      const response = await fetch(`/api/airtable/Invoices`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: airtableFields }),
+      const data = await client.createRecords('Invoices', {
+        records: [{ fields: airtableFields }]
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create invoice: ${response.status}`);
-      }
-
-      const data = await response.json();
       const createdInvoice = transformAirtableToInvoiceEntity(data.records[0]);
       
       // Add to local state
@@ -258,20 +235,16 @@ export function useInvoiceCounts() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&fields=Status`);
+      const client = createAirtableClient(BASE_ID);
+      const data = await client.listRecords('Invoices', { fields: ['Status', 'Vendor-Name', 'Invoice-Number', 'Amount'] });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
       const statusCounts: Record<string, number> = {};
 
       // Count by status (Invoices table status values)
       data.records.forEach((record: AirtableRecord) => {
         const status = record.fields.Status || 'Pending';
         // Normalize to lowercase for counting
-        const normalizedStatus = status.toLowerCase();
+        const normalizedStatus = (status as string).toLowerCase();
         statusCounts[normalizedStatus] = (statusCounts[normalizedStatus] || 0) + 1;
       });
 

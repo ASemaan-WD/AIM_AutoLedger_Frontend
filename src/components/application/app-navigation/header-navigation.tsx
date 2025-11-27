@@ -1,8 +1,6 @@
-"use client";
-
-import type { FC, ReactNode } from "react";
-import Link from "next/link";
-import { Bell01, LifeBuoy01, SearchLg, Settings01 } from "@untitledui/icons";
+import type { FC, ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { Bell01, LifeBuoy01, SearchLg, Settings01 } from '@untitledui/icons';
 import { Button as AriaButton, DialogTrigger, Popover } from "react-aria-components";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { BadgeWithDot } from "@/components/base/badges/badges";

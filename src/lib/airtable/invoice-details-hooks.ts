@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { createAirtableClient } from './client';
 import { TABLE_NAMES, FIELD_IDS } from './schema-types';
 import type { AirtableRecord } from './types';
 import type { DocumentLine } from '@/types/documents';
@@ -70,20 +71,19 @@ export function useInvoiceDetails(options: UseInvoiceDetailsOptions = {}): UseIn
     setError(null);
 
     try {
+      const client = createAirtableClient();
+      
       // Fetch each line item record by ID
       const linePromises = invoiceDetailsIds.map(async (recordId) => {
-        const url = `/api/airtable/${TABLE_NAMES.INVOICEDETAILS}/${recordId}`;
-        console.log('[InvoiceDetails] Fetching record:', url);
+        console.log('[InvoiceDetails] Fetching record:', recordId);
         
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          console.error('[InvoiceDetails] Failed to fetch record:', recordId, response.status);
+        try {
+          const data = await client.getRecord(TABLE_NAMES.INVOICEDETAILS, recordId);
+          return data;
+        } catch (err) {
+          console.error('[InvoiceDetails] Failed to fetch record:', recordId, err);
           return null;
         }
-        
-        const data = await response.json();
-        return data;
       });
 
       const records = await Promise.all(linePromises);

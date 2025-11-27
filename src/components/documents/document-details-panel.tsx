@@ -464,28 +464,18 @@ export const DocumentDetailsPanel = ({
         
         try {
             // Update Airtable directly
-            const response = await fetch(`/api/airtable/Invoices`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    records: [{
-                        id: currentDoc.id,
-                        fields: {
-                            'Vendor-Name': editingVendorName.trim(),
-                            'VendId': null // Clear vendor code since we're manually editing
-                        }
-                    }]
-                })
+            const { updateRecords } = await import('@/services/airtable-service');
+            const responseData = await updateRecords('Invoices', {
+                records: [{
+                    id: currentDoc.id,
+                    fields: {
+                        'Vendor-Name': editingVendorName.trim(),
+                        'VendId': null // Clear vendor code since we're manually editing
+                    }
+                }]
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to update vendor in Airtable');
-            }
-
-            // Parse the response to get the updated record
-            const responseData = await response.json();
+            // Get the updated record
             const updatedRecord = responseData.records?.[0];
 
             // Update the document locally to reflect the changes

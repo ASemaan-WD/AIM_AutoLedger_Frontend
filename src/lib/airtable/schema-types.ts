@@ -1,14 +1,22 @@
 /**
  * Auto-generated Airtable schema types
- * Generated from latest_schema.json
- * DO NOT EDIT MANUALLY - Run 'node scripts/generate-schema-types.js' to regenerate
+ * Generated from airtable-schema.json
+ * 
+ * Generated: 2025-11-27T15:13:18.187Z
+ * Base ID: applFPNMYrcJY8Z0C
+ * 
+ * DO NOT EDIT MANUALLY
+ * Run 'node scripts/generate-schema-types.js' to regenerate
  */
 
-// Auto-generated field IDs from Airtable schema
+// ============================================================================
+// FIELD IDS - Use these when accessing fields by ID
+// ============================================================================
 
 export const FIELD_IDS = {
   FILES: {
     FILEID: 'fld4aUSAm9rH0gPYt',
+    FILEURL: 'fldxdxWbvC9KDHee7',
     FILEHASH: 'fldAkFbKnjYLzQJqS',
     FILENAME: 'fld7E1dvgRISwW0Pt',
     UPLOADEDDATE: 'fldX1faf1UWuRF2p3',
@@ -22,7 +30,22 @@ export const FIELD_IDS = {
     CREATED_AT: 'fldUFewWxBBP9D5bv',
     MODIFIED_AT: 'fldnSfYc4IRnK3pHQ',
     INVOICES: 'flduJO35gW8Lo6Mh9',
+    INVOICERECORDIDS: 'fldbjQKrmz7YHR5Am',
     STATUS_MODIFIED_TIME: 'fldacexiDeUtwmKCV',
+    PROCESSING_STATUS: 'fldH93Ldd3EQoldMO',
+    JOBS: 'fldKrD2WCqE1fP6UR',
+    ORGANIZATIONID: 'fldKExnglFOvmEjKS',
+    IMAGEIDS: 'fldC5s2vHB7VMCh9d',
+    IMAGERECORDIDS: 'fldfrN7ocMWaGhj8J',
+  },
+  IMAGES: {
+    IMAGEID: 'fldf6wxF1QGSrZ7iI',
+    IMAGEURL: 'fldI99BgajoV4qwym',
+    UPLOADEDDATE: 'fld8XRPkGBbFiokJi',
+    CREATED_AT: 'fld5BQb1ciQ0AmnvK',
+    MODIFIED_AT: 'fldyORDhJp6ybMH15',
+    FILEID: 'fldkKmRJVQKhfioJb',
+    FILERECORDID: 'fld0HMo2VuQyxH9tg',
   },
   INVOICES: {
     RECORDID: 'fldvQzw4GlIefZTPy',
@@ -37,6 +60,7 @@ export const FIELD_IDS = {
     POS: 'fldmoLZSY47DRFnAr',
     DOCUMENT_RAW_TEXT: 'fldB5FcRvWID00Tdn',
     FILES: 'fldDzY5Ch6fCP0XHp',
+    FILERECORDID: 'fldFZHrRdMIBlJt4p',
     CREATED_AT: 'fldOh6DdIq2JAhGHO',
     MODIFIED_AT: 'fldSAyzOAxppKn8rh',
     MATCHPAYLOADJSON: 'fld7nZtX7h9ykBAS2',
@@ -49,11 +73,15 @@ export const FIELD_IDS = {
     FILE_RAW_TEXT: 'fldbhuxrnxJ1Fun9u',
     MISSING_FIELDS: 'fldRkn64EhJZkKKQg',
     ATTACHMENTS: 'fldBSFvaBJYkkbaRe',
-    POINVOICEHEADERS: 'fldGeieJZPW2XwQEJ',
+    POINVOICEHEADER: 'fldGeieJZPW2XwQEJ',
+    POINVOICEHEADERRECORDID: 'fldsNZFfzvHhCavg7',
     HEADERS_SUM: 'fldI5H4YHsu4VPPjg',
     LINE_ITEMS: 'fldHPkRk05SqNzF2W',
     ERROR_DESCRIPTION: 'fldnH8Tqrvk52I7e9',
     STATUS_MODIFIED_TIME: 'fldGcJS6M2X2TPHbS',
+    SUMMARY: 'fldhZQz3sZGhJHYts',
+    NAME_CANDIDATES: 'fldUqMvWCDZq1HAAu',
+    FILES_COPY: 'fldOvAKHWNuNgJf1E',
   },
   POINVOICEHEADERS: {
     RECORDID: 'fldhszvX1XbN0cGah',
@@ -73,12 +101,14 @@ export const FIELD_IDS = {
     MISCELLANEOUS_CHARGE: 'fldEDwJxYhaye4VmJ',
     DISCOUNT_AMOUNT: 'fldUcQK1FqpUZxxGJ',
     SURCHARGE: 'fldSY9GdNlijlsYdQ',
+    TAXID00: 'fldrfChafGoYKQ2aJ',
     APACCT: 'fldyi7UcDACICVIcq',
     APSUB: 'fldrdeHuh1NVCeKSv',
     FREIGHT_ACCOUNT: 'fld336ezRpzzEkyGh',
     FREIGHT_SUBACCOUNT: 'fldVB7LIxLqOeMmvd',
     MISC_CHARGE_ACCOUNT: 'fldCGiCgdrg5GL5pY',
     MISC_CHARGE_SUBACCOUNT: 'fldeFFh9n47APVWUr',
+    TAX01SUB: 'fldaU2IBNcOm07Vu6',
     PO_NUMBER_SEQ_TYPE: 'fldgqMRGrJM3BUUfQ',
     PO_NUMBER: 'fld4uJuo5MBMnsZgw',
     PO_VENDOR: 'fld0qGIscEzVUgiZm',
@@ -87,18 +117,21 @@ export const FIELD_IDS = {
     CURYRATE: 'fldtu6II85lju5kvT',
     CURYRATETYPE: 'fldLq5lUAm5C0HSa8',
     UPDATE_BATCH_NUMBER: 'fld4QUJecGm4skJhh',
-    DATE_STAMP: 'fldZxGyjFcQaPvxiO',
-    TIME_STAMP: 'fldXVDFDDk3sud6B9',
+    CREATED_AT: 'fldZxGyjFcQaPvxiO',
+    MODIFIED_AT: 'fldubcFtpviXe1zsf',
     USER_ID: 'fldSelF39N2dmQ3EA',
+    UPDATE_YN: 'fldfprb6BWN7yHaiU',
+    UPDATE_AUDIT_NUMBER: 'fldZlmKvQaAmYGzcd',
+    GL_EXCEPTION_YN: 'fld8VOSGAHVwsnNdp',
     INVOICE_BALANCE: 'fldHGoxrb3gYiN2Z7',
     BALANCE_EXCEPTION_YN: 'fldE38iRhlU7uIvma',
     JOB_PROJECT_NUMBER: 'fldg88jTL4hxHCgUG',
     DOCUMENTATTACHMENT: 'fldy6aT5yhZVbcs87',
-    EXPORT_STATUS: 'fldb5mLqnscBfBzjM',
+    STATUS: 'fldb5mLqnscBfBzjM',
     EXPORT_ERROR_CODE: 'fld08whvyI1HaV5Dx',
     DETAILS_SUM: 'fldId0eVt84ZYF9fx',
     TERMSDAYSINT: 'fldGmplqb3IKIwnBW',
-    TAXID00: 'fldrfChafGoYKQ2aJ',
+    STATUS_MODIFIED_TIME: 'fldBeuPc41kQmBKWY',
     TAXID01: 'fldxnhDiN7gAcEjS4',
     TAXID02: 'fldaTI1fhJnCe3T22',
     TAXID03: 'fldLImdkt3VKPM9kD',
@@ -115,19 +148,15 @@ export const FIELD_IDS = {
     TAX02ACCT: 'fldrtSPsGYh0EfR8O',
     TAX03ACCT: 'fldXQ3vJa8HyitF03',
     TAX00SUB: 'fldR03OR5REc0uPmA',
-    TAX01SUB: 'fldaU2IBNcOm07Vu6',
     TAX02SUB: 'fld14PdXAJF2iUNEV',
     TAX03SUB: 'fldn1f5oPJYIMqChb',
-    UPDATE_YN: 'fldfprb6BWN7yHaiU',
-    UPDATE_AUDIT_NUMBER: 'fldZlmKvQaAmYGzcd',
-    GL_EXCEPTION_YN: 'fld8VOSGAHVwsnNdp',
     TYPE: 'fld9hrf3hvO78stDY',
     FUTUREA: 'fldUDB4VInuh7JPOI',
     FUTUREB: 'fldXSWA3dr1rLL5s4',
   },
   POINVOICEDETAILS: {
     RECORDID: 'fldsFnV2r5H0Pljoz',
-    POINVOICEHEADERS: 'fldeJpf4G5Cj0LnaR',
+    POINVOICEHEADER: 'fldeJpf4G5Cj0LnaR',
     HEADERRECORDID: 'fldFEMHbiZkR41Dzz',
     COMPANY_CODE: 'flduZQavGskCdu35d',
     VENDID: 'fldwYCDK6mImfRGKQ',
@@ -169,6 +198,8 @@ export const FIELD_IDS = {
     FUTUREA: 'fldtLtHzF4eA2Hld6',
     FUTUREB: 'fldVUsmxKS3WERXwN',
     LINE_PRICING: 'fldPv8Y6IhHnpH6A3',
+    CREATED_AT: 'fldea5xycWCUvW5uQ',
+    MODIFIED_AT: 'fldJfQd3EbuRbdRaS',
     HEADER: 'fldrzIQxcaQWlAgwh',
     TAXID00: 'fldtGfOf1jFI9aDbE',
     TAXID01: 'fldYfRbCVad371ks3',
@@ -183,20 +214,66 @@ export const FIELD_IDS = {
     TXBLAMT02: 'fldYWkUBK56G895DP',
     TXBLAMT03: 'fldeT4ChgqreD0CfD',
   },
+  JOBS: {
+    RECORDID: 'fldWxFHCUspjwRSVH',
+    KIND: 'fldHTTbQg0THduYRz',
+    RELATEDID: 'fldqB13XyHV8adQGo',
+    RELATEDRECORDID: 'fldo5DUZ1ZqH81cMK',
+    STATUS: 'fldrLsufhRoczexhW',
+    ATTEMPTS: 'fldnuypciXqhTcjxF',
+    BASE_64_CONTENT: 'fldXZVizC2KUBZtHJ',
+    ERROR: 'fld82YekEL3sWscLX',
+    CREATEDAT: 'fldCdqR9MQUATvFVz',
+    MODIFIEDAT: 'fldAto9sfQBrJcaBl',
+    ORGANIZATIONID: 'fldihxZc6aRlVhvUN',
+  },
+  LOGS: {
+    RECORDID: 'fldZZtCAIZSYrPlI6',
+    SOURCE: 'fldETJ6DsaXKtawiE',
+    DATE: 'fldGC5sJu48eGBdlN',
+    OPERATION: 'fld71kOEuXNAXwHYM',
+    ERROR_MESSAGE: 'fldx3MCaYFEKqYWzZ',
+    STACK_TRACE: 'fldj7QfD7scWYmXDc',
+    CREATED_AT: 'fldFwNVSdwuxvjoDN',
+  },
 } as const;
 
-// Table names
+// ============================================================================
+// TABLE IDS - Airtable table IDs
+// ============================================================================
+
+export const TABLE_IDS = {
+  FILES: 'tbluYB0mHO6CQWrwL',
+  IMAGES: 'tblFUdFrmvlNhFJQ0',
+  INVOICES: 'tblokyH2U1PBhhCE9',
+  POINVOICEHEADERS: 'tblgEJz0WQtZusPAT',
+  POINVOICEDETAILS: 'tblajSDlRV6SsUtw8',
+  JOBS: 'tbl5ultFQKxpbqSk2',
+  LOGS: 'tblydVugKkN2lSEre',
+} as const;
+
+// ============================================================================
+// TABLE NAMES - Human-readable table names
+// ============================================================================
+
 export const TABLE_NAMES = {
   FILES: 'Files',
+  IMAGES: 'Images',
   INVOICES: 'Invoices',
   POINVOICEHEADERS: 'POInvoiceHeaders',
   POINVOICEDETAILS: 'POInvoiceDetails',
+  JOBS: 'Jobs',
+  LOGS: 'Logs',
 } as const;
 
-// Field names (actual field names in Airtable)
+// ============================================================================
+// FIELD NAMES - Human-readable field names
+// ============================================================================
+
 export const FIELD_NAMES = {
   FILES: {
     FILEID: 'FileID',
+    FILEURL: 'FileURL',
     FILEHASH: 'FileHash',
     FILENAME: 'FileName',
     UPLOADEDDATE: 'UploadedDate',
@@ -205,12 +282,27 @@ export const FIELD_NAMES = {
     ATTACHMENTS: 'Attachments',
     RAW_TEXT: 'Raw-Text',
     ERROR_CODE: 'Error-Code',
-    ERROR_DESCRIPTION: 'Error Description',
+    ERROR_DESCRIPTION: 'Error-Description',
     ERROR_LINK: 'Error-Link',
-    CREATED_AT: 'CreatedAt',
-    MODIFIED_AT: 'ModifiedAt',
+    CREATED_AT: 'Created-At',
+    MODIFIED_AT: 'Modified-At',
     INVOICES: 'Invoices',
+    INVOICERECORDIDS: 'InvoiceRecordIDs',
     STATUS_MODIFIED_TIME: 'Status-Modified-Time',
+    PROCESSING_STATUS: 'Processing-Status',
+    JOBS: 'Jobs',
+    ORGANIZATIONID: 'OrganizationId',
+    IMAGEIDS: 'ImageIDs',
+    IMAGERECORDIDS: 'ImageRecordIDs',
+  },
+  IMAGES: {
+    IMAGEID: 'ImageID',
+    IMAGEURL: 'ImageURL',
+    UPLOADEDDATE: 'UploadedDate',
+    CREATED_AT: 'Created-At',
+    MODIFIED_AT: 'Modified-At',
+    FILEID: 'FileID',
+    FILERECORDID: 'FileRecordID',
   },
   INVOICES: {
     RECORDID: 'RecordID',
@@ -225,9 +317,10 @@ export const FIELD_NAMES = {
     POS: 'POs',
     DOCUMENT_RAW_TEXT: 'Document-Raw-Text',
     FILES: 'Files',
-    CREATED_AT: 'CreatedAt',
-    MODIFIED_AT: 'ModifiedAt',
-    MATCH_PAYLOAD_JSON: 'MatchPayloadJSON',
+    FILERECORDID: 'FileRecordID',
+    CREATED_AT: 'Created-At',
+    MODIFIED_AT: 'Modified-At',
+    MATCHPAYLOADJSON: 'MatchPayloadJSON',
     ERRORCODE: 'ErrorCode',
     STATUS: 'Status',
     DISCOUNT_AMOUNT: 'Discount-Amount',
@@ -237,11 +330,15 @@ export const FIELD_NAMES = {
     FILE_RAW_TEXT: 'File-Raw-Text',
     MISSING_FIELDS: 'Missing-Fields',
     ATTACHMENTS: 'Attachments',
-    POINVOICEHEADERS: 'POInvoiceHeaders',
+    POINVOICEHEADER: 'POInvoiceHeader',
+    POINVOICEHEADERRECORDID: 'POInvoiceHeaderRecordID',
     HEADERS_SUM: 'Headers-Sum',
-    LINE_ITEMS: 'Line-Items',
-    ERROR_DESCRIPTION: 'Error Description',
+    LINE_ITEMS: 'Line Items',
+    ERROR_DESCRIPTION: 'Error-Description',
     STATUS_MODIFIED_TIME: 'Status-Modified-Time',
+    SUMMARY: 'Summary',
+    NAME_CANDIDATES: 'Name-Candidates',
+    FILES_COPY: 'Files copy',
   },
   POINVOICEHEADERS: {
     RECORDID: 'RecordID',
@@ -261,12 +358,14 @@ export const FIELD_NAMES = {
     MISCELLANEOUS_CHARGE: 'Miscellaneous-Charge',
     DISCOUNT_AMOUNT: 'Discount-Amount',
     SURCHARGE: 'Surcharge',
+    TAXID00: 'TaxID00',
     APACCT: 'APAcct',
     APSUB: 'APSub',
     FREIGHT_ACCOUNT: 'Freight-Account',
     FREIGHT_SUBACCOUNT: 'Freight-Subaccount',
     MISC_CHARGE_ACCOUNT: 'Misc-Charge-Account',
     MISC_CHARGE_SUBACCOUNT: 'Misc-Charge-Subaccount',
+    TAX01SUB: 'Tax01Sub',
     PO_NUMBER_SEQ_TYPE: 'PO-Number-Seq-Type',
     PO_NUMBER: 'PO-Number',
     PO_VENDOR: 'PO-Vendor',
@@ -275,18 +374,21 @@ export const FIELD_NAMES = {
     CURYRATE: 'CuryRate',
     CURYRATETYPE: 'CuryRateType',
     UPDATE_BATCH_NUMBER: 'Update-Batch-Number',
-    DATE_STAMP: 'Date-Stamp',
-    TIME_STAMP: 'Time-Stamp',
-    USER_ID: 'User-ID',
+    CREATED_AT: 'Created-At',
+    MODIFIED_AT: 'Modified-At',
+    USER_ID: 'User-Id',
+    UPDATE_YN: 'Update-YN',
+    UPDATE_AUDIT_NUMBER: 'Update-Audit-Number',
+    GL_EXCEPTION_YN: 'GL-Exception-YN',
     INVOICE_BALANCE: 'Invoice-Balance',
     BALANCE_EXCEPTION_YN: 'Balance-Exception-YN',
     JOB_PROJECT_NUMBER: 'Job-Project-Number',
     DOCUMENTATTACHMENT: 'DocumentAttachment',
-    EXPORT_STATUS: 'Export-Status',
+    STATUS: 'Status',
     EXPORT_ERROR_CODE: 'Export-Error-Code',
     DETAILS_SUM: 'Details-Sum',
     TERMSDAYSINT: 'TermsDaysInt',
-    TAXID00: 'TaxID00',
+    STATUS_MODIFIED_TIME: 'Status-Modified-Time',
     TAXID01: 'TaxID01',
     TAXID02: 'TaxID02',
     TAXID03: 'TaxID03',
@@ -294,28 +396,24 @@ export const FIELD_NAMES = {
     TAXTOT01: 'TaxTot01',
     TAXTOT02: 'TaxTot02',
     TAXTOT03: 'TaxTot03',
-    TXBLTOT00: 'TxblTot00',
-    TXBLTOT01: 'TxblTot01',
-    TXBLTOT02: 'TxblTot02',
-    TXBLTOT03: 'TxblTot03',
+    TXBLTOT00: 'txblTot00',
+    TXBLTOT01: 'txblTot01',
+    TXBLTOT02: 'txblTot02',
+    TXBLTOT03: 'txblTot03',
     TAX00ACCT: 'Tax00Acct',
     TAX01ACCT: 'Tax01Acct',
     TAX02ACCT: 'Tax02Acct',
     TAX03ACCT: 'Tax03Acct',
     TAX00SUB: 'Tax00Sub',
-    TAX01SUB: 'Tax01Sub',
     TAX02SUB: 'Tax02Sub',
     TAX03SUB: 'Tax03Sub',
-    UPDATE_YN: 'Update-YN',
-    UPDATE_AUDIT_NUMBER: 'Update-Audit-Number',
-    GL_EXCEPTION_YN: 'GL-Exception-YN',
     TYPE: 'Type',
     FUTUREA: 'FutureA',
     FUTUREB: 'FutureB',
   },
   POINVOICEDETAILS: {
     RECORDID: 'RecordID',
-    POINVOICEHEADERS: 'POInvoiceHeaders',
+    POINVOICEHEADER: 'POInvoiceHeader',
     HEADERRECORDID: 'HeaderRecordID',
     COMPANY_CODE: 'Company-Code',
     VENDID: 'VendId',
@@ -357,6 +455,8 @@ export const FIELD_NAMES = {
     FUTUREA: 'FutureA',
     FUTUREB: 'FutureB',
     LINE_PRICING: 'Line-Pricing',
+    CREATED_AT: 'Created-At',
+    MODIFIED_AT: 'Modified-At',
     HEADER: 'Header',
     TAXID00: 'TaxID00',
     TAXID01: 'TaxID01',
@@ -366,392 +466,40 @@ export const FIELD_NAMES = {
     TAXAMT01: 'TaxAmt01',
     TAXAMT02: 'TaxAmt02',
     TAXAMT03: 'TaxAmt03',
-    TXBLAMT00: 'TxblAmt00',
-    TXBLAMT01: 'TxblAmt01',
-    TXBLAMT02: 'TxblAmt02',
-    TXBLAMT03: 'TxblAmt03',
+    TXBLAMT00: 'txblAmt00',
+    TXBLAMT01: 'txblAmt01',
+    TXBLAMT02: 'txblAmt02',
+    TXBLAMT03: 'txblAmt03',
+  },
+  JOBS: {
+    RECORDID: 'RecordID',
+    KIND: 'Kind',
+    RELATEDID: 'RelatedId',
+    RELATEDRECORDID: 'RelatedRecordID',
+    STATUS: 'Status',
+    ATTEMPTS: 'Attempts',
+    BASE_64_CONTENT: 'Base-64-Content',
+    ERROR: 'Error',
+    CREATEDAT: 'CreatedAt',
+    MODIFIEDAT: 'ModifiedAt',
+    ORGANIZATIONID: 'OrganizationId',
+  },
+  LOGS: {
+    RECORDID: 'RecordID',
+    SOURCE: 'Source',
+    DATE: 'Date',
+    OPERATION: 'Operation',
+    ERROR_MESSAGE: 'Error-Message',
+    STACK_TRACE: 'Stack-Trace',
+    CREATED_AT: 'Created-At',
   },
 } as const;
 
-// Airtable attachment type
-export interface AirtableAttachment {
-  id: string;
-  url: string;
-  filename: string;
-  size?: number;
-  type?: string;
-  thumbnails?: {
-    small?: { url: string; width: number; height: number };
-    large?: { url: string; width: number; height: number };
-    full?: { url: string; width: number; height: number };
-  };
-}
+// ============================================================================
+// STATUS CONSTANTS
+// ============================================================================
 
-export interface FilesFields {
-  fileID: number;
-  fileHash?: string;
-  fileName?: string;
-  uploadedDate?: string;
-  status?: string;
-  parsedAt?: string;
-  attachments?: AirtableAttachment[];
-  rawText?: string;
-  errorCode?: string;
-  errorDescription?: string;
-  errorLink?: string;
-  createdAt: string;
-  modifiedAt?: string;
-  invoices?: string[];
-  statusModifiedTime?: string;
-}
-
-export interface InvoicesFields {
-  recordID: number;
-  invoiceNumber?: string;
-  vendId?: string;
-  vendorName?: string;
-  amount?: number;
-  date?: string;
-  freightCharge?: number;
-  miscCharge?: number;
-  surcharge?: number;
-  pOs?: string;
-  documentRawText?: string;
-  files?: string[];
-  createdAt: string;
-  modifiedAt?: string;
-  matchPayloadJSON?: string;
-  errorCode?: string;
-  status?: string;
-  discountAmount?: number;
-  discountDate?: string;
-  balance?: any;
-  balanceExplanation?: string;
-  fileRawText?: any;
-  missingFields?: any;
-  attachments?: any;
-  pOInvoiceHeaders?: string[];
-  headersSum?: any;
-  lineItems?: string;
-  errorDescription?: string;
-  statusModifiedTime?: string;
-}
-
-export interface POInvoiceHeadersFields {
-  recordID: number;
-  invoice?: string[];
-  invoiceRecordID?: any;
-  details?: string[];
-  companyCode?: string;
-  vendId?: string;
-  aPInvoiceNumber?: any;
-  remitName?: any;
-  invoiceDate?: any;
-  termsId?: string;
-  dueDate?: any;
-  discountDate?: any;
-  totalInvoiceAmount?: any;
-  freightCharge?: any;
-  miscellaneousCharge?: any;
-  discountAmount?: any;
-  surcharge?: any;
-  aPAcct?: string;
-  aPSub?: string;
-  freightAccount?: string;
-  freightSubaccount?: string;
-  miscChargeAccount?: string;
-  miscChargeSubaccount?: string;
-  pONumberSeqType?: string;
-  pONumber?: string;
-  pOVendor?: string;
-  curyId?: string;
-  curyMultDiv?: string;
-  curyRate?: number;
-  curyRateType?: string;
-  updateBatchNumber?: string;
-  dateStamp: string;
-  timeStamp?: any;
-  userId?: string;
-  invoiceBalance?: any;
-  balanceExceptionYN?: any;
-  jobProjectNumber?: string;
-  documentAttachment?: any;
-  exportStatus?: string;
-  exportErrorCode?: string;
-  detailsSum?: any;
-  termsDaysInt?: number;
-  taxID00?: string;
-  taxID01?: string;
-  taxID02?: string;
-  taxID03?: string;
-  taxTot00?: number;
-  taxTot01?: number;
-  taxTot02?: number;
-  taxTot03?: number;
-  txblTot00?: number;
-  txblTot01?: number;
-  txblTot02?: number;
-  txblTot03?: number;
-  tax00Acct?: string;
-  tax01Acct?: string;
-  tax02Acct?: string;
-  tax03Acct?: string;
-  tax00Sub?: string;
-  tax01Sub?: string;
-  tax02Sub?: string;
-  tax03Sub?: string;
-  updateYN?: boolean;
-  updateAuditNumber?: string;
-  gLExceptionYN?: boolean;
-  type?: string;
-  futureA?: string;
-  futureB?: string;
-}
-
-export interface POInvoiceDetailsFields {
-  recordID: number;
-  pOInvoiceHeaders?: string[];
-  headerRecordID?: any;
-  companyCode?: any;
-  vendId?: any;
-  aPInvoiceNumber?: any;
-  lineNumber?: string;
-  itemNo?: string;
-  itemDescription?: string;
-  step?: string;
-  invoicePrice?: number;
-  invoicePricingQty?: number;
-  quantityInvoiced?: number;
-  lineAmount?: number;
-  pONumberSeqType?: any;
-  pONumber?: any;
-  pOReleaseNumber?: string;
-  pOLineNumber?: string;
-  vendorShipNumber?: string;
-  dateReceived?: string;
-  quantityReceived?: number;
-  quantityAccepted?: number;
-  purchasePrice?: number;
-  pricingQuantity?: number;
-  alreadyInvoicedQty?: number;
-  expAcct?: string;
-  expSub?: string;
-  pPVVoucheredAcct?: string;
-  pPVVoucheredSubAcct?: string;
-  pPVUnitCost?: any;
-  standardCost?: number;
-  surchargeType?: string;
-  surchargeRate?: number;
-  surcharge?: number;
-  gLExceptionYN?: string;
-  invoicedInFullYN?: string;
-  updateLevelInd?: string;
-  pOUOM?: string;
-  jobProjectNumber?: any;
-  boxNbr?: string;
-  futureA?: string;
-  futureB?: string;
-  linePricing?: any;
-  header?: string;
-  taxID00?: any;
-  taxID01?: any;
-  taxID02?: any;
-  taxID03?: any;
-  taxAmt00?: number;
-  taxAmt01?: number;
-  taxAmt02?: number;
-  taxAmt03?: number;
-  txblAmt00?: number;
-  txblAmt01?: number;
-  txblAmt02?: number;
-  txblAmt03?: number;
-}
-
-export interface FilesRecord {
-  fileID: number;
-  fileHash?: string;
-  fileName?: string;
-  uploadedDate?: string;
-  status?: string;
-  parsedAt?: string;
-  attachments?: AirtableAttachment[];
-  rawText?: string;
-  errorCode?: string;
-  errorDescription?: string;
-  errorLink?: string;
-  createdAt: string;
-  modifiedAt?: string;
-  invoices?: string[];
-  statusModifiedTime?: string;
-}
-
-export interface InvoicesRecord {
-  recordID: number;
-  invoiceNumber?: string;
-  vendId?: string;
-  vendorName?: string;
-  amount?: number;
-  date?: string;
-  freightCharge?: number;
-  miscCharge?: number;
-  surcharge?: number;
-  pOs?: string;
-  documentRawText?: string;
-  files?: string[];
-  createdAt: string;
-  modifiedAt?: string;
-  matchPayloadJSON?: string;
-  errorCode?: string;
-  status?: string;
-  discountAmount?: number;
-  discountDate?: string;
-  balance?: any;
-  balanceExplanation?: string;
-  fileRawText?: any;
-  missingFields?: any;
-  attachments?: any;
-  pOInvoiceHeaders?: string[];
-  headersSum?: any;
-  lineItems?: string;
-  errorDescription?: string;
-  statusModifiedTime?: string;
-}
-
-export interface POInvoiceHeadersRecord {
-  recordID: number;
-  invoice?: string[];
-  invoiceRecordID?: any;
-  details?: string[];
-  companyCode?: string;
-  vendId?: string;
-  aPInvoiceNumber?: any;
-  remitName?: any;
-  invoiceDate?: any;
-  termsId?: string;
-  dueDate?: any;
-  discountDate?: any;
-  totalInvoiceAmount?: any;
-  freightCharge?: any;
-  miscellaneousCharge?: any;
-  discountAmount?: any;
-  surcharge?: any;
-  aPAcct?: string;
-  aPSub?: string;
-  freightAccount?: string;
-  freightSubaccount?: string;
-  miscChargeAccount?: string;
-  miscChargeSubaccount?: string;
-  pONumberSeqType?: string;
-  pONumber?: string;
-  pOVendor?: string;
-  curyId?: string;
-  curyMultDiv?: string;
-  curyRate?: number;
-  curyRateType?: string;
-  updateBatchNumber?: string;
-  dateStamp: string;
-  timeStamp?: any;
-  userId?: string;
-  invoiceBalance?: any;
-  balanceExceptionYN?: any;
-  jobProjectNumber?: string;
-  documentAttachment?: any;
-  exportStatus?: string;
-  exportErrorCode?: string;
-  detailsSum?: any;
-  termsDaysInt?: number;
-  taxID00?: string;
-  taxID01?: string;
-  taxID02?: string;
-  taxID03?: string;
-  taxTot00?: number;
-  taxTot01?: number;
-  taxTot02?: number;
-  taxTot03?: number;
-  txblTot00?: number;
-  txblTot01?: number;
-  txblTot02?: number;
-  txblTot03?: number;
-  tax00Acct?: string;
-  tax01Acct?: string;
-  tax02Acct?: string;
-  tax03Acct?: string;
-  tax00Sub?: string;
-  tax01Sub?: string;
-  tax02Sub?: string;
-  tax03Sub?: string;
-  updateYN?: boolean;
-  updateAuditNumber?: string;
-  gLExceptionYN?: boolean;
-  type?: string;
-  futureA?: string;
-  futureB?: string;
-}
-
-export interface POInvoiceDetailsRecord {
-  recordID: number;
-  pOInvoiceHeaders?: string[];
-  headerRecordID?: any;
-  companyCode?: any;
-  vendId?: any;
-  aPInvoiceNumber?: any;
-  lineNumber?: string;
-  itemNo?: string;
-  itemDescription?: string;
-  step?: string;
-  invoicePrice?: number;
-  invoicePricingQty?: number;
-  quantityInvoiced?: number;
-  lineAmount?: number;
-  pONumberSeqType?: any;
-  pONumber?: any;
-  pOReleaseNumber?: string;
-  pOLineNumber?: string;
-  vendorShipNumber?: string;
-  dateReceived?: string;
-  quantityReceived?: number;
-  quantityAccepted?: number;
-  purchasePrice?: number;
-  pricingQuantity?: number;
-  alreadyInvoicedQty?: number;
-  expAcct?: string;
-  expSub?: string;
-  pPVVoucheredAcct?: string;
-  pPVVoucheredSubAcct?: string;
-  pPVUnitCost?: any;
-  standardCost?: number;
-  surchargeType?: string;
-  surchargeRate?: number;
-  surcharge?: number;
-  gLExceptionYN?: string;
-  invoicedInFullYN?: string;
-  updateLevelInd?: string;
-  pOUOM?: string;
-  jobProjectNumber?: any;
-  boxNbr?: string;
-  futureA?: string;
-  futureB?: string;
-  linePricing?: any;
-  header?: string;
-  taxID00?: any;
-  taxID01?: any;
-  taxID02?: any;
-  taxID03?: any;
-  taxAmt00?: number;
-  taxAmt01?: number;
-  taxAmt02?: number;
-  taxAmt03?: number;
-  txblAmt00?: number;
-  txblAmt01?: number;
-  txblAmt02?: number;
-  txblAmt03?: number;
-}
-
-// =============================================================================
-// MANUALLY ADDED CONSTANTS (preserved after schema regeneration)
-// =============================================================================
-
-// Invoice Status Constants (Airtable values)
+// Invoice Status Constants
 export const INVOICE_STATUS = {
   PENDING: 'Pending',
   OPEN: 'Matched',
@@ -764,10 +512,21 @@ export const INVOICE_STATUS = {
 
 // File Status Constants
 export const FILE_STATUS = {
-  UPLOADED: 'Uploaded',
+  QUEUED: 'Queued',
   PROCESSING: 'Processing',
   PROCESSED: 'Processed',
   ERROR: 'Error',
+} as const;
+
+// File Processing Status Constants (substatus - shows current operation)
+export const PROCESSING_STATUS = {
+  UPL: 'UPL',           // Uploaded to Vercel
+  DETINV: 'DETINV',     // Detecting invoices (OCR)
+  PARSE: 'PARSE',       // Parsing invoice data
+  RELINV: 'RELINV',     // Relating/finding invoices
+  MATCHING: 'MATCHING', // Matching with PO headers
+  MATCHED: 'MATCHED',   // Matching complete
+  ERROR: 'ERROR',       // Error occurred
 } as const;
 
 // User-facing display text for invoice statuses
@@ -802,7 +561,7 @@ export const INTERNAL_TO_AIRTABLE_STATUS: Record<string, keyof typeof UX_STATUS_
 export const UX_STATUS_COLORS = {
   'Processing': 'blue',
   'Processed': 'success',
-  'Exported': 'brand',
   'Attention': 'error',
+  'Exported': 'gray',
   'Exporting': 'warning',
 } as const;

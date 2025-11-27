@@ -339,7 +339,7 @@ export const FileListItemProgressBar = ({ name, size, progress, failed, isDuplic
                                         {getErrorDisplayName(errorCode)}
                                     </p>
                                     <p className="text-sm text-error-700">
-                                        {getErrorDescription(errorCode)}
+                                        {errorDescription || getErrorDescription(errorCode)}
                                     </p>
                                     {errorLink && errorCode === 'DUPLICATE_FILE' && errorLink.startsWith('/') && (
                                         <p className="text-xs text-warning-600 mt-1">

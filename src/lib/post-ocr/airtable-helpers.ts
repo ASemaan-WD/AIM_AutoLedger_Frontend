@@ -3,15 +3,18 @@
  */
 
 import { FIELD_IDS, TABLE_NAMES } from '../airtable/schema-types';
+import { AirtableClient } from '../airtable/client';
 import type { ParsedDocument } from '../llm/schemas';
 
-const AIRTABLE_TOKEN = process.env.AIRTABLE_PAT;
+const AIRTABLE_TOKEN = process.env.AIRTABLE_PAT || import.meta.env.VITE_AIRTABLE_PAT;
 
 /**
  * Get BASE_ID from environment variables (runtime check)
  */
 function getBaseId(): string {
-  const baseId = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
+  const baseId = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || 
+                 process.env.AIRTABLE_BASE_ID || 
+                 import.meta.env.VITE_AIRTABLE_BASE_ID;
   if (!baseId) {
     throw new Error('Airtable BASE_ID is not configured');
   }
@@ -19,27 +22,25 @@ function getBaseId(): string {
 }
 
 /**
- * Fetch a file record from Airtable using the existing API endpoint
+ * Create Airtable client for direct API access
+ */
+function createClient(): AirtableClient {
+  const baseId = getBaseId();
+  if (!AIRTABLE_TOKEN) {
+    throw new Error('Airtable PAT is not configured');
+  }
+  return new AirtableClient({
+    baseId,
+    token: AIRTABLE_TOKEN,
+  });
+}
+
+/**
+ * Fetch a file record from Airtable using direct API access
  */
 export async function getFileRecord(fileRecordId: string): Promise<any> {
-  const BASE_ID = getBaseId();
-  // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-  const url = `${baseUrl}/api/airtable/${TABLE_NAMES.FILES}/${fileRecordId}?baseId=${BASE_ID}`;
-  
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch file record: ${response.status}`);
-  }
-
-  const record = await response.json();
+  const client = createClient();
+  const record = await client.getRecord(TABLE_NAMES.FILES, fileRecordId);
   
   // Debug: Log the record structure to understand what fields are available
   console.log('🔍 File record fields available:', Object.keys(record.fields || {}));
@@ -81,22 +82,8 @@ export async function findTeamByName(teamName: string): Promise<string | null> {
   }
 
   try {
-    const BASE_ID = getBaseId();
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const url = `${baseUrl}/api/airtable/${TABLE_NAMES.TEAMS}?baseId=${BASE_ID}&maxRecords=50`;
-
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      console.warn(`Failed to lookup teams: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
+    const client = createClient();
+    const data = await client.listRecords(TABLE_NAMES.TEAMS, { maxRecords: 50 });
     
     console.log(`🔍 Looking for team matching: "${teamName}"`);
     
@@ -253,28 +240,12 @@ export async function createInvoiceRecord(
     amount: doc.amount,
   });
   
-  // Create the record using the existing API
-  const BASE_ID = getBaseId();
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-  const url = `${baseUrl}/api/airtable/Invoices?baseId=${BASE_ID}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ fields }),
+  // Create the record using direct API access
+  const client = createClient();
+  const data = await client.createRecords('Invoices', {
+    records: [{ fields }]
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create Invoice record: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  const recordId = data.records?.[0]?.id || data.id;
+  const recordId = data.records?.[0]?.id;
   console.log(`✅ Created Invoice record: ${recordId}`);
   
   return recordId;
@@ -326,28 +297,12 @@ export async function createPOInvoiceHeaderRecord(
     amount: doc.amount,
   });
   
-  // Create the record using the existing API
-  const BASE_ID = getBaseId();
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-  const url = `${baseUrl}/api/airtable/POInvoiceHeaders?baseId=${BASE_ID}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ fields }),
+  // Create the record using direct API access
+  const client = createClient();
+  const data = await client.createRecords('POInvoiceHeaders', {
+    records: [{ fields }]
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create POInvoiceHeader record: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  const recordId = data.records?.[0]?.id || data.id;
+  const recordId = data.records?.[0]?.id;
   console.log(`✅ Created POInvoiceHeader record: ${recordId}`);
   
   return recordId;
@@ -443,29 +398,12 @@ export async function createDocumentRecord(
     team: doc.team,
   });
   
-  // Create the record using the existing API
-  // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
-  const BASE_ID = getBaseId();
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-  const url = `${baseUrl}/api/airtable/${encodeURIComponent(config.tableName)}?baseId=${BASE_ID}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ fields }),
+  // Create the record using direct API access
+  const client = createClient();
+  const data = await client.createRecords(config.tableName, {
+    records: [{ fields }]
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create ${doc.document_type} record: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  const recordId = data.records?.[0]?.id || data.id;
+  const recordId = data.records?.[0]?.id;
   console.log(`✅ Created ${doc.document_type} record: ${recordId}`);
   
   return recordId;
@@ -492,30 +430,15 @@ export async function linkDocumentsToFile(
   
   // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
   const BASE_ID = getBaseId();
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-  const url = `${baseUrl}/api/airtable/Files?baseId=${BASE_ID}`;
-  
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      records: [{
-        id: fileRecordId,
-        fields: {
-          'Invoices': invoiceIds, // Link to Invoices table (multipleRecordLinks)
-        },
-      }]
-    }),
+  const client = createClient();
+  await client.updateRecords('Files', {
+    records: [{
+      id: fileRecordId,
+      fields: {
+        'Invoices': invoiceIds, // Link to Invoices table (multipleRecordLinks)
+      },
+    }]
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to link invoices to file: ${response.status} - ${errorText}`);
-  }
 
   console.log(`✅ Linked ${invoiceIds.length} invoice(s) to file ${fileRecordId}`);
 }
@@ -538,13 +461,8 @@ export async function createInvoiceDetails(
 
   console.log(`\n📋 Creating ${doc.line_items.length} POInvoiceDetails record(s) for POInvoiceHeader...`);
   
-  // Use VERCEL_URL for production, NEXTAUTH_URL for custom domains, or localhost for dev
-  const BASE_ID = getBaseId();
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-  const url = `${baseUrl}/api/airtable/${TABLE_NAMES.INVOICEDETAILS}?baseId=${BASE_ID}`;
-  
+  // Create invoice details using direct API access
+  const client = createClient();
   const createdDetailIds: string[] = [];
   
   for (let i = 0; i < doc.line_items.length; i++) {
@@ -605,24 +523,17 @@ export async function createInvoiceDetails(
     console.log(`  Creating detail ${i + 1}/${doc.line_items.length}: Line ${lineItem.line_number || 'N/A'} - ${lineItem.item_description || 'N/A'}`);
     
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ fields }),
+      const data = await client.createRecords(TABLE_NAMES.INVOICEDETAILS, {
+        records: [{ fields }]
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`  ❌ Failed to create detail record: ${response.status} - ${errorText}`);
-        continue; // Continue with next line item even if one fails
+      const recordId = data.records?.[0]?.id;
+      if (recordId) {
+        createdDetailIds.push(recordId);
+        console.log(`  ✅ Created detail record: ${recordId}`);
+      } else {
+        console.error(`  ❌ Failed to create detail record: No record ID returned`);
       }
-
-      const data = await response.json();
-      const recordId = data.records?.[0]?.id || data.id;
-      createdDetailIds.push(recordId);
-      console.log(`  ✅ Created detail record: ${recordId}`);
     } catch (error) {
       console.error(`  ❌ Error creating detail record:`, error);
       continue; // Continue with next line item

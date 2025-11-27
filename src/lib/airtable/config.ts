@@ -17,28 +17,29 @@ export interface AirtableEnvironmentConfig {
 
 /**
  * Load Airtable configuration from environment variables
+ * Uses Vite's import.meta.env for frontend access
  */
 export function loadAirtableConfig(): AirtableEnvironmentConfig {
-  const pat = process.env.AIRTABLE_PAT;
+  const pat = import.meta.env.VITE_AIRTABLE_PAT;
   
   if (!pat) {
     throw new Error(
-      'AIRTABLE_PAT environment variable is required. ' +
+      'VITE_AIRTABLE_PAT environment variable is required. ' +
       'Get your Personal Access Token from https://airtable.com/create/tokens'
     );
   }
 
   return {
     pat,
-    baseId: process.env.AIRTABLE_BASE_ID,
-    webhookSecret: process.env.AIRTABLE_WEBHOOK_SECRET,
-    clientId: process.env.AIRTABLE_CLIENT_ID,
-    clientSecret: process.env.AIRTABLE_CLIENT_SECRET,
-    redirectUri: process.env.AIRTABLE_REDIRECT_URI || 'http://localhost:3000/api/airtable/oauth/callback',
-    rateLimitPerBase: parseInt(process.env.AIRTABLE_RATE_LIMIT_PER_BASE || '5'),
-    rateLimitPerToken: parseInt(process.env.AIRTABLE_RATE_LIMIT_PER_TOKEN || '50'),
-    enableCache: process.env.AIRTABLE_ENABLE_CACHE !== 'false',
-    cacheTtl: parseInt(process.env.AIRTABLE_CACHE_TTL || '300'),
+    baseId: import.meta.env.VITE_AIRTABLE_BASE_ID,
+    webhookSecret: import.meta.env.VITE_AIRTABLE_WEBHOOK_SECRET,
+    clientId: import.meta.env.VITE_AIRTABLE_CLIENT_ID,
+    clientSecret: import.meta.env.VITE_AIRTABLE_CLIENT_SECRET,
+    redirectUri: import.meta.env.VITE_AIRTABLE_REDIRECT_URI || 'http://localhost:3000/api/airtable/oauth/callback',
+    rateLimitPerBase: parseInt(import.meta.env.VITE_AIRTABLE_RATE_LIMIT_PER_BASE || '5'),
+    rateLimitPerToken: parseInt(import.meta.env.VITE_AIRTABLE_RATE_LIMIT_PER_TOKEN || '50'),
+    enableCache: import.meta.env.VITE_AIRTABLE_ENABLE_CACHE !== 'false',
+    cacheTtl: parseInt(import.meta.env.VITE_AIRTABLE_CACHE_TTL || '300'),
   };
 }
 
@@ -72,40 +73,40 @@ export function validateConfig(config: AirtableEnvironmentConfig): void {
 /**
  * Environment variables required for Airtable integration
  * 
- * Create a .env.local file with these variables:
+ * Create a .env file with these variables (Vite requires VITE_ prefix):
  * 
  * # Required
- * AIRTABLE_PAT=your_personal_access_token_here
+ * VITE_AIRTABLE_PAT=your_personal_access_token_here
  * 
  * # Optional (can be provided at runtime)
- * AIRTABLE_BASE_ID=your_base_id_here
+ * VITE_AIRTABLE_BASE_ID=your_base_id_here
  * 
  * # Webhook support (optional)
- * AIRTABLE_WEBHOOK_SECRET=your_webhook_secret_here
+ * VITE_AIRTABLE_WEBHOOK_SECRET=your_webhook_secret_here
  * 
  * # OAuth support (optional, for multi-tenant)
- * AIRTABLE_CLIENT_ID=your_client_id_here
- * AIRTABLE_CLIENT_SECRET=your_client_secret_here
- * AIRTABLE_REDIRECT_URI=http://localhost:3000/api/airtable/oauth/callback
+ * VITE_AIRTABLE_CLIENT_ID=your_client_id_here
+ * VITE_AIRTABLE_CLIENT_SECRET=your_client_secret_here
+ * VITE_AIRTABLE_REDIRECT_URI=http://localhost:3000/api/airtable/oauth/callback
  * 
  * # Performance tuning (optional)
- * AIRTABLE_RATE_LIMIT_PER_BASE=5
- * AIRTABLE_RATE_LIMIT_PER_TOKEN=50
- * AIRTABLE_ENABLE_CACHE=true
- * AIRTABLE_CACHE_TTL=300
+ * VITE_AIRTABLE_RATE_LIMIT_PER_BASE=5
+ * VITE_AIRTABLE_RATE_LIMIT_PER_TOKEN=50
+ * VITE_AIRTABLE_ENABLE_CACHE=true
+ * VITE_AIRTABLE_CACHE_TTL=300
  */
 export const ENVIRONMENT_SETUP = `
-# Airtable Integration Environment Variables
+# Airtable Integration Environment Variables (Vite Frontend)
 
 ## Required Variables
 
-### AIRTABLE_PAT
+### VITE_AIRTABLE_PAT
 Your Personal Access Token from Airtable.
 - Get from: https://airtable.com/create/tokens
 - Scopes needed: data.records:read, data.records:write (minimum)
-- Keep this secret and never expose in client-side code
+- NOTE: Exposed in browser bundle (use scoped token for production)
 
-### AIRTABLE_BASE_ID (optional)
+### VITE_AIRTABLE_BASE_ID (optional)
 The ID of your Airtable base (format: appXXXXXXXXXXXXXX)
 - Can be provided at runtime via API calls
 - Find in your base URL or API documentation
@@ -113,26 +114,26 @@ The ID of your Airtable base (format: appXXXXXXXXXXXXXX)
 ## Optional Variables
 
 ### Webhooks
-AIRTABLE_WEBHOOK_SECRET=base64_encoded_secret
+VITE_AIRTABLE_WEBHOOK_SECRET=base64_encoded_secret
 - For webhook signature verification
 - Get when creating webhook subscription
 
 ### OAuth (Multi-tenant)
-AIRTABLE_CLIENT_ID=your_oauth_client_id
-AIRTABLE_CLIENT_SECRET=your_oauth_client_secret
-AIRTABLE_REDIRECT_URI=http://localhost:3000/api/airtable/oauth/callback
+VITE_AIRTABLE_CLIENT_ID=your_oauth_client_id
+VITE_AIRTABLE_CLIENT_SECRET=your_oauth_client_secret
+VITE_AIRTABLE_REDIRECT_URI=http://localhost:3000/api/airtable/oauth/callback
 
 ### Performance
-AIRTABLE_RATE_LIMIT_PER_BASE=5     # Max 5 req/s per base
-AIRTABLE_RATE_LIMIT_PER_TOKEN=50   # Max 50 req/s per token
-AIRTABLE_ENABLE_CACHE=true         # Enable schema caching
-AIRTABLE_CACHE_TTL=300            # Cache TTL in seconds
+VITE_AIRTABLE_RATE_LIMIT_PER_BASE=5     # Max 5 req/s per base
+VITE_AIRTABLE_RATE_LIMIT_PER_TOKEN=50   # Max 50 req/s per token
+VITE_AIRTABLE_ENABLE_CACHE=true         # Enable schema caching
+VITE_AIRTABLE_CACHE_TTL=300            # Cache TTL in seconds
 
-## Example .env.local file:
+## Example .env file:
 
-AIRTABLE_PAT=patXXXXXXXXXXXXXX.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-AIRTABLE_BASE_ID=appXXXXXXXXXXXXXX
-AIRTABLE_WEBHOOK_SECRET=base64EncodedSecretHere
+VITE_AIRTABLE_PAT=patXXXXXXXXXXXXXX.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+VITE_AIRTABLE_BASE_ID=appXXXXXXXXXXXXXX
+VITE_AIRTABLE_WEBHOOK_SECRET=base64EncodedSecretHere
 `;
 
 /**

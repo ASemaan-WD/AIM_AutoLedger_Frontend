@@ -1,11 +1,12 @@
 /**
  * React hooks for Airtable integration
- * Client-side utilities that call our server-side API endpoints
+ * Client-side utilities that call Airtable directly
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createAirtableClient } from './client';
 import type {
   AirtableRecord,
   AirtableListParams,
@@ -51,31 +52,8 @@ export function useAirtable(
   const [hasMore, setHasMore] = useState(false);
   const [lastParams, setLastParams] = useState<AirtableListParams>(initialParams);
 
-  /**
-   * Build API URL with query parameters
-   */
-  const buildUrl = useCallback((endpoint: string, params?: Record<string, any>) => {
-    const baseUrl = `/api/airtable/${encodeURIComponent(table)}${endpoint}`;
-    const url = new URL(baseUrl, window.location.origin);
-    
-    if (baseId) {
-      url.searchParams.append('baseId', baseId);
-    }
-    
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            value.forEach(item => url.searchParams.append(`${key}[]`, String(item)));
-          } else {
-            url.searchParams.append(key, String(value));
-          }
-        }
-      });
-    }
-    
-    return url.toString();
-  }, [table, baseId]);
+  // Create Airtable client instance
+  const client = createAirtableClient(baseId);
 
   /**
    * Fetch records with pagination
@@ -85,32 +63,7 @@ export function useAirtable(
     setError(null);
     
     try {
-      const queryParams: Record<string, any> = { ...params };
-      
-      // Handle sort parameter
-      if (params.sort) {
-        params.sort.forEach((sort, index) => {
-          queryParams[`sort[${index}][field]`] = sort.field;
-          queryParams[`sort[${index}][direction]`] = sort.direction;
-        });
-        delete queryParams.sort;
-      }
-      
-      // Handle fields parameter
-      if (params.fields) {
-        queryParams.fields = params.fields;
-        delete queryParams.fields;
-      }
-      
-      const url = buildUrl('', queryParams);
-      const response = await window.fetch(url);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = await client.listRecords(table, params);
       
       if (params.offset) {
         // Appending to existing records (pagination)
@@ -129,7 +82,7 @@ export function useAirtable(
     } finally {
       setLoading(false);
     }
-  }, [buildUrl]);
+  }, [client, table]);
 
   /**
    * Fetch more records (pagination)
@@ -150,23 +103,11 @@ export function useAirtable(
     setError(null);
     
     try {
-      const body = Array.isArray(record) 
+      const params = Array.isArray(record) 
         ? { records: record }
-        : { fields: record.fields };
+        : { records: [record] };
       
-      const url = buildUrl('');
-      const response = await window.fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = await client.createRecords(table, params);
       
       // Add new records to the beginning of the list
       setRecords(prev => [...data.records, ...prev]);
@@ -180,7 +121,7 @@ export function useAirtable(
     } finally {
       setLoading(false);
     }
-  }, [buildUrl]);
+  }, [client, table]);
 
   /**
    * Update existing record(s)
@@ -192,19 +133,7 @@ export function useAirtable(
     setError(null);
     
     try {
-      const url = buildUrl('');
-      const response = await window.fetch(url, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ records: updates }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = await client.updateRecords(table, { records: updates });
       
       // Update records in place
       setRecords(prev => 
@@ -223,7 +152,7 @@ export function useAirtable(
     } finally {
       setLoading(false);
     }
-  }, [buildUrl]);
+  }, [client, table]);
 
   /**
    * Delete record(s)
@@ -233,17 +162,7 @@ export function useAirtable(
     setError(null);
     
     try {
-      const url = buildUrl('');
-      const response = await window.fetch(url, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
+      await client.deleteRecords(table, { records: ids });
       
       // Remove deleted records from the list
       setRecords(prev => prev.filter(record => !ids.includes(record.id)));
@@ -255,7 +174,7 @@ export function useAirtable(
     } finally {
       setLoading(false);
     }
-  }, [buildUrl]);
+  }, [client, table]);
 
   /**
    * Refresh current view
@@ -322,20 +241,14 @@ export function useAirtableRecord(
   
   const { baseId, autoFetch = true } = options;
 
+  const client = createAirtableClient(baseId);
+
   const fetchRecord = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const url = `/api/airtable/${encodeURIComponent(table)}/${recordId}${baseId ? `?baseId=${baseId}` : ''}`;
-      const response = await window.fetch(url);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const data = await client.getRecord(table, recordId);
       setRecord(data);
       
     } catch (err) {
@@ -343,7 +256,7 @@ export function useAirtableRecord(
     } finally {
       setLoading(false);
     }
-  }, [table, recordId, baseId]);
+  }, [client, table, recordId]);
 
   useEffect(() => {
     if (autoFetch && recordId) {

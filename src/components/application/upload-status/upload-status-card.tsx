@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01 } from "@untitledui/icons"
+import { useState, useEffect, useRef } from "react"
+import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05 } from "@untitledui/icons"
 import { 
   CardLayout,
   CardHeader, 
@@ -12,31 +12,37 @@ import {
   CardActions 
 } from "./components"
 import { DeleteFileModal, ExportWithIssuesModal } from "./modals"
+import { getProcessingStatusText, getProcessingProgress } from "@/lib/status-mapper"
+import { createAirtableClient } from "@/lib/airtable/client"
 
 export type UploadStatus = 
   | "uploading" 
+  | "queued"              // NEW: File uploaded, waiting for processing to start
   | "processing" 
   | "connecting" 
   | "success" 
-  | "success-with-caveats" 
+  | "success-with-caveats"  // TODO: Review usage
   | "exported"
   | "error"
   | "duplicate"
-  | "no-match"
-  | "processing-error"
+  | "no-match"              // TODO: Review usage
+  | "processing-error"      // TODO: Review usage
 
 export interface UploadStatusCardProps {
   filename: string
   status: UploadStatus
+  processingStatus?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR' // New prop
   pageCount?: number
   fileSize?: number
-  invoiceInfo?: {
+  invoices?: Array<{
     vendor: string
     date: string
     daysAgo: number
     amount: string
     description: string
-  }
+    invoiceNumber?: string
+    recordId?: string // Airtable record ID for updating status
+  }>
   caveats?: string[]
   issues?: string[]
   errorMessage?: string
@@ -65,9 +71,10 @@ const formatFileSize = (bytes?: number): string => {
 export function UploadStatusCard({
   filename,
   status,
+  processingStatus,
   pageCount,
   fileSize,
-  invoiceInfo,
+  invoices,
   caveats,
   issues,
   errorMessage,
@@ -79,8 +86,29 @@ export function UploadStatusCard({
   onGetHelp,
   onViewFile,
 }: UploadStatusCardProps) {
+  // Helper to get display title
+  const getCardTitle = () => {
+    if (!invoices || invoices.length === 0) return filename;
+    if (invoices.length === 1) return `Invoice by ${invoices[0].vendor}`;
+    return `${invoices.length} Invoices`;
+  };
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
+  
+  // Export state management
+  const [exportState, setExportState] = useState<'idle' | 'queued' | 'exported' | 'error'>('idle')
+  const [exportError, setExportError] = useState<string | null>(null)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+    }
+  }, [])
 
   const handleRemoveClick = () => {
     setShowDeleteModal(true)
@@ -90,17 +118,133 @@ export function UploadStatusCard({
     onRemove?.()
   }
 
-  const handleExportClick = () => {
+  const handleExportClick = async () => {
     if (status === "success-with-caveats" && issues && issues.length > 0) {
       setShowExportModal(true)
     } else {
-      onExport?.()
+      await initiateExport()
     }
   }
 
-  const handleExportConfirm = () => {
+  const handleExportConfirm = async () => {
+    await initiateExport()
+  }
+
+  const initiateExport = async () => {
+    // Set invoice status to "Queued" for export
+    await setInvoiceStatusToQueued()
+    
+    // Set export state to queued and start polling
+    setExportState('queued')
+    setExportError(null)
+    startExportPolling()
+    
     onExport?.()
   }
+
+  const setInvoiceStatusToQueued = async () => {
+    if (!invoices || invoices.length === 0) {
+      console.warn('⚠️ No invoices to export')
+      return
+    }
+
+    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID
+    if (!baseId) {
+      console.error('VITE_AIRTABLE_BASE_ID not configured')
+      return
+    }
+
+    try {
+      const client = createAirtableClient(baseId)
+      
+      // Update all invoices to "Queued" status for export
+      const updates = invoices
+        .filter(invoice => invoice.recordId) // Only update if we have recordId
+        .map(invoice => ({
+          id: invoice.recordId!,
+          fields: {
+            'Status': 'Queued'
+          }
+        }))
+
+      if (updates.length > 0) {
+        await client.updateRecords('Invoices', { records: updates })
+        console.log(`✅ Set ${updates.length} invoice(s) to Queued status`)
+      } else {
+        console.warn('⚠️ No invoice record IDs available for status update')
+      }
+    } catch (error) {
+      console.error('❌ Failed to set invoice status to Queued:', error)
+    }
+  }
+
+  const startExportPolling = () => {
+    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID
+    if (!baseId) {
+      console.error('VITE_AIRTABLE_BASE_ID not configured')
+      return
+    }
+
+    const pollInvoiceStatus = async () => {
+      if (!invoices || invoices.length === 0) return
+
+      try {
+        const client = createAirtableClient(baseId)
+        let allExported = true
+        let hasError = false
+        let errorCode: string | null = null
+
+        // Check status of all invoices
+        for (const invoice of invoices) {
+          if (!invoice.recordId) continue
+
+          const record = await client.getRecord('Invoices', invoice.recordId)
+          if (record && record.fields) {
+            const invoiceStatus = record.fields['Status'] as string
+            const invoiceErrorCode = record.fields['ErrorCode'] as string
+
+            console.log(`📊 [Export Polling] Invoice ${invoice.recordId}: ${invoiceStatus}`)
+
+            if (invoiceStatus === 'Error') {
+              hasError = true
+              errorCode = invoiceErrorCode || 'Unknown error'
+              allExported = false
+            } else if (invoiceStatus !== 'Exported') {
+              allExported = false
+            }
+          }
+        }
+
+        // Update export state based on results
+        if (hasError) {
+          setExportState('error')
+          setExportError(errorCode)
+          stopExportPolling()
+          console.log('❌ [Export Polling] Export failed with error:', errorCode)
+        } else if (allExported) {
+          setExportState('exported')
+          stopExportPolling()
+          console.log('✅ [Export Polling] All invoices exported successfully')
+        }
+      } catch (error) {
+        console.error('❌ [Export Polling] Error checking invoice status:', error)
+      }
+    }
+
+    // Poll immediately, then every 3 seconds
+    pollInvoiceStatus()
+    const interval = setInterval(pollInvoiceStatus, 3000)
+    pollingIntervalRef.current = interval
+  }
+
+  const stopExportPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+      console.log('🛑 [Export Polling] Stopped polling')
+    }
+  }
+
 
   const handleViewFile = () => {
     if (onViewFile) {
@@ -146,7 +290,26 @@ export function UploadStatusCard({
             showCancelButton
             onCancel={onCancel}
           />
-          <CardProgress value={50} />
+          <CardProgress value={0} />
+        </CardLayout>
+      </div>
+    )
+  }
+
+  // Queued State - File uploaded, waiting for processing to start
+  if (status === "queued") {
+    return (
+      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
+        <CardLayout icon={File04} iconColor="brand">
+          <CardHeader
+            title={filename}
+            badgeText="Queued"
+            badgeColor="gray-blue"
+            helperText={getProcessingStatusText(processingStatus)}
+            showCancelButton
+            onCancel={onCancel}
+          />
+          <CardProgress value={getProcessingProgress(processingStatus)} />
         </CardLayout>
       </div>
     )
@@ -154,50 +317,84 @@ export function UploadStatusCard({
 
   // Processing State
   if (status === "processing") {
+    const helperText = processingStatus 
+      ? getProcessingStatusText(processingStatus)
+      : pageCount 
+        ? `Extracting text from ${pageCount} pages...`
+        : 'Processing...';
+    
     return (
       <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
         <CardLayout icon={File04} iconColor="brand">
           <CardHeader
-            title={filename}
+            title={getCardTitle()}
             badgeText="Processing"
             badgeColor="gray-blue"
-            helperText={`Extracting text from ${pageCount} pages...`}
+            helperText={helperText}
             showCancelButton
             onCancel={onCancel}
           />
-          <CardProgress value={75} />
+          
+          {/* Show all invoice details if available during processing */}
+          {invoices && invoices.map((invoice, index) => (
+            <div key={index} className={index > 0 ? "mt-4" : ""}>
+              <InvoiceDetails
+                description={invoice.description}
+                date={invoice.date}
+                amount={invoice.amount}
+              />
+            </div>
+          ))}
+          
+          <CardProgress value={getProcessingProgress(processingStatus)} />
         </CardLayout>
+        
+        {/* Show original file link if we have invoices */}
+        {invoices && invoices.length > 0 && (
+          <OriginalFileLink
+            filename={filename}
+            onClick={onViewFile}
+          />
+        )}
       </div>
     )
   }
 
   // Connecting/Analyzing State
-  if (status === "connecting" && invoiceInfo) {
+  if (status === "connecting") {
     return (
       <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
         <CardLayout icon={File06} iconColor="brand">
           <CardHeader
-            title={`Invoice by ${invoiceInfo.vendor}`}
+            title={getCardTitle()}
             badgeText="Matching"
             badgeColor="gray-blue"
-            helperText="Connecting to AIM to match POs..."
+            helperText={getProcessingStatusText(processingStatus) || "Connecting to AIM to match POs..."}
             showCancelButton
             onCancel={onCancel}
           />
           
-          <InvoiceDetails
-            description={invoiceInfo.description}
-            date={invoiceInfo.date}
-            amount={invoiceInfo.amount}
-          />
+          {/* Show all invoice details if available */}
+          {invoices && invoices.map((invoice, index) => (
+            <div key={index} className={index > 0 ? "mt-4" : ""}>
+              <InvoiceDetails
+                description={invoice.description}
+                date={invoice.date}
+                amount={invoice.amount}
+              />
+            </div>
+          ))}
           
-          <CardProgress value={90} />
+          <CardProgress value={getProcessingProgress(processingStatus)} />
         </CardLayout>
         
-        <OriginalFileLink
-          filename={filename}
-          onClick={onViewFile}
-        />
+        {/* Show original file link if we have invoices */}
+        {invoices && invoices.length > 0 && (
+          <OriginalFileLink
+            filename={filename}
+            onClick={onViewFile}
+          />
+        )}
       </div>
     )
   }
@@ -209,7 +406,7 @@ export function UploadStatusCard({
         <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
           <CardLayout icon={CheckCircle} iconColor="success">
             <CardHeader
-              title={invoiceInfo ? `Invoice by ${invoiceInfo.vendor}` : filename}
+              title={getCardTitle()}
               badgeText="Complete"
               badgeColor="success"
               helperText="Everything checks out"
@@ -217,12 +414,16 @@ export function UploadStatusCard({
               onDelete={handleRemoveClick}
             />
             
-            <InvoiceDetails
-              description={invoiceInfo?.description || ""}
-              date={invoiceInfo?.date || ""}
-              amount={invoiceInfo?.amount || ""}
-              show={!!invoiceInfo}
-            />
+            {/* Show all invoice details */}
+            {invoices && invoices.map((invoice, index) => (
+              <div key={index} className={index > 0 ? "mt-4" : ""}>
+                <InvoiceDetails
+                  description={invoice.description}
+                  date={invoice.date}
+                  amount={invoice.amount}
+                />
+              </div>
+            ))}
           </CardLayout>
           
           <OriginalFileLink
@@ -230,11 +431,48 @@ export function UploadStatusCard({
             onClick={handleViewFile}
           />
           
-          <CardActions
-            type="success"
-            onPrimaryAction={handleExportClick}
-            isLoading={isExporting}
-          />
+          {/* Custom export UI based on export state */}
+          <div className="mt-4 flex items-center justify-end gap-3">
+            {exportState === 'idle' && (
+              <CardActions
+                type="success"
+                onPrimaryAction={handleExportClick}
+                isLoading={isExporting}
+              />
+            )}
+            
+            {exportState === 'queued' && (
+              <button
+                disabled
+                className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2.5 text-sm font-semibold text-tertiary shadow-xs cursor-not-allowed"
+              >
+                <RefreshCw05 className="size-4 animate-spin" />
+                Queued
+              </button>
+            )}
+            
+            {exportState === 'exported' && (
+              <div className="flex items-center gap-2 text-success-primary">
+                <CheckCircle className="size-5" />
+                <span className="text-sm font-semibold">Export Successful</span>
+              </div>
+            )}
+            
+            {exportState === 'error' && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-error-primary">
+                  <AlertTriangle className="size-5" />
+                  <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
+                </div>
+                <button
+                  onClick={handleExportClick}
+                  className="inline-flex items-center gap-2 rounded-lg border border-error bg-primary px-4 py-2.5 text-sm font-semibold text-error-primary shadow-xs hover:bg-error-50 transition-colors"
+                >
+                  Retry Export
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         {renderModals()}
       </>
@@ -242,13 +480,14 @@ export function UploadStatusCard({
   }
 
   // Success with Caveats State
+  // TODO: Review usage - may need to be updated for new backend flow
   if (status === "success-with-caveats" && issues) {
     return (
       <>
         <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
           <CardLayout icon={AlertTriangle} iconColor="warning">
             <CardHeader
-              title={invoiceInfo ? `Invoice by ${invoiceInfo.vendor}` : filename}
+              title={getCardTitle()}
               badgeText="Complete"
               badgeColor="warning"
               helperText="Everything is in order, but:"
@@ -258,12 +497,16 @@ export function UploadStatusCard({
             
             <AttentionList items={issues} />
             
-            <InvoiceDetails
-              description={invoiceInfo?.description || ""}
-              date={invoiceInfo?.date || ""}
-              amount={invoiceInfo?.amount || ""}
-              show={!!invoiceInfo}
-            />
+            {/* Show all invoice details */}
+            {invoices && invoices.map((invoice, index) => (
+              <div key={index} className={index > 0 ? "mt-4" : ""}>
+                <InvoiceDetails
+                  description={invoice.description}
+                  date={invoice.date}
+                  amount={invoice.amount}
+                />
+              </div>
+            ))}
           </CardLayout>
           
           <OriginalFileLink
@@ -288,18 +531,22 @@ export function UploadStatusCard({
       <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
         <CardLayout icon={CheckCircle} iconColor="success">
           <CardHeader
-            title={invoiceInfo ? `Invoice by ${invoiceInfo.vendor}` : filename}
+            title={getCardTitle()}
             badgeText="Exported"
             badgeColor="success"
             helperText="Successfully exported to AIM"
           />
           
-          <InvoiceDetails
-            description={invoiceInfo?.description || ""}
-            date={invoiceInfo?.date || ""}
-            amount={invoiceInfo?.amount || ""}
-            show={!!invoiceInfo}
-          />
+          {/* Show all invoice details */}
+          {invoices && invoices.map((invoice, index) => (
+            <div key={index} className={index > 0 ? "mt-4" : ""}>
+              <InvoiceDetails
+                description={invoice.description}
+                date={invoice.date}
+                amount={invoice.amount}
+              />
+            </div>
+          ))}
         </CardLayout>
         
         <OriginalFileLink
@@ -311,6 +558,7 @@ export function UploadStatusCard({
   }
 
   // Processing Error State (prior to OCR - no data available)
+  // TODO: Review usage - may need to be updated or removed for new backend flow
   if (status === "processing-error") {
     return (
       <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
@@ -343,7 +591,7 @@ export function UploadStatusCard({
       <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
         <CardLayout icon={Copy01} iconColor="error">
           <CardHeader
-            title={invoiceInfo ? `Invoice by ${invoiceInfo.vendor}` : filename}
+            title={getCardTitle()}
             badgeText="Duplicate"
             badgeColor="error"
             helperText={
@@ -353,12 +601,16 @@ export function UploadStatusCard({
             }
           />
           
-          <InvoiceDetails
-            description={invoiceInfo?.description || ""}
-            date={invoiceInfo?.date || ""}
-            amount={invoiceInfo?.amount || ""}
-            show={!!invoiceInfo}
-          />
+          {/* Show all invoice details */}
+          {invoices && invoices.map((invoice, index) => (
+            <div key={index} className={index > 0 ? "mt-4" : ""}>
+              <InvoiceDetails
+                description={invoice.description}
+                date={invoice.date}
+                amount={invoice.amount}
+              />
+            </div>
+          ))}
         </CardLayout>
         
         <OriginalFileLink
@@ -376,23 +628,28 @@ export function UploadStatusCard({
   }
 
   // Could Not Match State
+  // TODO: Review usage - backend now handles matching automatically, may need different handling
   if (status === "no-match") {
     return (
       <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
         <CardLayout icon={LinkBroken01} iconColor="error">
           <CardHeader
-            title={invoiceInfo ? `Invoice by ${invoiceInfo.vendor}` : filename}
+            title={getCardTitle()}
             badgeText="No Match"
             badgeColor="error"
             helperText="Could not find matching PO in AIM"
           />
           
-          <InvoiceDetails
-            description={invoiceInfo?.description || ""}
-            date={invoiceInfo?.date || ""}
-            amount={invoiceInfo?.amount || ""}
-            show={!!invoiceInfo}
-          />
+          {/* Show all invoice details */}
+          {invoices && invoices.map((invoice, index) => (
+            <div key={index} className={index > 0 ? "mt-4" : ""}>
+              <InvoiceDetails
+                description={invoice.description}
+                date={invoice.date}
+                amount={invoice.amount}
+              />
+            </div>
+          ))}
         </CardLayout>
         
         <OriginalFileLink

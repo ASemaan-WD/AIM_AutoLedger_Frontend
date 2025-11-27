@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createAirtableClient, buildFilter, filters } from './index';
 import type { AirtableAttachment } from './types';
 
-const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
+const BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
 
 // Types that match the Airtable Files table schema
 export interface AirtableFile {
@@ -14,7 +14,8 @@ export interface AirtableFile {
     name: string;
     uploadDate?: Date;
     source: 'Email' | 'Upload';
-    status: 'Queued' | 'Processing' | 'Processed' | 'Attention';
+    status: 'Queued' | 'Processing' | 'Processed' | 'Error';
+    processingStatus?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR'; // New field
     pages?: number;
     isDuplicate: boolean;
     duplicateOf?: string[]; // Now a record link array
@@ -93,6 +94,7 @@ function transformAirtableRecord(record: any): AirtableFile {
         uploadDate: record.fields['UploadedDate'] ? new Date(record.fields['UploadedDate']) : undefined,
         source: record.fields['Source'] || 'Upload',
         status: record.fields['Status'] || 'Queued',
+        processingStatus: record.fields['Processing-Status'] || undefined, // New field
         pages: record.fields['Pages'] || undefined,
         isDuplicate: isDuplicate, // Now based on Error-Code field
         duplicateOf: [], // This field was removed from schema
@@ -121,6 +123,7 @@ function transformToAirtableUpdate(file: Partial<AirtableFile>): any {
     // Source field removed in new schema
     // if (file.source !== undefined) fields['Source'] = file.source;
     if (file.status !== undefined) fields['Status'] = file.status;
+    if (file.processingStatus !== undefined) fields['Processing-Status'] = file.processingStatus; // New field
     if (file.pages !== undefined) fields['Pages'] = file.pages;
     // Is Duplicate is controlled by Error-Code, so we don't set it directly
     // if (file.isDuplicate !== undefined) fields['Is Duplicate'] = file.isDuplicate;
@@ -191,26 +194,19 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
         setError(null);
         
         try {
-            const queryParams = new URLSearchParams({
-                baseId: BASE_ID,
-                'sort[0][field]': 'FileName', // New field name
-                'sort[0][direction]': 'asc',
-                pageSize: '100'
-            });
+            const client = createAirtableClient(BASE_ID);
+            
+            const listParams: any = {
+                sort: [{ field: 'FileName', direction: 'asc' as const }],
+                pageSize: 100
+            };
 
             const filterFormula = fileFilters ? buildFileFilter(fileFilters) : '';
             if (filterFormula) {
-                queryParams.append('filterByFormula', filterFormula);
+                listParams.filterByFormula = filterFormula;
             }
 
-            const response = await fetch(`/api/airtable/Files?${queryParams}`);
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-            }
-            
-            const data = await response.json();
+            const data = await client.listRecords('Files', listParams);
             const transformedFiles = data.records.map(transformAirtableRecord);
             setFiles(transformedFiles);
         } catch (err) {
@@ -225,19 +221,12 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
 
     const updateFile = useCallback(async (fileId: string, updates: Partial<AirtableFile>) => {
         try {
+            const client = createAirtableClient(BASE_ID);
             const updateData = transformToAirtableUpdate(updates);
-            const response = await fetch(`/api/airtable/Files`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    records: [{ id: fileId, ...updateData }]
-                })
-            });
             
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-            }
+            await client.updateRecords('Files', {
+                records: [{ id: fileId, ...updateData }]
+            });
             
             // Update local state optimistically
             setFiles(currentFiles => 
@@ -253,21 +242,13 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
 
     const createFile = useCallback(async (fileData: Partial<AirtableFile>): Promise<AirtableFile> => {
         try {
+            const client = createAirtableClient(BASE_ID);
             const createData = transformToAirtableUpdate(fileData);
-            const response = await fetch(`/api/airtable/Files`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    records: [createData]
-                })
+            
+            const data = await client.createRecords('Files', {
+                records: [createData]
             });
             
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-            }
-            
-            const data = await response.json();
             const newFile = transformAirtableRecord(data.records[0]);
             
             // Update local state
@@ -282,16 +263,8 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
 
     const deleteFile = useCallback(async (fileId: string) => {
         try {
-            const response = await fetch(`/api/airtable/Files`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: [fileId] })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-            }
+            const client = createAirtableClient(BASE_ID);
+            await client.deleteRecords('Files', { records: [fileId] });
             
             // Update local state
             setFiles(currentFiles => currentFiles.filter(file => file.id !== fileId));
@@ -404,12 +377,8 @@ export function useFileCounts(): UseFileCountsResult {
                 return;
             }
 
-            const response = await fetch(`/api/airtable/Files?baseId=${BASE_ID}&pageSize=100`);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const data = await response.json();
+            const client = createAirtableClient(BASE_ID);
+            const data = await client.listRecords('Files', { pageSize: 100 });
             const files = data.records.map(transformAirtableRecord);
             
             const newCounts = {

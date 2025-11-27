@@ -5,11 +5,12 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { createAirtableClient } from './client';
 import { useAirtableRecords } from './hooks';
 import type { AirtableFile } from './files-hooks';
 
 
-const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_ID;
+const BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
 
 export interface LinkedDocuments {
     files: AirtableFile[];
@@ -129,30 +130,26 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
         setError(null);
 
         try {
+            const client = createAirtableClient(BASE_ID);
+            
             // First, fetch all records and find the one with the matching ID
             // This works around the RECORD_ID() filter issue
-            let currentDocResponse;
+            let currentDocData;
             
             switch (docType) {
                 case 'invoice':
                     // Fetch from Invoices table (primary entity)
-                    currentDocResponse = await fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&pageSize=100`);
+                    currentDocData = await client.listRecords('Invoices', { pageSize: 100 });
                     break;
                 case 'delivery-ticket':
                     // DEPRECATED: Delivery Tickets table no longer exists - treat as invoice
                     console.warn('Delivery Tickets table deprecated, treating as Invoices');
-                    currentDocResponse = await fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&pageSize=100`);
+                    currentDocData = await client.listRecords('Invoices', { pageSize: 100 });
                     break;
                 case 'file':
-                    currentDocResponse = await fetch(`/api/airtable/Files?baseId=${BASE_ID}&pageSize=100`);
+                    currentDocData = await client.listRecords('Files', { pageSize: 100 });
                     break;
             }
-
-            if (!currentDocResponse.ok) {
-                throw new Error(`Failed to fetch current document: ${currentDocResponse.status}`);
-            }
-
-            const currentDocData = await currentDocResponse.json();
             
             if (!currentDocData.records || currentDocData.records.length === 0) {
                 throw new Error('No documents found');
@@ -206,46 +203,26 @@ export function useLinkedDocuments(documentId?: string, documentType?: 'invoice'
             // Fetch files by ID if we have any
             if (linkedFileIds.length > 0) {
                 console.log(`Debug: Fetching files for IDs:`, linkedFileIds);
-                promises.push(
-                    fetch(`/api/airtable/Files?baseId=${BASE_ID}&pageSize=100`)
-                );
+                promises.push(client.listRecords('Files', { pageSize: 100 }));
             } else {
-                promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
+                promises.push(Promise.resolve({ records: [] }));
             }
 
             // Emails table was removed - always return empty response
-            promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
+            promises.push(Promise.resolve({ records: [] }));
 
             // Fetch invoices by ID if we have any (using Invoices table)
             if (linkedInvoiceIds.length > 0) {
                 console.log(`Debug: Fetching invoices for IDs:`, linkedInvoiceIds);
-                promises.push(
-                    fetch(`/api/airtable/Invoices?baseId=${BASE_ID}&pageSize=100`)
-                );
+                promises.push(client.listRecords('Invoices', { pageSize: 100 }));
             } else {
-                promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
+                promises.push(Promise.resolve({ records: [] }));
             }
 
             // DEPRECATED: Delivery tickets no longer exist - always return empty
-            promises.push(Promise.resolve({ ok: true, json: () => Promise.resolve({ records: [] }) }));
+            promises.push(Promise.resolve({ records: [] }));
 
-            const [filesResponse, emailsResponse, invoicesResponse, deliveryTicketsResponse] = await Promise.all(promises);
-
-            if (!filesResponse.ok) {
-                throw new Error(`Failed to fetch files: ${('status' in filesResponse) ? filesResponse.status : 'Unknown error'}`);
-            }
-            // Skip email response validation since emails were removed
-            if (invoicesResponse && 'status' in invoicesResponse && !invoicesResponse.ok) {
-                throw new Error(`Failed to fetch invoices: ${invoicesResponse.status}`);
-            }
-            // Skip delivery tickets validation since they were removed
-
-            const [filesData, emailsData, invoicesData, deliveryTicketsData] = await Promise.all([
-                filesResponse.json(),
-                emailsResponse.json(),
-                invoicesResponse ? invoicesResponse.json() : Promise.resolve({ records: [] }),
-                deliveryTicketsResponse ? deliveryTicketsResponse.json() : Promise.resolve({ records: [] })
-            ]);
+            const [filesData, emailsData, invoicesData, deliveryTicketsData] = await Promise.all(promises);
 
             // Filter the fetched records to only include the ones we actually want
             const filteredFiles = filesData.records.filter((record: any) => linkedFileIds.includes(record.id));

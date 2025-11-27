@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createAirtableClient } from './client';
 import type { AirtableFile } from './files-hooks';
 
 interface UseFilePollingOptions {
@@ -50,9 +51,7 @@ interface UseFilePollingResult {
   error: string | null;
 }
 
-const BASE_ID = typeof window !== 'undefined' 
-  ? (window as any).NEXT_PUBLIC_AIRTABLE_BASE_ID || process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID
-  : process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID;
+const BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
 
 /**
  * Transform Airtable record to AirtableFile (same as in files-hooks.ts)
@@ -119,28 +118,20 @@ export function useFilePolling(options: UseFilePollingOptions = {}): UseFilePoll
     setError(null);
 
     try {
+      const client = createAirtableClient(BASE_ID);
+      
       // Calculate timestamp for the update window
       const checkTime = new Date(Date.now() - updateWindow);
       const isoString = checkTime.toISOString();
       
       // Airtable formula to check if Status-Modified-Time is within the window
       const formula = `IS_AFTER({Status-Modified-Time}, "${isoString}")`;
-      
-      const queryParams = new URLSearchParams({
-        baseId: BASE_ID || '',
+
+      const data = await client.listRecords('Files', {
         filterByFormula: formula,
-        maxRecords: '50',
-        'sort[0][field]': 'Status-Modified-Time',
-        'sort[0][direction]': 'desc',
+        maxRecords: 50,
+        sort: [{ field: 'Status-Modified-Time', direction: 'desc' }]
       });
-
-      const response = await fetch(`/api/airtable/Files?${queryParams}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to poll files: ${response.status}`);
-      }
-
-      const data = await response.json();
       
       if (data.records && data.records.length > 0) {
         // Transform Airtable records to AirtableFile entities

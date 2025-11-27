@@ -1,30 +1,23 @@
 /**
  * File hash generation utilities for duplicate detection
+ * Uses browser's native Web Crypto API
  */
 
-import crypto from 'crypto';
-
 /**
- * Generate SHA-256 hash from file buffer (for server-side use)
+ * Generate SHA-256 hash from File (browser-side)
  */
 export async function generateFileHash(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
-  const nodeBuffer = Buffer.from(buffer);
-  return crypto.createHash('sha256').update(nodeBuffer).digest('hex');
+  return generateArrayBufferHash(buffer);
 }
 
 /**
- * Generate SHA-256 hash from buffer (for server-side use)
- */
-export function generateBufferHash(buffer: Buffer): string {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
-}
-
-/**
- * Generate SHA-256 hash from ArrayBuffer (for client-side use)
+ * Generate SHA-256 hash from ArrayBuffer (browser-side)
+ * Uses native Web Crypto API available in all modern browsers
  */
 export async function generateArrayBufferHash(arrayBuffer: ArrayBuffer): Promise<string> {
-  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  // Use browser's native crypto.subtle (Web Crypto API)
+  const hashBuffer = await window.crypto.subtle.digest('SHA-256', arrayBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   return hashHex;

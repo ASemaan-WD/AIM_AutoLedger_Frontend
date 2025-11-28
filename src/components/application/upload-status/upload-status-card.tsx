@@ -32,6 +32,7 @@ export interface UploadStatusCardProps {
   filename: string
   status: UploadStatus
   processingStatus?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR' // New prop
+  errorCode?: string
   pageCount?: number
   fileSize?: number
   invoices?: Array<{
@@ -72,6 +73,7 @@ export function UploadStatusCard({
   filename,
   status,
   processingStatus,
+  errorCode,
   pageCount,
   fileSize,
   invoices,
@@ -303,9 +305,9 @@ export function UploadStatusCard({
         <CardLayout icon={File04} iconColor="brand">
           <CardHeader
             title={filename}
-            badgeText="Queued"
+            badgeText="Processing"
             badgeColor="gray-blue"
-            helperText={getProcessingStatusText(processingStatus)}
+            helperText={`Attempting to extract text from ${pageCount || '...'} pages...`}
             showCancelButton
             onCancel={onCancel}
           />
@@ -432,7 +434,7 @@ export function UploadStatusCard({
           />
           
           {/* Custom export UI based on export state */}
-          <div className="mt-4 flex items-center justify-end gap-3">
+          <div className="mt-4 flex items-center gap-3">
             {exportState === 'idle' && (
               <CardActions
                 type="success"
@@ -668,6 +670,33 @@ export function UploadStatusCard({
 
   // Generic Error State (kept for backward compatibility)
   if (status === "error") {
+    // Special handling for Attention/Error case
+    if (processingStatus === 'ERROR' && errorCode) {
+      return (
+        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
+          <CardLayout icon={XCircle} iconColor="error">
+            <CardHeader
+              title={filename}
+              badgeText={errorCode}
+              badgeColor="error"
+              helperText={errorMessage || "An error occurred during processing"}
+            />
+          </CardLayout>
+          
+          <OriginalFileLink
+            filename={filename}
+            onClick={handleViewFile}
+          />
+          
+          <CardActions
+            type="error"
+            onPrimaryAction={onRemove}
+            onSecondaryAction={onGetHelp}
+          />
+        </div>
+      )
+    }
+
     return (
       <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
         <CardLayout icon={XCircle} iconColor="error">

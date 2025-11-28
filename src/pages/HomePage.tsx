@@ -34,9 +34,26 @@ interface UploadedFile {
     description: string;
     invoiceNumber?: string;
     recordId?: string;
+    status?: string;
+    errorCode?: string;
+    errorDescription?: string;
   }>;
   caveats?: string[];
 }
+
+// Parse error code to extract message outside brackets
+const parseErrorCode = (code: string): string => {
+  if (!code) return '';
+  const match = code.match(/^\[.*?\]\s*(.*)$/);
+  return match ? match[1] : code;
+};
+
+// Parse error description to get the first sentence
+const parseErrorDescription = (description: string): string => {
+  if (!description) return '';
+  const dotIndex = description.indexOf('.');
+  return dotIndex !== -1 ? description.substring(0, dotIndex + 1) : description;
+};
 
 // Helper function to get time-based greeting
 function getGreeting() {
@@ -77,6 +94,7 @@ export default function HomePage() {
    * 4. Trigger OCR with fileId only
    */
   const processFileInBackground = async (
+    uploadId: string,
     fileId: number,
     fileUrl: string,
     file: File,
@@ -87,6 +105,11 @@ export default function HomePage() {
       console.log('🖼️  [Background] Converting PDF to images...');
       const images = await convertPDFToImages(fileUrl, file);
       console.log(`✅ [Background] PDF converted to ${images.length} images`);
+
+      // Update file with page count immediately so UI shows "Attempting to extract text from X pages..."
+      setFiles(prev => prev.map(f => 
+        f.id === uploadId ? { ...f, pageCount: images.length } : f
+      ));
 
       // Step 6: Upload images to Vercel and create Image records in Airtable
       console.log(`📤 [Background] Uploading ${images.length} images to Vercel and creating Airtable records...`);
@@ -129,6 +152,9 @@ export default function HomePage() {
             const date = invoiceRecord.fields['Date'] as string;
             const summary = invoiceRecord.fields['Summary'] as string;
             const invoiceNumber = invoiceRecord.fields['Invoice-Number'] as string;
+            const status = invoiceRecord.fields['Status'] as string;
+            const errorCode = invoiceRecord.fields['ErrorCode'] as string;
+            const errorDescription = invoiceRecord.fields['Error-Description'] as string;
 
             // Format the data for the UI
             const invoiceDate = date ? new Date(date) : new Date();
@@ -142,6 +168,9 @@ export default function HomePage() {
               description: summary || 'Invoice details',
               invoiceNumber: invoiceNumber || undefined,
               recordId: invoiceRecordId, // Include recordId for status updates
+              status,
+              errorCode,
+              errorDescription,
             });
           }
         } catch (error) {
@@ -173,32 +202,50 @@ export default function HomePage() {
         const response = await client.getRecord('Files', airtableRecordId);
         
         if (response && response.fields) {
-          const processingStatus = response.fields['Processing-Status'] as string;
-          const mainStatus = response.fields['Status'] as string;
+          let processingStatus = response.fields['Processing-Status'] as string;
+          let mainStatus = response.fields['Status'] as string;
+          let errorCode = response.fields['Error-Code'] as string;
+          let errorDescription = response.fields['Error-Description'] as string;
           const progress = getProcessingProgress(processingStatus);
           const invoiceRecordIds = response.fields['Invoices'] as string[];
 
           console.log(`📊 [Polling] File ${airtableRecordId}: ${mainStatus}/${processingStatus} (${progress}%)`);
 
           // Map the Airtable status to UI status
-          const uiStatus = mapFileStatusToUI(mainStatus, processingStatus);
+          let uiStatus = mapFileStatusToUI(mainStatus, processingStatus);
 
           // Fetch invoice info if invoices are linked (don't wait for MATCHING status)
           let invoices = null;
           if (invoiceRecordIds && invoiceRecordIds.length > 0) {
             console.log(`📄 [Polling] Found ${invoiceRecordIds.length} invoice(s), fetching details...`);
             invoices = await fetchAllInvoices(baseId, invoiceRecordIds);
+
+            // Check for invoice errors and override status if needed
+            if (invoices) {
+              const errorInvoice = invoices.find(inv => inv.status === 'Error');
+              if (errorInvoice) {
+                console.log(`❌ [Polling] Invoice ${errorInvoice.recordId} has error: ${errorInvoice.errorCode}`);
+                
+                processingStatus = 'ERROR';
+                mainStatus = 'Error';
+                errorCode = parseErrorCode(errorInvoice.errorCode || '');
+                errorDescription = parseErrorDescription(errorInvoice.errorDescription || '');
+                uiStatus = 'error';
+              }
+            }
           }
 
           // Update the file's status, progress, processingStatus, and invoices
           setFiles((prev) =>
             prev.map((f) =>
               f.id === uploadFileId
-                ? { 
+                ?                   { 
                     ...f, 
                     status: uiStatus, 
                     processingStatus, 
                     mainStatus,
+                    errorCode,
+                    errorDescription,
                     ...(invoices && { invoices }) // Only update if fetched
                   }
                 : f
@@ -299,7 +346,7 @@ export default function HomePage() {
           // Start background processing (PDF conversion + image upload + OCR)
           if (result.fileId && result.url && result.airtableRecordId) {
             console.log('🔄 Starting PDF conversion, image upload, and OCR in background...');
-            processFileInBackground(result.fileId, result.url, actualFile, result.airtableRecordId);
+            processFileInBackground(uploadFile.id, result.fileId, result.url, actualFile, result.airtableRecordId);
           }
         } else if (result.errorCode === 'DUPLICATE_FILE') {
           // Handle duplicate file gracefully - show UI feedback instead of error
@@ -441,7 +488,8 @@ export default function HomePage() {
                   pageCount={file.pageCount}
                   invoices={file.invoices}
                   caveats={file.caveats}
-                  errorMessage={file.errorDescription || file.errorCode}
+                  errorCode={file.errorCode}
+                  errorMessage={file.errorDescription}
                   onCancel={() => handleCancel(file.id)}
                   onRemove={() => handleRemove(file.id)}
                   onGetHelp={() => handleGetHelp(file.id)}

@@ -567,7 +567,7 @@ export function UploadStatusCard({
         <CardLayout icon={XCircle} iconColor="error">
           <CardHeader
             title={filename}
-            badgeText="Error"
+            badgeText="Error Occurred"
             badgeColor="error"
             helperText={errorMessage || "Unable to process this file"}
           />
@@ -702,7 +702,7 @@ export function UploadStatusCard({
         <CardLayout icon={XCircle} iconColor="error">
           <CardHeader
             title={filename}
-            badgeText="Error"
+            badgeText="Error Occurred"
             badgeColor="error"
             helperText={errorMessage}
           />

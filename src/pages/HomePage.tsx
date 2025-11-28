@@ -83,6 +83,15 @@ export default function HomePage() {
     setGreeting(getGreeting());
   }, []);
 
+  const stopPolling = (fileId: string) => {
+    const interval = pollingIntervalsRef.current.get(fileId);
+    if (interval) {
+      clearInterval(interval);
+      pollingIntervalsRef.current.delete(fileId);
+      console.log(`🛑 Polling stopped for file: ${fileId}`);
+    }
+  };
+
   /**
    * Process PDF conversion, image upload, and OCR in the background
    * This runs after the file upload is complete and doesn't block the UI
@@ -126,8 +135,17 @@ export default function HomePage() {
       console.log('✅ [Background] OCR triggered, job ID:', ocrResponse.id);
     } catch (error) {
       console.error('❌ [Background] PDF conversion, image upload, or OCR failed:', error);
-      // Background processing failed, but file is already uploaded
-      // User can retry OCR manually later if needed
+      
+      stopPolling(uploadId);
+
+      setFiles(prev => prev.map(f => 
+        f.id === uploadId ? { 
+          ...f, 
+          status: 'error',
+          errorCode: 'PROCESSING_ERROR',
+          errorDescription: error instanceof Error ? error.message : 'Processing failed'
+        } : f
+      ));
     }
   };
 
@@ -254,16 +272,27 @@ export default function HomePage() {
 
           // Stop polling if complete or error
           if (progress >= 100 || mainStatus === 'Error' || mainStatus === 'Processed') {
-            const interval = pollingIntervalsRef.current.get(uploadFileId);
-            if (interval) {
-              clearInterval(interval);
-              pollingIntervalsRef.current.delete(uploadFileId);
-              console.log(`✅ [Polling] Stopped polling for file ${airtableRecordId}`);
-            }
+            stopPolling(uploadFileId);
           }
         }
       } catch (error) {
         console.error('❌ [Polling] Error polling file:', error);
+        
+        stopPolling(uploadFileId);
+
+        // Update UI to show error
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === uploadFileId
+              ? {
+                  ...f,
+                  status: 'error',
+                  errorCode: 'POLLING_ERROR',
+                  errorDescription: error instanceof Error ? error.message : 'Connection lost',
+                }
+              : f
+          )
+        );
       }
     };
 
@@ -409,13 +438,7 @@ export default function HomePage() {
       console.log('🛑 Upload cancelled for file:', fileId);
     }
     
-    // Stop polling if active
-    const pollingInterval = pollingIntervalsRef.current.get(fileId);
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingIntervalsRef.current.delete(fileId);
-      console.log('🛑 Polling stopped for file:', fileId);
-    }
+    stopPolling(fileId);
     
     // Remove file from UI
     setFiles((prev) => prev.filter((f) => f.id !== fileId));

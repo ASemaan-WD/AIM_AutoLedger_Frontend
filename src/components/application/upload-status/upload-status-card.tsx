@@ -44,7 +44,6 @@ export interface UploadStatusCardProps {
     invoiceNumber?: string
     recordId?: string // Airtable record ID for updating status
   }>
-  caveats?: string[]
   issues?: string[]
   errorMessage?: string
   duplicateInfo?: {
@@ -77,7 +76,6 @@ export function UploadStatusCard({
   pageCount,
   fileSize,
   invoices,
-  caveats,
   issues,
   errorMessage,
   duplicateInfo,

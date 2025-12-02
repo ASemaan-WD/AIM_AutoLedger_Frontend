@@ -2,7 +2,7 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-11-27T15:13:18.187Z
+ * Generated: 2025-12-02T15:24:46.867Z
  * Base ID: applFPNMYrcJY8Z0C
  * 
  * DO NOT EDIT MANUALLY
@@ -66,8 +66,6 @@ export const FIELD_IDS = {
     MATCHPAYLOADJSON: 'fld7nZtX7h9ykBAS2',
     ERRORCODE: 'fldwsvCcR8BsNYQVx',
     STATUS: 'fld8ZH6sheroClLwL',
-    DISCOUNT_AMOUNT: 'fld0zHEhMerfgxZx1',
-    DISCOUNT_DATE: 'fldyN4Sf6FTZoH9YI',
     BALANCE: 'fldgF26E6kAcOYIEf',
     BALANCE_EXPLANATION: 'fldXH56bhzI3ieEsU',
     FILE_RAW_TEXT: 'fldbhuxrnxJ1Fun9u',
@@ -81,7 +79,7 @@ export const FIELD_IDS = {
     STATUS_MODIFIED_TIME: 'fldGcJS6M2X2TPHbS',
     SUMMARY: 'fldhZQz3sZGhJHYts',
     NAME_CANDIDATES: 'fldUqMvWCDZq1HAAu',
-    FILES_COPY: 'fldOvAKHWNuNgJf1E',
+    WARNINGS: 'flduKtm4zmcsDYR74',
   },
   POINVOICEHEADERS: {
     RECORDID: 'fldhszvX1XbN0cGah',
@@ -130,7 +128,6 @@ export const FIELD_IDS = {
     STATUS: 'fldb5mLqnscBfBzjM',
     EXPORT_ERROR_CODE: 'fld08whvyI1HaV5Dx',
     DETAILS_SUM: 'fldId0eVt84ZYF9fx',
-    TERMSDAYSINT: 'fldGmplqb3IKIwnBW',
     STATUS_MODIFIED_TIME: 'fldBeuPc41kQmBKWY',
     TAXID01: 'fldxnhDiN7gAcEjS4',
     TAXID02: 'fldaTI1fhJnCe3T22',
@@ -221,7 +218,6 @@ export const FIELD_IDS = {
     RELATEDRECORDID: 'fldo5DUZ1ZqH81cMK',
     STATUS: 'fldrLsufhRoczexhW',
     ATTEMPTS: 'fldnuypciXqhTcjxF',
-    BASE_64_CONTENT: 'fldXZVizC2KUBZtHJ',
     ERROR: 'fld82YekEL3sWscLX',
     CREATEDAT: 'fldCdqR9MQUATvFVz',
     MODIFIEDAT: 'fldAto9sfQBrJcaBl',
@@ -323,8 +319,6 @@ export const FIELD_NAMES = {
     MATCHPAYLOADJSON: 'MatchPayloadJSON',
     ERRORCODE: 'ErrorCode',
     STATUS: 'Status',
-    DISCOUNT_AMOUNT: 'Discount-Amount',
-    DISCOUNT_DATE: 'Discount-Date',
     BALANCE: 'Balance',
     BALANCE_EXPLANATION: 'Balance-Explanation',
     FILE_RAW_TEXT: 'File-Raw-Text',
@@ -338,7 +332,7 @@ export const FIELD_NAMES = {
     STATUS_MODIFIED_TIME: 'Status-Modified-Time',
     SUMMARY: 'Summary',
     NAME_CANDIDATES: 'Name-Candidates',
-    FILES_COPY: 'Files copy',
+    WARNINGS: 'Warnings',
   },
   POINVOICEHEADERS: {
     RECORDID: 'RecordID',
@@ -387,7 +381,6 @@ export const FIELD_NAMES = {
     STATUS: 'Status',
     EXPORT_ERROR_CODE: 'Export-Error-Code',
     DETAILS_SUM: 'Details-Sum',
-    TERMSDAYSINT: 'TermsDaysInt',
     STATUS_MODIFIED_TIME: 'Status-Modified-Time',
     TAXID01: 'TaxID01',
     TAXID02: 'TaxID02',
@@ -478,7 +471,6 @@ export const FIELD_NAMES = {
     RELATEDRECORDID: 'RelatedRecordID',
     STATUS: 'Status',
     ATTEMPTS: 'Attempts',
-    BASE_64_CONTENT: 'Base-64-Content',
     ERROR: 'Error',
     CREATEDAT: 'CreatedAt',
     MODIFIEDAT: 'ModifiedAt',
@@ -515,7 +507,7 @@ export const FILE_STATUS = {
   QUEUED: 'Queued',
   PROCESSING: 'Processing',
   PROCESSED: 'Processed',
-  ATTENTION: 'Attention',
+  ERROR: 'Error',
 } as const;
 
 // File Processing Status Constants (substatus - shows current operation)
@@ -565,60 +557,3 @@ export const UX_STATUS_COLORS = {
   'Exported': 'gray',
   'Exporting': 'warning',
 } as const;
-
-// ============================================================================
-// RECORD TYPES - TypeScript types for Airtable records
-// ============================================================================
-
-/**
- * POInvoiceHeaders record type
- * Represents a single PO invoice header record from Airtable
- */
-export interface POInvoiceHeadersRecord {
-  id: string;
-  fields: {
-    [key: string]: any;
-    'RecordID'?: string;
-    'Invoice'?: string[];
-    'InvoiceRecordID'?: string;
-    'Details'?: string[];
-    'Company-Code'?: string;
-    'VendId'?: string;
-    'AP-Invoice-Number'?: string;
-    'Remit-Name'?: string;
-    'Invoice-Date'?: string;
-    'TermsId'?: string;
-    'Due-Date'?: string;
-    'Total-Invoice-Amount'?: number;
-    'Freight-Charge'?: number;
-    'Surcharge'?: number;
-    'PO-Number'?: string;
-    'Status'?: string;
-    'Created-At'?: string;
-    'Modified-At'?: string;
-  };
-  createdTime?: string;
-}
-
-/**
- * POInvoiceDetails record type
- * Represents a single PO invoice line item record from Airtable
- */
-export interface POInvoiceDetailsRecord {
-  id: string;
-  fields: {
-    [key: string]: any;
-    'RecordID'?: string;
-    'InvoiceHeaders'?: string[];
-    'Line-Number'?: string;
-    'Item-No'?: string;
-    'Item-Description'?: string;
-    'Quantity-Invoiced'?: number;
-    'Invoice-Price'?: number;
-    'Line-Amount'?: number;
-    'PO-Number'?: string;
-    'Expacct'?: string;
-    'AP-Invoice-Number'?: string;
-  };
-  createdTime?: string;
-}

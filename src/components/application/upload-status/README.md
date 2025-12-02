@@ -64,7 +64,7 @@ import { UploadStatusCard } from "@/components/application/upload-status/upload-
     amount: "$2,450.00",
     description: "Office supplies and equipment"
   }}
-  caveats={[
+  issues={[
     "This invoice is 45 days old",
     "No matching PO found in the system"
   ]}
@@ -88,7 +88,7 @@ import { UploadStatusCard } from "@/components/application/upload-status/upload-
 | `status` | `UploadStatus` | Yes | Current status: `"uploading"`, `"processing"`, `"connecting"`, `"success"`, `"success-with-caveats"`, or `"error"` |
 | `pageCount` | `number` | No | Number of pages in document (shown during processing) |
 | `invoiceInfo` | `InvoiceInfo` | No | Invoice details to display |
-| `caveats` | `string[]` | No | List of warnings for success-with-caveats state |
+| `issues` | `string[]` | No | List of warnings for success-with-caveats state |
 | `errorMessage` | `string` | No | Error message for error state |
 
 ### InvoiceInfo
@@ -116,7 +116,7 @@ Shows invoice details while connecting to AIM. Includes a link to the original f
 Shows success message with action buttons (Export, Cancel) and link to original file.
 
 ### 5. Success with Caveats
-Shows success message with warnings/caveats listed. Includes action buttons and link to original file.
+Shows success message with warnings/issues listed. Includes action buttons and link to original file.
 
 ### 6. Error
 Shows error message with action buttons (Remove, Get Help) and link to original file.

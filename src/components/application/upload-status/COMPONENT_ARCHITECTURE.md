@@ -13,7 +13,7 @@ upload-status/
 │   ├── card-progress.tsx        # Progress bar for in-progress states
 │   ├── invoice-details.tsx      # Invoice description, date, and amount
 │   ├── original-file-link.tsx   # Link to view the original file
-│   ├── attention-list.tsx       # Warning/caveat list for attention states
+│   ├── attention-list.tsx       # Warning/issue list for attention states
 │   ├── card-actions.tsx         # Action buttons (Export/Cancel or Remove/Get Help)
 │   └── index.tsx                # Barrel export
 ├── upload-status-card.tsx       # Main orchestrator component
@@ -133,12 +133,12 @@ interface OriginalFileLinkProps {
 
 ### 5. AttentionList
 
-**Purpose:** Displays a list of warnings or caveats with warning icons.
+**Purpose:** Displays a list of warnings or issues with warning icons.
 
 **Props:**
 ```typescript
 interface AttentionListProps {
-  items: string[]    // Array of warning/caveat messages
+  items: string[]    // Array of warning/issue messages
   show?: boolean     // Whether to show this section (default: true)
 }
 ```
@@ -214,7 +214,7 @@ interface UploadStatusCardProps {
     amount: string
     description: string
   }
-  caveats?: string[]
+  issues?: string[]
   errorMessage?: string
   onCancel?: () => void
   onExport?: () => void

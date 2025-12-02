@@ -18,13 +18,6 @@ export const sampleInvoices = [{
   description: "Fastener nuts assortment including SPAC HGLF Os, Lt, and SPL types"
 }]
 
-// Sample caveats for warning states (deprecated - use sampleIssues)
-export const sampleCaveats = [
-  "This invoice is 45 days old",
-  "No matching PO found in the system",
-  "Vendor address differs from records"
-]
-
 // Sample issues for success-with-caveats state
 export const sampleIssues = [
   "This invoice is 45 days old",

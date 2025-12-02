@@ -9,6 +9,11 @@ import { createAirtableClient } from '@/lib/airtable/client';
 import { mapFileStatusToUI, getProcessingProgress } from '@/lib/status-mapper';
 import { FILE_STATUS } from '@/lib/airtable/schema-types';
 
+interface InvoiceWarning {
+  Type: string;
+  [key: string]: any;
+}
+
 interface UploadedFile {
   id: string;
   name: string;
@@ -37,9 +42,53 @@ interface UploadedFile {
     status?: string;
     errorCode?: string;
     errorDescription?: string;
+    warnings?: InvoiceWarning[];
+    balance?: number;
   }>;
-  caveats?: string[];
+  issues?: string[];
 }
+
+// Format invoice warning to display message
+const formatInvoiceWarning = (warning: InvoiceWarning): string | null => {
+  // Type: 'balance' is now handled directly from the invoice record 'Balance' field
+  
+  if (warning.Type === 'line_amount') {
+    if (warning.Items && Array.isArray(warning.Items)) {
+      const items = warning.Items as { 
+        LineNo: string; 
+        DocQty: number; 
+        RecQty: number; 
+        DocPrice: number; 
+        RecPrice: number; 
+      }[];
+      if (items.length === 0) return null;
+      
+      // Format as a single string since the UI handles lists of strings
+      // We'll format it to look good in the UI
+      const details = items.map(item => {
+        const qtyMismatch = item.DocQty != null;
+        const priceMismatch = item.DocPrice !=null;
+
+        if (qtyMismatch && priceMismatch) {
+          return `- Line ${item.LineNo} – quantity and unit price mismatch (Invoice: ${item.DocQty} @ ${item.DocPrice}, PO: ${item.RecQty} @ ${item.RecPrice}).`;
+        } else if (qtyMismatch) {
+          return `- Line ${item.LineNo} – quantity mismatch (Invoice: ${item.DocQty}, PO: ${item.RecQty}).`;
+        } else if (priceMismatch) {
+          return `- Line ${item.LineNo} – unit price mismatch (Invoice: ${item.DocPrice}, PO: ${item.RecPrice}).`;
+        }
+        return `- Line ${item.LineNo} – mismatch detected.`;
+      }).join('\n');
+      
+      return `There is a line amount mismatch for the following item(s):\n${details}`;
+    }
+  }
+  if (warning.Type === 'missing_receipts') {
+    if (warning.ItemLineNumbers) {
+      return `Line(s) ${warning.ItemLineNumbers} – item(s) not on PO).`;
+    }
+  }
+  return null;
+};
 
 // Parse error code to extract message outside brackets
 const parseErrorCode = (code: string): string => {
@@ -173,6 +222,22 @@ export default function HomePage() {
             const status = invoiceRecord.fields['Status'] as string;
             const errorCode = invoiceRecord.fields['ErrorCode'] as string;
             const errorDescription = invoiceRecord.fields['Error-Description'] as string;
+            const warningsRaw = invoiceRecord.fields['Warnings'];
+            const balance = invoiceRecord.fields['Balance'] as number;
+
+            // Parse warnings
+            let warnings: InvoiceWarning[] = [];
+            if (warningsRaw) {
+              try {
+                if (typeof warningsRaw === 'string') {
+                  warnings = JSON.parse(warningsRaw);
+                } else if (Array.isArray(warningsRaw)) {
+                  warnings = warningsRaw as InvoiceWarning[];
+                }
+              } catch (e) {
+                console.warn('Failed to parse warnings for invoice', invoiceRecordId, e);
+              }
+            }
 
             // Format the data for the UI
             const invoiceDate = date ? new Date(date) : new Date();
@@ -189,6 +254,8 @@ export default function HomePage() {
               status,
               errorCode,
               errorDescription,
+              warnings,
+              balance,
             });
           }
         } catch (error) {
@@ -231,6 +298,7 @@ export default function HomePage() {
 
           // Map the Airtable status to UI status
           let uiStatus = mapFileStatusToUI(mainStatus, processingStatus);
+          let collectedIssues: string[] | undefined;
 
           // Fetch invoice info if invoices are linked (don't wait for MATCHING status)
           let invoices = null;
@@ -249,6 +317,43 @@ export default function HomePage() {
                 errorCode = parseErrorCode(errorInvoice.errorCode || '');
                 errorDescription = parseErrorDescription(errorInvoice.errorDescription || '');
                 uiStatus = 'error';
+              } else {
+                // Check for warnings (success-with-caveats)
+                // Definition: status is Matched AND (has Warnings property that is NOT null and non-empty OR balance is not 0)
+                const warningInvoices = invoices.filter(inv => 
+                  inv.status === 'Matched' && 
+                  ((inv.warnings && inv.warnings.length > 0) || (inv.balance !== undefined && inv.balance !== 0))
+                );
+                
+                if (warningInvoices.length > 0) {
+                  console.log(`⚠️ [Polling] Found ${warningInvoices.length} invoice(s) with warnings`);
+                  uiStatus = 'success-with-caveats';
+                  collectedIssues = warningInvoices.flatMap(inv => {
+                    const issues = [];
+                    
+                    // Check balance first
+                    if (inv.balance !== undefined && inv.balance !== 0) {
+                      const absBalance = Math.abs(inv.balance);
+                      
+                      if (inv.balance > 0) {
+                        issues.push(`Invoice subtotal is ${absBalance} more than PO total.`);
+                      } else {
+                        issues.push(`Invoice subtotal is ${absBalance} less than PO total.`);
+                      }
+                    }
+                    
+                    // Check other warnings
+                    if (inv.warnings && inv.warnings.length > 0) {
+                      issues.push(...inv.warnings
+                        .filter(w => w.Type !== 'balance') // Ignore balance type warnings from the array
+                        .map(formatInvoiceWarning)
+                        .filter((w): w is string => w !== null)
+                      );
+                    }
+                    
+                    return issues;
+                  });
+                }
               }
             }
           }
@@ -264,7 +369,8 @@ export default function HomePage() {
                     mainStatus,
                     errorCode,
                     errorDescription,
-                    ...(invoices && { invoices }) // Only update if fetched
+                    ...(invoices && { invoices }), // Only update if fetched
+                    ...(invoices ? { issues: collectedIssues || [] } : {})
                   }
                 : f
             )
@@ -510,7 +616,7 @@ export default function HomePage() {
                   fileSize={file.size}
                   pageCount={file.pageCount}
                   invoices={file.invoices}
-                  caveats={file.caveats}
+                  issues={file.issues}
                   errorCode={file.errorCode}
                   errorMessage={file.errorDescription}
                   onCancel={() => handleCancel(file.id)}

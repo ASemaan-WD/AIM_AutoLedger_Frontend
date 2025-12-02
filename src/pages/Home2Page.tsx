@@ -17,7 +17,7 @@ interface UploadedFile {
     amount: string;
     description: string;
   }>;
-  caveats?: string[];
+  issues?: string[];
   errorMessage?: string;
 }
 
@@ -102,7 +102,7 @@ export default function Home2Page() {
                 ? {
                     ...f,
                     status: 'success-with-caveats' as UploadStatus,
-                    caveats: ['This invoice is 45 days old', 'No matching PO found in the system'],
+                    issues: ['This invoice is 45 days old', 'No matching PO found in the system'],
                   }
                 : f
             )
@@ -191,7 +191,7 @@ export default function Home2Page() {
                   fileSize={file.size}
                   pageCount={file.pageCount}
                   invoices={file.invoices || []}
-                  caveats={file.caveats}
+                  issues={file.issues}
                   errorMessage={file.errorMessage}
                   onCancel={() => handleCancel(file.id)}
                   onExport={() => handleExport(file.id)}

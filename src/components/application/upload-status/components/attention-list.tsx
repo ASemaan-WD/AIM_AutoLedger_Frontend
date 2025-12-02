@@ -16,7 +16,7 @@ export function AttentionList({ items, show = true }: AttentionListProps) {
         <li key={index} className="flex gap-3">
           <AlertTriangle aria-hidden="true" className="size-6 shrink-0 text-fg-warning-primary" />
           <div className="flex flex-col gap-0.5">
-            <p className="text-md text-tertiary">{item}</p>
+            <p className="text-md text-tertiary whitespace-pre-line">{item}</p>
           </div>
         </li>
       ))}

@@ -70,16 +70,16 @@ const formatInvoiceWarning = (warning: InvoiceWarning): string | null => {
         const priceMismatch = item.DocPrice !=null;
 
         if (qtyMismatch && priceMismatch) {
-          return `- Line ${item.LineNo} – quantity and unit price mismatch (Invoice: ${item.DocQty} @ ${item.DocPrice}, PO: ${item.RecQty} @ ${item.RecPrice}).`;
+          return `- Line ${item.LineNo} – quantity and unit price mismatch (Invoice: ${item.DocQty} @ $${item.DocPrice}, PO: ${item.RecQty} @ $${item.RecPrice}).`;
         } else if (qtyMismatch) {
           return `- Line ${item.LineNo} – quantity mismatch (Invoice: ${item.DocQty}, PO: ${item.RecQty}).`;
         } else if (priceMismatch) {
-          return `- Line ${item.LineNo} – unit price mismatch (Invoice: ${item.DocPrice}, PO: ${item.RecPrice}).`;
+          return `- Line ${item.LineNo} – unit price mismatch (Invoice: $${item.DocPrice}, PO: $${item.RecPrice}).`;
         }
         return `- Line ${item.LineNo} – mismatch detected.`;
       }).join('\n');
       
-      return `There is a line amount mismatch for the following item(s):\n${details}`;
+      return `Line item mismatch(es) detected:\n${details}`;
     }
   }
   if (warning.Type === 'missing_receipts') {
@@ -336,9 +336,9 @@ export default function HomePage() {
                       const absBalance = Math.abs(inv.balance);
                       
                       if (inv.balance > 0) {
-                        issues.push(`Invoice subtotal is ${absBalance} more than PO total.`);
+                        issues.push(`Invoice subtotal is $${absBalance} more than PO total.`);
                       } else {
-                        issues.push(`Invoice subtotal is ${absBalance} less than PO total.`);
+                        issues.push(`Invoice subtotal is $${absBalance} less than PO total.`);
                       }
                     }
                     

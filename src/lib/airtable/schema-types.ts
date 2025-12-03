@@ -2,7 +2,7 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-12-02T15:24:46.867Z
+ * Generated: 2025-12-03T14:34:30.547Z
  * Base ID: applFPNMYrcJY8Z0C
  * 
  * DO NOT EDIT MANUALLY
@@ -508,6 +508,7 @@ export const FILE_STATUS = {
   PROCESSING: 'Processing',
   PROCESSED: 'Processed',
   ERROR: 'Error',
+  ATTENTION: 'Attention',
 } as const;
 
 // File Processing Status Constants (substatus - shows current operation)
@@ -557,3 +558,261 @@ export const UX_STATUS_COLORS = {
   'Exported': 'gray',
   'Exporting': 'warning',
 } as const;
+
+// ============================================================================
+// TABLE INTERFACES - TypeScript interfaces for each table
+// ============================================================================
+
+export interface FilesRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    FileID?: number;
+    FileURL?: string;
+    FileHash?: string;
+    FileName?: string;
+    UploadedDate?: string;
+    Status?: 'Queued' | 'Processing' | 'Processed' | 'Attention';
+    ParsedAt?: string;
+    Attachments?: Array<{ url: string; filename: string; type?: string; size?: number; thumbnails?: any }>;
+    'Raw-Text'?: string;
+    'Error-Code'?: string;
+    'Error-Description'?: string;
+    'Error-Link'?: string;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+    Invoices?: string[];
+    InvoiceRecordIDs?: any;
+    'Status-Modified-Time'?: string;
+    'Processing-Status'?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR';
+    Jobs?: string;
+    OrganizationId?: string;
+    ImageIDs?: string[];
+    ImageRecordIDs?: any;
+  };
+}
+
+export interface ImagesRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    ImageID?: number;
+    ImageURL?: string;
+    UploadedDate?: string;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+    FileID?: string[];
+    FileRecordID?: any;
+  };
+}
+
+export interface InvoicesRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    RecordID?: number;
+    'Invoice-Number'?: string;
+    VendId?: string;
+    'Vendor-Name'?: string;
+    Amount?: number;
+    Date?: string;
+    'Freight-Charge'?: number;
+    'Misc-Charge'?: number;
+    Surcharge?: number;
+    POs?: string;
+    'Document-Raw-Text'?: string;
+    Files?: string[];
+    FileRecordID?: any;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+    MatchPayloadJSON?: string;
+    ErrorCode?: string;
+    Status?: 'Pending' | 'Matching' | 'Matched' | 'Queued' | 'Exported' | 'Error';
+    Balance?: any;
+    'Balance-Explanation'?: string;
+    'File-Raw-Text'?: any;
+    'Missing-Fields'?: any;
+    Attachments?: any;
+    POInvoiceHeader?: string[];
+    POInvoiceHeaderRecordID?: any;
+    'Headers-Sum'?: any;
+    'Line Items'?: string;
+    'Error-Description'?: string;
+    'Status-Modified-Time'?: string;
+    Summary?: string;
+    'Name-Candidates'?: string;
+    Warnings?: string;
+  };
+}
+
+export interface POInvoiceHeadersRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    RecordID?: number;
+    Invoice?: string[];
+    InvoiceRecordID?: any;
+    Details?: string[];
+    'Company-Code'?: string;
+    VendId?: string;
+    'AP-Invoice-Number'?: any;
+    'Remit-Name'?: any;
+    'Invoice-Date'?: any;
+    TermsId?: string;
+    'Due-Date'?: string;
+    'Discount-Date'?: string;
+    'Total-Invoice-Amount'?: any;
+    'Freight-Charge'?: any;
+    'Miscellaneous-Charge'?: any;
+    'Discount-Amount'?: number;
+    Surcharge?: any;
+    TaxID00?: string;
+    APAcct?: string;
+    APSub?: string;
+    'Freight-Account'?: string;
+    'Freight-Subaccount'?: string;
+    'Misc-Charge-Account'?: string;
+    'Misc-Charge-Subaccount'?: string;
+    Tax01Sub?: string;
+    'PO-Number-Seq-Type'?: string;
+    'PO-Number'?: string;
+    'PO-Vendor'?: string;
+    CuryId?: string;
+    CuryMultDiv?: number;
+    CuryRate?: number;
+    CuryRateType?: string;
+    'Update-Batch-Number'?: string;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+    'User-Id'?: string;
+    'Update-YN'?: boolean;
+    'Update-Audit-Number'?: string;
+    'GL-Exception-YN'?: boolean;
+    'Invoice-Balance'?: any;
+    'Balance-Exception-YN'?: any;
+    'Job-Project-Number'?: string;
+    DocumentAttachment?: any;
+    Status?: 'Pending' | 'Matched' | 'Queued' | 'Exported' | 'Error' | '';
+    'Export-Error-Code'?: string;
+    'Details-Sum'?: any;
+    'Status-Modified-Time'?: string;
+    TaxID01?: string;
+    TaxID02?: string;
+    TaxID03?: string;
+    TaxTot00?: number;
+    TaxTot01?: number;
+    TaxTot02?: number;
+    TaxTot03?: number;
+    txblTot00?: number;
+    txblTot01?: number;
+    txblTot02?: number;
+    txblTot03?: number;
+    Tax00Acct?: string;
+    Tax01Acct?: string;
+    Tax02Acct?: string;
+    Tax03Acct?: string;
+    Tax00Sub?: string;
+    Tax02Sub?: string;
+    Tax03Sub?: string;
+    Type?: string;
+    FutureA?: string;
+    FutureB?: string;
+  };
+}
+
+export interface POInvoiceDetailsRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    RecordID?: number;
+    POInvoiceHeader?: string[];
+    HeaderRecordID?: any;
+    'Company-Code'?: any;
+    VendId?: any;
+    'AP-Invoice-Number'?: any;
+    'Line-Number'?: string;
+    'Item-No'?: string;
+    'Item-Description'?: string;
+    Step?: string;
+    'Invoice-Price'?: number;
+    'Invoice-Pricing-Qty'?: number;
+    'Quantity-Invoiced'?: number;
+    'Line-Amount'?: number;
+    'PO-Number-Seq-Type'?: any;
+    'PO-Number'?: any;
+    'PO-Release-Number'?: string;
+    'PO-Line-Number'?: string;
+    'Vendor-Ship-Number'?: string;
+    'Date-Received'?: string;
+    'Quantity-Received'?: number;
+    'Quantity-Accepted'?: number;
+    'Purchase-Price'?: number;
+    'Pricing-Quantity'?: number;
+    'Already-Invoiced-Qty'?: number;
+    ExpAcct?: string;
+    ExpSub?: string;
+    'PPV-Vouchered-Acct'?: string;
+    'PPV-Vouchered-SubAcct'?: string;
+    'PPV-Unit-Cost'?: any;
+    'Standard-Cost'?: number;
+    SurchargeType?: 'Dollar' | 'Percent';
+    SurchargeRate?: number;
+    Surcharge?: number;
+    'GL-Exception-YN'?: string;
+    'Invoiced-In-Full-YN'?: string;
+    'Update-Level-Ind'?: string;
+    'PO-UOM'?: string;
+    'Job-Project-Number'?: any;
+    BoxNbr?: string;
+    FutureA?: string;
+    FutureB?: string;
+    'Line-Pricing'?: any;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+    Header?: string;
+    TaxID00?: any;
+    TaxID01?: any;
+    TaxID02?: any;
+    TaxID03?: any;
+    TaxAmt00?: number;
+    TaxAmt01?: number;
+    TaxAmt02?: number;
+    TaxAmt03?: number;
+    txblAmt00?: number;
+    txblAmt01?: number;
+    txblAmt02?: number;
+    txblAmt03?: number;
+  };
+}
+
+export interface JobsRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    RecordID?: number;
+    Kind?: 'ocr' | 'parse' | 'match';
+    RelatedId?: string;
+    RelatedRecordID?: number;
+    Status?: 'Pending' | 'Processing' | 'Completed' | 'Failed';
+    Attempts?: number;
+    Error?: string;
+    CreatedAt?: string;
+    ModifiedAt?: string;
+    OrganizationId?: string;
+  };
+}
+
+export interface LogsRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    RecordID?: number;
+    Source?: 'backend' | 'bridge';
+    Date?: string;
+    Operation?: string;
+    'Error-Message'?: string;
+    'Stack-Trace'?: string;
+    'Created-At'?: string;
+  };
+}
+

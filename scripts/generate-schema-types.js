@@ -155,6 +155,7 @@ export const FILE_STATUS = {
   PROCESSING: 'Processing',
   PROCESSED: 'Processed',
   ERROR: 'Error',
+  ATTENTION: 'Attention',
 } as const;
 
 // File Processing Status Constants (substatus - shows current operation)
@@ -205,6 +206,119 @@ export const UX_STATUS_COLORS = {
   'Exporting': 'warning',
 } as const;
 `;
+}
+
+/**
+ * Generate interface definitions for each table
+ */
+function generateInterfaces(schema) {
+  let code = '// ============================================================================\n';
+  code += '// TABLE INTERFACES - TypeScript interfaces for each table\n';
+  code += '// ============================================================================\n\n';
+  
+  Object.entries(schema.tables).forEach(([tableName, table]) => {
+    // Create interface name (e.g., "Files" -> "FilesRecord", "POInvoiceHeaders" -> "POInvoiceHeadersRecord")
+    // Use the exact table name from schema + "Record" suffix to match usage in code
+    const interfaceName = `${tableName}Record`;
+    
+    code += `export interface ${interfaceName} {\n`;
+    code += `  id: string;\n`;
+    code += `  createdTime: string;\n`;
+    code += `  fields: {\n`;
+    
+    Object.entries(table.fields).forEach(([fieldName, field]) => {
+      // Use the exact field name as key (needs quotes if it contains special chars)
+      const fieldKey = fieldName.match(/^[a-zA-Z0-9_]+$/) ? fieldName : `'${fieldName}'`;
+      
+      // Determine TypeScript type based on Airtable type
+      let tsType = 'any';
+      
+      switch (field.type) {
+        case 'singleLineText':
+        case 'multilineText':
+        case 'email':
+        case 'url':
+        case 'phoneNumber':
+        case 'richText':
+          tsType = 'string';
+          break;
+          
+        case 'number':
+        case 'currency':
+        case 'percent':
+        case 'duration':
+        case 'rating':
+        case 'autoNumber':
+        case 'count':
+          tsType = 'number';
+          break;
+          
+        case 'checkbox':
+          tsType = 'boolean';
+          break;
+          
+        case 'date':
+        case 'dateTime':
+        case 'createdTime':
+        case 'lastModifiedTime':
+          tsType = 'string'; // ISO date string
+          break;
+          
+        case 'singleSelect':
+          if (field.options && field.options.choices) {
+            tsType = field.options.choices.map(c => `'${c.name}'`).join(' | ');
+          } else {
+            tsType = 'string';
+          }
+          break;
+          
+        case 'multipleSelects':
+          if (field.options && field.options.choices) {
+            const choiceType = field.options.choices.map(c => `'${c.name}'`).join(' | ');
+            tsType = `Array<${choiceType}>`;
+          } else {
+            tsType = 'string[]';
+          }
+          break;
+          
+        case 'multipleAttachments':
+          // We can reference the AirtableAttachment type if we import it or define it
+          // For now, let's use a simplified inline type or any[]
+          tsType = 'Array<{ url: string; filename: string; type?: string; size?: number; thumbnails?: any }>';
+          break;
+          
+        case 'singleCollaborator':
+          tsType = '{ id: string; email: string; name: string }';
+          break;
+          
+        case 'multipleCollaborators':
+          tsType = 'Array<{ id: string; email: string; name: string }>';
+          break;
+          
+        case 'multipleRecordLinks':
+          tsType = 'string[]'; // Linked record IDs
+          break;
+          
+        // Formulas, lookups, and rollups are tricky as their type depends on the result
+        // For now, we'll use 'any' or try to guess based on name
+        case 'formula':
+        case 'rollup':
+        case 'lookup':
+        case 'multipleLookupValues':
+        default:
+          tsType = 'any';
+          break;
+      }
+      
+      // Make all fields optional since they might not be returned by API
+      code += `    ${fieldKey}?: ${tsType};\n`;
+    });
+    
+    code += `  };\n`;
+    code += `}\n\n`;
+  });
+  
+  return code;
 }
 
 /**
@@ -261,6 +375,9 @@ function generateTypeScriptFile(schema) {
 `;
   
   code += generateStatusConstants();
+  
+  code += `\n`;
+  code += generateInterfaces(schema);
   
   return code;
 }

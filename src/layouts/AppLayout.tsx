@@ -1,7 +1,8 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { HelpCircle } from '@untitledui/icons';
+import { HelpCircle, LogOut01 } from '@untitledui/icons';
 import { NavItemButton } from '@/components/application/app-navigation/base-components/nav-item-button';
 import { cx } from '@/utils/cx';
+import { logout } from '@/services/auth-service';
 
 export default function AppLayout() {
   const location = useLocation();
@@ -20,6 +21,11 @@ export default function AppLayout() {
 
   const handleNavigation = (href: string) => {
     navigate(href);
+  };
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    logout();
   };
 
   return (
@@ -45,8 +51,15 @@ export default function AppLayout() {
             ))}
           </div>
 
-          {/* Help Button (Right Side) */}
+          {/* Right Side Actions */}
           <div className="ml-auto flex items-center gap-1">
+            <NavItemButton
+              size="md"
+              icon={LogOut01}
+              label="Sign out"
+              onClick={handleLogout}
+              tooltipPlacement="bottom"
+            />
             <NavItemButton
               size="md"
               icon={HelpCircle}
@@ -65,4 +78,3 @@ export default function AppLayout() {
     </div>
   );
 }
-

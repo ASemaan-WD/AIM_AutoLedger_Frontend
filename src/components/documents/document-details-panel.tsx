@@ -25,6 +25,7 @@ import type { Invoice, DeliveryTicket, DocumentLink, StoreReceiver, DocumentStat
 import { isInvoice, isDeliveryTicket, isStoreReceiver, hasLines } from "@/types/documents";
 import { INVOICE_STATUS, UX_STATUS_MAP, UX_STATUS_COLORS, INTERNAL_TO_AIRTABLE_STATUS, type UXStatus } from "@/lib/airtable/schema-types";
 import { validateInvoice, getMissingFieldsMessage, isMultiLineMode } from "@/utils/invoice-validation";
+import { openCrispChat } from "@/utils/crisp";
 
 
 
@@ -366,8 +367,7 @@ export const DocumentDetailsPanel = ({
                                         label="Reprocess"
                                         icon={RefreshCcw01}
                                         onAction={() => {
-                                            // TODO: Implement reprocess logic
-                                            console.log('Reprocess invoice:', currentDoc.id);
+                                            openCrispChat();
                                         }}
                                     />
                                     <Dropdown.Item
@@ -408,8 +408,7 @@ export const DocumentDetailsPanel = ({
                                 color="secondary"
                                 iconLeading={HelpCircle}
                                 onClick={() => {
-                                    // Open help/support - could be a modal or external link
-                                    window.open('mailto:support@example.com?subject=Invoice%20Error%20Help', '_blank');
+                                    openCrispChat();
                                 }}
                                 className="flex-1"
                             >

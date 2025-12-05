@@ -14,6 +14,7 @@ import {
 import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal } from "./modals"
 import { getProcessingStatusText, getProcessingProgress } from "@/lib/status-mapper"
 import { createAirtableClient } from "@/lib/airtable/client"
+import { openCrispChat } from "@/utils/crisp"
 
 export type UploadStatus = 
   | "uploading" 
@@ -538,8 +539,7 @@ export function UploadStatusCard({
                 label: "Reprocess invoice",
                 icon: RefreshCw05,
                 onClick: () => {
-                  // TODO: Implement reprocess functionality
-                  console.log("Reprocess invoice clicked")
+                  openCrispChat()
                 },
               },
               {

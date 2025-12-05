@@ -3,6 +3,7 @@
 import type { FC, ReactNode } from "react"
 import { Upload02, Trash01, HelpCircle } from "@untitledui/icons"
 import { Button } from "@/components/base/buttons/button"
+import { openCrispChat } from "@/utils/crisp"
 
 type ActionType = "success" | "error" | "warning"
 
@@ -93,7 +94,9 @@ export function CardActions({
         <Button 
           size="md" 
           color="secondary"
-          onClick={onSecondaryAction}
+          onClick={() => {
+            openCrispChat()
+          }}
           iconLeading={secondary.Icon ? <SmallIcon Icon={secondary.Icon} /> : undefined}
         >
           {secondary.label}

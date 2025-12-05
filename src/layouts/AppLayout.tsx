@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { HelpCircle, LogOut01 } from '@untitledui/icons';
+import { LogOut01 } from '@untitledui/icons';
 import { NavItemButton } from '@/components/application/app-navigation/base-components/nav-item-button';
 import { cx } from '@/utils/cx';
 import { logout } from '@/services/auth-service';
@@ -58,13 +58,6 @@ export default function AppLayout() {
               icon={LogOut01}
               label="Sign out"
               onClick={handleLogout}
-              tooltipPlacement="bottom"
-            />
-            <NavItemButton
-              size="md"
-              icon={HelpCircle}
-              label="Help"
-              href="#"
               tooltipPlacement="bottom"
             />
           </div>

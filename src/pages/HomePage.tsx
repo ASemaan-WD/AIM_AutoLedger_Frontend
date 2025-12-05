@@ -8,6 +8,7 @@ import { uploadAndCreateImageRecords } from '@/services/image-service';
 import { createAirtableClient } from '@/lib/airtable/client';
 import { mapFileStatusToUI, getProcessingProgress } from '@/lib/status-mapper';
 import { FILE_STATUS } from '@/lib/airtable/schema-types';
+import type { AirtableRecord } from '@/lib/airtable/types';
 
 interface InvoiceWarning {
   Type: string;
@@ -110,6 +111,55 @@ const parseErrorDescription = (description: string): string => {
   return dotIndex !== -1 ? description.substring(0, dotIndex + 1) : description;
 };
 
+// Helper to parse invoice record
+const parseInvoiceRecord = (invoiceRecord: AirtableRecord) => {
+  if (!invoiceRecord || !invoiceRecord.fields) return null;
+  
+  const vendorName = invoiceRecord.fields['Vendor-Name'] as string;
+  const amount = invoiceRecord.fields['Amount'] as number;
+  const date = invoiceRecord.fields['Date'] as string;
+  const summary = invoiceRecord.fields['Summary'] as string;
+  const invoiceNumber = invoiceRecord.fields['Invoice-Number'] as string;
+  const status = invoiceRecord.fields['Status'] as string;
+  const errorCode = invoiceRecord.fields['ErrorCode'] as string;
+  const errorDescription = invoiceRecord.fields['Error-Description'] as string;
+  const warningsRaw = invoiceRecord.fields['Warnings'];
+  const balance = invoiceRecord.fields['Balance'] as number;
+
+  // Parse warnings
+  let warnings: InvoiceWarning[] = [];
+  if (warningsRaw) {
+    try {
+      if (typeof warningsRaw === 'string') {
+        warnings = JSON.parse(warningsRaw);
+      } else if (Array.isArray(warningsRaw)) {
+        warnings = warningsRaw as InvoiceWarning[];
+      }
+    } catch (e) {
+      console.warn('Failed to parse warnings for invoice', invoiceRecord.id, e);
+    }
+  }
+
+  // Format the data for the UI
+  const invoiceDate = date ? new Date(date) : new Date();
+  const daysAgo = Math.floor((Date.now() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  return {
+    vendor: vendorName || 'Unknown Vendor',
+    date: invoiceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    daysAgo,
+    amount: amount ? `$${amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}` : '$0.00',
+    description: summary || 'Invoice details',
+    invoiceNumber: invoiceNumber || undefined,
+    recordId: invoiceRecord.id, // Include recordId for status updates
+    status,
+    errorCode,
+    errorDescription,
+    warnings,
+    balance,
+  };
+};
+
 // Helper function to get time-based greeting
 function getGreeting() {
   const hour = new Date().getHours();
@@ -146,6 +196,154 @@ export default function HomePage() {
       console.log(`🛑 Polling stopped for file: ${fileId}`);
     }
   };
+
+  /**
+   * Fetch existing files on load
+   */
+  const fetchExistingFiles = async () => {
+    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+    if (!baseId) {
+      console.error('VITE_AIRTABLE_BASE_ID not configured');
+      return;
+    }
+
+    try {
+      const client = createAirtableClient(baseId);
+      
+      // 1. Fetch all files
+      console.log('📥 Fetching existing files...');
+      const filesRecords = await client.getAllRecords('Files', {
+        sort: [{ field: 'Created-At', direction: 'desc' }]
+      });
+      console.log(`✅ Fetched ${filesRecords.length} files`);
+
+      // 2. Fetch all invoices (if files exist)
+      let invoiceRecords: AirtableRecord[] = [];
+      if (filesRecords.length > 0) {
+        console.log('📥 Fetching associated invoices...');
+        invoiceRecords = await client.getAllRecords('Invoices');
+        console.log(`✅ Fetched ${invoiceRecords.length} invoices`);
+      }
+
+      // 3. Create Invoice Map
+      const invoiceMap = new Map<string, AirtableRecord>();
+      invoiceRecords.forEach(inv => invoiceMap.set(inv.id, inv));
+
+      // 4. Map to UploadedFile
+      const mappedFiles: UploadedFile[] = filesRecords.map(fileRecord => {
+        const fileId = fileRecord.id;
+        const fileName = fileRecord.fields['FileName'] as string || 'Untitled';
+        const fileSize = 0; // Not available in Airtable unless parsed from Attachments
+        const fileStatus = fileRecord.fields['Status'] as string;
+        const processingStatus = fileRecord.fields['Processing-Status'] as string;
+        const errorCode = fileRecord.fields['Error-Code'] as string;
+        const errorDescription = fileRecord.fields['Error-Description'] as string;
+        const invoiceIds = (fileRecord.fields['Invoices'] as string[]) || [];
+        
+        // Find associated invoices
+        const fileInvoices = invoiceIds
+            .map(id => invoiceMap.get(id))
+            .filter((inv): inv is AirtableRecord => !!inv)
+            .map(parseInvoiceRecord)
+            .filter((inv): inv is NonNullable<ReturnType<typeof parseInvoiceRecord>> => !!inv);
+            
+        // Determine UI status
+        let uiStatus = mapFileStatusToUI(fileStatus, processingStatus);
+        let collectedIssues: string[] | undefined;
+        
+        // Logic from startFilePolling to refine status based on invoices
+        if (fileInvoices.length > 0) {
+             const errorInvoice = fileInvoices.find(inv => inv.status === 'Error');
+             
+             if (errorInvoice) {
+                uiStatus = 'error';
+             } else {
+                 // Check for warnings (success-with-caveats)
+                 const warningInvoices = fileInvoices.filter(inv => 
+                   inv.status === 'Matched' && 
+                   ((inv.warnings && inv.warnings.length > 0) || (inv.balance !== undefined && inv.balance !== 0))
+                 );
+                 
+                 if (warningInvoices.length > 0) {
+                   uiStatus = 'success-with-caveats';
+                   collectedIssues = warningInvoices.flatMap(inv => {
+                     const issues = [];
+                     
+                     // Check balance
+                     if (inv.balance !== undefined && inv.balance !== 0) {
+                       const absBalance = Math.abs(inv.balance);
+                       if (inv.balance > 0) {
+                         issues.push(`Invoice subtotal is $${absBalance} more than PO total.`);
+                       } else {
+                         issues.push(`Invoice subtotal is $${absBalance} less than PO total.`);
+                       }
+                     }
+                     
+                     // Check other warnings
+                     if (inv.warnings && inv.warnings.length > 0) {
+                       issues.push(...inv.warnings
+                         .filter(w => w.Type !== 'balance')
+                         .map(formatInvoiceWarning)
+                         .filter((w): w is string => w !== null)
+                       );
+                     }
+                     return issues;
+                   });
+                 }
+
+                 // Check export status: if all invoices are 'Exported', status is 'exported'
+                 const allExported = fileInvoices.every(inv => inv.status === 'Exported');
+                 if (allExported) {
+                     uiStatus = 'exported';
+                 }
+             }
+        }
+        
+        return {
+            id: fileId,
+            name: fileName,
+            size: fileSize,
+            status: uiStatus,
+            type: 'application/pdf', // Default assumption
+            airtableRecordId: fileRecord.id,
+            processingStatus,
+            mainStatus: fileStatus,
+            errorCode,
+            errorDescription,
+            invoices: fileInvoices,
+            issues: collectedIssues,
+        };
+      });
+
+      setFiles(mappedFiles);
+
+      // 5. Start polling for active files
+      mappedFiles.forEach(file => {
+         // Files that are not in a final state should be polled
+         // Final states: 'exported', 'success' (if no actions needed?), 'error' (if fatal)
+         // Note: 'success' and 'success-with-caveats' might need polling if status changes externally, 
+         // but usually polling stops when MATCHED.
+         // However, the user might re-export or something changes.
+         // Usually we poll while processing.
+         
+         const isProcessing = file.status === 'uploading' || file.status === 'queued' || file.status === 'processing' || file.status === 'connecting';
+         
+         // Also poll if Airtable status is Processing even if UI thinks it's something else (unlikely given mapping)
+         // Or if it's Queued in Airtable.
+         
+         if (isProcessing && file.airtableRecordId) {
+             startFilePolling(file.id, file.airtableRecordId);
+         }
+      });
+
+    } catch (error) {
+      console.error("Failed to fetch existing files", error);
+    }
+  };
+
+  useEffect(() => {
+      fetchExistingFiles();
+  }, []);
 
   /**
    * Process PDF conversion, image upload, and OCR in the background
@@ -218,51 +416,9 @@ export default function HomePage() {
       for (const invoiceRecordId of invoiceRecordIds) {
         try {
           const invoiceRecord = await client.getRecord('Invoices', invoiceRecordId);
-          
-          if (invoiceRecord && invoiceRecord.fields) {
-            const vendorName = invoiceRecord.fields['Vendor-Name'] as string;
-            const amount = invoiceRecord.fields['Amount'] as number;
-            const date = invoiceRecord.fields['Date'] as string;
-            const summary = invoiceRecord.fields['Summary'] as string;
-            const invoiceNumber = invoiceRecord.fields['Invoice-Number'] as string;
-            const status = invoiceRecord.fields['Status'] as string;
-            const errorCode = invoiceRecord.fields['ErrorCode'] as string;
-            const errorDescription = invoiceRecord.fields['Error-Description'] as string;
-            const warningsRaw = invoiceRecord.fields['Warnings'];
-            const balance = invoiceRecord.fields['Balance'] as number;
-
-            // Parse warnings
-            let warnings: InvoiceWarning[] = [];
-            if (warningsRaw) {
-              try {
-                if (typeof warningsRaw === 'string') {
-                  warnings = JSON.parse(warningsRaw);
-                } else if (Array.isArray(warningsRaw)) {
-                  warnings = warningsRaw as InvoiceWarning[];
-                }
-              } catch (e) {
-                console.warn('Failed to parse warnings for invoice', invoiceRecordId, e);
-              }
-            }
-
-            // Format the data for the UI
-            const invoiceDate = date ? new Date(date) : new Date();
-            const daysAgo = Math.floor((Date.now() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
-            
-            invoices.push({
-              vendor: vendorName || 'Unknown Vendor',
-              date: invoiceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-              daysAgo,
-              amount: amount ? `$${amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}` : '$0.00',
-              description: summary || 'Invoice details',
-              invoiceNumber: invoiceNumber || undefined,
-              recordId: invoiceRecordId, // Include recordId for status updates
-              status,
-              errorCode,
-              errorDescription,
-              warnings,
-              balance,
-            });
+          const parsed = parseInvoiceRecord(invoiceRecord);
+          if (parsed) {
+            invoices.push(parsed);
           }
         } catch (error) {
           console.error(`❌ [Polling] Error fetching invoice ${invoiceRecordId}:`, error);
@@ -287,6 +443,11 @@ export default function HomePage() {
       return;
     }
 
+    // Check if we already have a poller for this file
+    if (pollingIntervalsRef.current.has(uploadFileId)) {
+        return;
+    }
+
     const pollFile = async () => {
       try {
         const client = createAirtableClient(baseId);
@@ -309,7 +470,7 @@ export default function HomePage() {
           // Fetch invoice info if invoices are linked (don't wait for MATCHING status)
           let invoices = null;
           if (invoiceRecordIds && invoiceRecordIds.length > 0) {
-            console.log(`📄 [Polling] Found ${invoiceRecordIds.length} invoice(s), fetching details...`);
+            // console.log(`📄 [Polling] Found ${invoiceRecordIds.length} invoice(s), fetching details...`);
             invoices = await fetchAllInvoices(baseId, invoiceRecordIds);
 
             // Check for invoice errors and override status if needed
@@ -332,7 +493,7 @@ export default function HomePage() {
                 );
                 
                 if (warningInvoices.length > 0) {
-                  console.log(`⚠️ [Polling] Found ${warningInvoices.length} invoice(s) with warnings`);
+                  // console.log(`⚠️ [Polling] Found ${warningInvoices.length} invoice(s) with warnings`);
                   uiStatus = 'success-with-caveats';
                   collectedIssues = warningInvoices.flatMap(inv => {
                     const issues = [];
@@ -360,6 +521,12 @@ export default function HomePage() {
                     return issues;
                   });
                 }
+
+                // Check export status
+                const allExported = invoices.every(inv => inv.status === 'Exported');
+                if (allExported && invoices.length > 0) {
+                    uiStatus = 'exported';
+                }
               }
             }
           }
@@ -383,7 +550,11 @@ export default function HomePage() {
           );
 
           // Stop polling if complete or error
-          if (progress >= 100 || mainStatus === 'Error' || mainStatus === 'Processed') {
+          // Added check for exported
+          if (progress >= 100 || mainStatus === 'Error' || mainStatus === 'Processed' || uiStatus === 'exported') {
+            // If it's processed but we want to catch export updates if initiated, we might keep polling?
+            // But usually polling stops at processed/matched. Export is a separate action or status update.
+            // If status is exported, we definitely stop.
             stopPolling(uploadFileId);
           }
         }
@@ -638,4 +809,3 @@ export default function HomePage() {
     </div>
   );
 }
-

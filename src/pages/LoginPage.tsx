@@ -48,6 +48,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e)}
                 isRequired
+                hideRequiredIndicator
                 placeholder="Enter your username"
                 autoComplete="username"
               />
@@ -60,6 +61,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e)}
                 isRequired
+                hideRequiredIndicator
                 placeholder="Enter your password"
                 autoComplete="current-password"
               />

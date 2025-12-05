@@ -82,11 +82,11 @@ const formatInvoiceWarning = (warning: InvoiceWarning): string | null => {
       return `Line item mismatch(es) detected:\n${details}`;
     }
   }
-  // if (warning.Type === 'missing_receipts') {
-  //   if (warning.ItemLineNumbers) {
-  //     return `Line(s) ${warning.ItemLineNumbers} – item(s) not on PO.`;
-  //   }
-  // }
+  if (warning.Type === 'missing_receipts') {
+    if (warning.ItemLineNumbers) {
+      return `Line(s) ${warning.ItemLineNumbers} – item(s) not on PO.`;
+    }
+  }
 
   if (warning.Type === 'ai_matching') {
     if (warning.Message) {

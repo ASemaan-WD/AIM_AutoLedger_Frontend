@@ -514,11 +514,47 @@ export function UploadStatusCard({
             onClick={handleViewFile}
           />
           
-          <CardActions
-            type="success"
-            onPrimaryAction={handleExportClick}
-            isLoading={isExporting}
-          />
+          {exportState === 'idle' ? (
+            <CardActions
+              type="success"
+              onPrimaryAction={handleExportClick}
+              isLoading={isExporting}
+            />
+          ) : (
+            <div className="mt-4 flex items-center gap-3">
+              {exportState === 'queued' && (
+                <button
+                  disabled
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2.5 text-sm font-semibold text-tertiary shadow-xs cursor-not-allowed"
+                >
+                  <RefreshCw05 className="size-4 animate-spin" />
+                  Queued
+                </button>
+              )}
+              
+              {exportState === 'exported' && (
+                <div className="flex items-center gap-2 text-success-primary">
+                  <CheckCircle className="size-5" />
+                  <span className="text-sm font-semibold">Export Successful</span>
+                </div>
+              )}
+              
+              {exportState === 'error' && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-error-primary">
+                    <AlertTriangle className="size-5" />
+                    <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
+                  </div>
+                  <button
+                    onClick={initiateExport}
+                    className="inline-flex items-center gap-2 rounded-lg border border-error bg-primary px-4 py-2.5 text-sm font-semibold text-error-primary shadow-xs hover:bg-error-50 transition-colors"
+                  >
+                    Retry Export
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {renderModals()}
       </>

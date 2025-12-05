@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05 } from "@untitledui/icons"
+import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05, Mail01 } from "@untitledui/icons"
 import { 
   CardLayout,
   CardHeader, 
@@ -11,7 +11,7 @@ import {
   AttentionList, 
   CardActions 
 } from "./components"
-import { DeleteFileModal, ExportWithIssuesModal } from "./modals"
+import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal } from "./modals"
 import { getProcessingStatusText, getProcessingProgress } from "@/lib/status-mapper"
 import { createAirtableClient } from "@/lib/airtable/client"
 
@@ -94,6 +94,7 @@ export function UploadStatusCard({
   };
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
+  const [showContactVendorModal, setShowContactVendorModal] = useState(false)
   
   // Export state management
   const [exportState, setExportState] = useState<'idle' | 'queued' | 'exported' | 'error'>('idle')
@@ -273,6 +274,20 @@ export function UploadStatusCard({
           onOpenChange={setShowExportModal}
           issues={issues}
           onConfirm={handleExportConfirm}
+        />
+      )}
+
+      {showContactVendorModal && invoices && invoices.length > 0 && (
+        <ContactVendorModal
+          isOpen={showContactVendorModal}
+          onOpenChange={setShowContactVendorModal}
+          vendorName={invoices[0].vendor}
+          issues={issues || []}
+          invoiceInfo={{
+            invoiceNumber: invoices[0].invoiceNumber,
+            date: invoices[0].date,
+            amount: invoices[0].amount,
+          }}
         />
       )}
     </>
@@ -515,9 +530,24 @@ export function UploadStatusCard({
           />
           
           <CardActions
-            type="success"
+            type="warning"
             onPrimaryAction={handleExportClick}
             isLoading={isExporting}
+            additionalButtons={[
+              {
+                label: "Reprocess invoice",
+                icon: RefreshCw05,
+                onClick: () => {
+                  // TODO: Implement reprocess functionality
+                  console.log("Reprocess invoice clicked")
+                },
+              },
+              {
+                label: "Contact vendor",
+                icon: Mail01,
+                onClick: () => setShowContactVendorModal(true),
+              },
+            ]}
           />
         </div>
         {renderModals()}

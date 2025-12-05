@@ -586,7 +586,7 @@ export default function HomePage() {
       <div className="container mx-auto max-w-4xl p-6">
         {/* Greeting Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-semibold text-secondary mb-2">{greeting}, Gary</h1>
+          <h1 className="text-3xl font-semibold text-secondary mb-2">{greeting}, Sherry</h1>
           <p className="text-tertiary">
             Upload your documents to get started with automated invoice processing.
           </p>

@@ -30,9 +30,13 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-secondary px-4 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center mb-6">
-             {/* Using text for now as I need to check Logo component */}
-             <h1 className="text-3xl font-bold text-primary">AutoLedger</h1>
+        <div className="flex flex-col items-center mb-6">
+          <img 
+            src="/logo.png" 
+            alt="AutoLedger" 
+            className="h-16 w-16 mb-3"
+          />
+          <p className="text-base font-medium text-secondary">AutoLedger for AIM</p>
         </div>
         
         <div className="bg-primary py-8 px-4 shadow-xl rounded-xl sm:px-10 border border-secondary">

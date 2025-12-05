@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { HelpCircle, LogOut01 } from '@untitledui/icons';
+import { HelpCircle, LogOut01, Scissors01 } from '@untitledui/icons';
 import { NavItemButton } from '@/components/application/app-navigation/base-components/nav-item-button';
 import { cx } from '@/utils/cx';
 import { logout } from '@/services/auth-service';
@@ -53,6 +53,13 @@ export default function AppLayout() {
 
           {/* Right Side Actions */}
           <div className="ml-auto flex items-center gap-1">
+            <NavItemButton
+              size="md"
+              icon={Scissors01}
+              label="Split PDFs"
+              onClick={() => navigate('/split-pdf')}
+              tooltipPlacement="bottom"
+            />
             <NavItemButton
               size="md"
               icon={LogOut01}

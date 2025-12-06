@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05, Mail01 } from "@untitledui/icons"
+import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05, Mail01, ArrowRight } from "@untitledui/icons"
+import { Button } from "@/components/base/buttons/button"
+import { Badge } from "@/components/base/badges/badges"
 import { 
   CardLayout,
   CardHeader, 
@@ -9,7 +11,8 @@ import {
   InvoiceDetails, 
   OriginalFileLink, 
   AttentionList, 
-  CardActions 
+  CardActions,
+  IssueDetailsTable
 } from "./components"
 import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal } from "./modals"
 import { getProcessingStatusText, getProcessingProgress } from "@/lib/status-mapper"
@@ -29,6 +32,21 @@ export type UploadStatus =
   | "no-match"              // TODO: Review usage
   | "processing-error"      // TODO: Review usage
 
+export interface DetailedIssue {
+  type: 'price-variance' | 'unmatched-item' | 'quantity-mismatch' | 'missing-po'
+  severity: 'warning' | 'error'
+  lineNumber?: number
+  lineReference?: string
+  description: string
+  impact: string
+  details?: {
+    invoiceValue?: string
+    poValue?: string
+    itemDescription?: string
+    quantity?: number
+  }
+}
+
 export interface UploadStatusCardProps {
   filename: string
   status: UploadStatus
@@ -46,6 +64,12 @@ export interface UploadStatusCardProps {
     recordId?: string // Airtable record ID for updating status
   }>
   issues?: string[]
+  detailedIssues?: DetailedIssue[]
+  analysisSummary?: string
+  varianceInfo?: {
+    amount: string
+    direction: 'over' | 'under'
+  }
   errorMessage?: string
   duplicateInfo?: {
     originalFilename: string
@@ -57,6 +81,8 @@ export interface UploadStatusCardProps {
   onRemove?: () => void
   onGetHelp?: () => void
   onViewFile?: () => void
+  onReprocess?: () => void
+  onContactVendor?: () => void
 }
 
 // Helper function to format file size
@@ -78,6 +104,9 @@ export function UploadStatusCard({
   fileSize,
   invoices,
   issues,
+  detailedIssues,
+  analysisSummary,
+  varianceInfo,
   errorMessage,
   duplicateInfo,
   isExporting = false,
@@ -86,6 +115,8 @@ export function UploadStatusCard({
   onRemove,
   onGetHelp,
   onViewFile,
+  onReprocess,
+  onContactVendor,
 }: UploadStatusCardProps) {
   // Helper to get display title
   const getCardTitle = () => {
@@ -378,188 +409,161 @@ export function UploadStatusCard({
 
   // Connecting/Analyzing State
   if (status === "connecting") {
+    const invoice = invoices?.[0]
+    
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={File06} iconColor="brand">
-          <CardHeader
-            title={getCardTitle()}
-            badgeText="Matching"
-            badgeColor="gray-blue"
-            helperText={getProcessingStatusText(processingStatus) || "Connecting to AIM to match POs..."}
-            showCancelButton
-            onCancel={onCancel}
-          />
+      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl shadow-xs overflow-hidden">
+        {/* Header Section */}
+        <div className="px-4 py-5 sm:p-6">
+          {/* Status Badge - Prominent at top */}
+          <div className="mb-4">
+            <Badge size="md" color="gray-blue" type="color">
+              Matching
+            </Badge>
+          </div>
           
-          {/* Show all invoice details if available */}
-          {invoices && invoices.map((invoice, index) => (
-            <div key={index} className={index > 0 ? "mt-4" : ""}>
-              <InvoiceDetails
-                description={invoice.description}
-                date={invoice.date}
-                amount={invoice.amount}
-              />
+          {/* Top Row: Vendor + Amount */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-semibold text-primary">
+                {invoice?.vendor || getCardTitle()}
+              </h3>
+              <div className="flex items-center gap-2 mt-1 text-sm text-tertiary">
+                <span>{invoice?.date}</span>
+                {invoice?.description && (
+                  <>
+                    <span className="text-quaternary">|</span>
+                    <span className="truncate">{invoice.description}</span>
+                  </>
+                )}
+              </div>
             </div>
-          ))}
+            
+            {/* Amount */}
+            <div className="text-right flex-shrink-0">
+              <div className="text-xl font-semibold text-primary">
+                {invoice?.amount}
+              </div>
+            </div>
+          </div>
+          
+          {/* Processing Status */}
+          <div className="mt-4 pt-4 border-t border-secondary">
+            <p className="text-sm text-tertiary">
+              {getProcessingStatusText(processingStatus) || "Connecting to AIM to match POs..."}
+            </p>
+          </div>
           
           <CardProgress value={getProcessingProgress(processingStatus)} />
-        </CardLayout>
+        </div>
         
-        {/* Show original file link if we have invoices */}
-        {invoices && invoices.length > 0 && (
-          <OriginalFileLink
-            filename={filename}
+        {/* Footer Section */}
+        <div className="border-t border-secondary px-4 py-4 sm:px-6 flex items-center justify-between gap-4">
+          {/* File Link */}
+          <button 
+            className="flex items-center gap-2 text-sm text-tertiary hover:text-secondary transition-colors min-w-0"
             onClick={onViewFile}
-          />
-        )}
+          >
+            <File04 className="size-4 text-quaternary flex-shrink-0" />
+            <span className="truncate">{filename}</span>
+          </button>
+          
+          {/* Cancel Button */}
+          <Button 
+            size="md" 
+            color="secondary"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+        </div>
       </div>
     )
   }
 
   // Success State
   if (status === "success") {
+    const invoice = invoices?.[0]
+    
     return (
       <>
-        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-          <CardLayout icon={CheckCircle} iconColor="success">
-            <CardHeader
-              title={getCardTitle()}
-              badgeText="Complete"
-              badgeColor="success"
-              helperText="Everything checks out"
-              showDeleteButton
-              onDelete={handleRemoveClick}
-            />
+        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl shadow-xs overflow-hidden">
+          {/* Header Section */}
+          <div className="px-4 py-5 sm:p-6">
+            {/* Status Badge - Prominent at top */}
+            <div className="mb-4">
+              <Badge size="md" color="success" type="color">
+                Complete
+              </Badge>
+            </div>
             
-            {/* Show all invoice details */}
-            {invoices && invoices.map((invoice, index) => (
-              <div key={index} className={index > 0 ? "mt-4" : ""}>
-                <InvoiceDetails
-                  description={invoice.description}
-                  date={invoice.date}
-                  amount={invoice.amount}
-                />
-              </div>
-            ))}
-          </CardLayout>
-          
-          <OriginalFileLink
-            filename={filename}
-            onClick={handleViewFile}
-          />
-          
-          {/* Custom export UI based on export state */}
-          <div className="mt-4 flex items-center gap-3">
-            {exportState === 'idle' && (
-              <CardActions
-                type="success"
-                onPrimaryAction={handleExportClick}
-                isLoading={isExporting}
-              />
-            )}
-            
-            {exportState === 'queued' && (
-              <button
-                disabled
-                className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2.5 text-sm font-semibold text-tertiary shadow-xs cursor-not-allowed"
-              >
-                <RefreshCw05 className="size-4 animate-spin" />
-                Queued
-              </button>
-            )}
-            
-            {exportState === 'exported' && (
-              <div className="flex items-center gap-2 text-success-primary">
-                <CheckCircle className="size-5" />
-                <span className="text-sm font-semibold">Export Successful</span>
-              </div>
-            )}
-            
-            {exportState === 'error' && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-error-primary">
-                  <AlertTriangle className="size-5" />
-                  <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
+            {/* Top Row: Vendor + Amount */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-semibold text-primary">
+                  {invoice?.vendor || getCardTitle()}
+                </h3>
+                <div className="flex items-center gap-2 mt-1 text-sm text-tertiary">
+                  <span>{invoice?.date}</span>
+                  {invoice?.description && (
+                    <>
+                      <span className="text-quaternary">|</span>
+                      <span className="truncate">{invoice.description}</span>
+                    </>
+                  )}
                 </div>
-                <button
-                  onClick={handleExportClick}
-                  className="inline-flex items-center gap-2 rounded-lg border border-error bg-primary px-4 py-2.5 text-sm font-semibold text-error-primary shadow-xs hover:bg-error-50 transition-colors"
-                >
-                  Retry Export
-                </button>
               </div>
-            )}
+              
+              {/* Amount */}
+              <div className="text-right flex-shrink-0">
+                <div className="text-xl font-semibold text-primary">
+                  {invoice?.amount}
+                </div>
+              </div>
+            </div>
+            
+            {/* Success Message */}
+            <div className="mt-4 pt-4 border-t border-secondary">
+              <p className="text-sm text-success-600 font-medium">
+                ✓ Everything checks out
+              </p>
+            </div>
           </div>
-        </div>
-        {renderModals()}
-      </>
-    )
-  }
-
-  // Success with Caveats State
-  // TODO: Review usage - may need to be updated for new backend flow
-  if (status === "success-with-caveats" && issues) {
-    return (
-      <>
-        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-          <CardLayout icon={AlertTriangle} iconColor="warning">
-            <CardHeader
-              title={getCardTitle()}
-              badgeText="Complete"
-              badgeColor="warning"
-              helperText="Everything is in order, but:"
-              showDeleteButton
-              onDelete={handleRemoveClick}
-            />
-            
-            <AttentionList items={issues} />
-            
-            {/* Show all invoice details */}
-            {invoices && invoices.map((invoice, index) => (
-              <div key={index} className={index > 0 ? "mt-4" : ""}>
-                <InvoiceDetails
-                  description={invoice.description}
-                  date={invoice.date}
-                  amount={invoice.amount}
-                />
-              </div>
-            ))}
-          </CardLayout>
           
-          <OriginalFileLink
-            filename={filename}
-            onClick={handleViewFile}
-          />
-          
-          {exportState === 'idle' ? (
-            <CardActions
-              type="warning"
-              onPrimaryAction={handleExportClick}
-              isLoading={isExporting}
-              additionalButtons={[
-                {
-                  label: "Reprocess invoice",
-                  icon: RefreshCw05,
-                  onClick: () => {
-                    openCrispChat()
-                  },
-                },
-                {
-                  label: "Contact vendor",
-                  icon: Mail01,
-                  onClick: () => setShowContactVendorModal(true),
-                },
-              ]}
-            />
-          ) : (
-            <div className="mt-4 flex items-center gap-3">
-              {exportState === 'queued' && (
-                <button
-                  disabled
-                  className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2.5 text-sm font-semibold text-tertiary shadow-xs cursor-not-allowed"
+          {/* Footer Section */}
+          <div className="border-t border-secondary px-4 py-4 sm:px-6 flex items-center justify-between gap-4">
+            {/* File Link */}
+            <button 
+              className="flex items-center gap-2 text-sm text-tertiary hover:text-secondary transition-colors min-w-0"
+              onClick={handleViewFile}
+            >
+              <File04 className="size-4 text-quaternary flex-shrink-0" />
+              <span className="truncate">{filename}</span>
+            </button>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {exportState === 'idle' && (
+                <Button 
+                  size="md" 
+                  color="primary"
+                  iconTrailing={ArrowRight}
+                  onClick={handleExportClick}
+                  isLoading={isExporting}
                 >
-                  <RefreshCw05 className="size-4 animate-spin" />
+                  Export
+                </Button>
+              )}
+              
+              {exportState === 'queued' && (
+                <Button 
+                  size="md" 
+                  color="secondary"
+                  isDisabled
+                  iconLeading={RefreshCw05}
+                >
                   Queued
-                </button>
+                </Button>
               )}
               
               {exportState === 'exported' && (
@@ -575,16 +579,170 @@ export function UploadStatusCard({
                     <AlertTriangle className="size-5" />
                     <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
                   </div>
-                  <button
-                    onClick={initiateExport}
-                    className="inline-flex items-center gap-2 rounded-lg border border-error bg-primary px-4 py-2.5 text-sm font-semibold text-error-primary shadow-xs hover:bg-error-50 transition-colors"
+                  <Button
+                    size="md"
+                    color="secondary-destructive"
+                    onClick={handleExportClick}
                   >
                     Retry Export
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
-          )}
+          </div>
+        </div>
+        {renderModals()}
+      </>
+    )
+  }
+
+  // Success with Caveats State
+  // TODO: Review usage - may need to be updated for new backend flow
+  if (status === "success-with-caveats" && (issues || detailedIssues)) {
+    const invoice = invoices?.[0]
+    
+    return (
+      <>
+        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl shadow-xs overflow-hidden">
+          {/* Header Section */}
+          <div className="px-4 py-5 sm:p-6">
+            {/* Status Badge - Prominent at top */}
+            <div className="mb-4">
+              <Badge size="md" color="warning" type="color">
+                Needs Review
+              </Badge>
+            </div>
+            
+            {/* Top Row: Vendor + Amount */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-semibold text-primary">
+                  {invoice?.vendor || getCardTitle()}
+                </h3>
+                <div className="flex items-center gap-2 mt-1 text-sm text-tertiary">
+                  <span>{invoice?.date}</span>
+                  {invoice?.description && (
+                    <>
+                      <span className="text-quaternary">|</span>
+                      <span className="truncate">{invoice.description}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Amount + Variance */}
+              <div className="text-right flex-shrink-0">
+                <div className="text-xl font-semibold text-primary">
+                  {invoice?.amount}
+                </div>
+                {varianceInfo && (
+                  <div className={`text-sm font-medium ${
+                    varianceInfo.direction === 'over' ? 'text-utility-warning-700' : 'text-success-600'
+                  }`}>
+                    {varianceInfo.direction === 'over' ? '+' : '-'}{varianceInfo.amount} {varianceInfo.direction} PO
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Analysis Summary */}
+            {analysisSummary && (
+              <div className="mt-5 border-l-4 border-utility-warning-500 bg-utility-warning-50 rounded-r-lg px-4 py-3">
+                <div className="text-xs font-semibold text-utility-warning-700 uppercase tracking-wider mb-1.5">
+                  Analysis Summary
+                </div>
+                <p className="text-sm text-secondary leading-relaxed">
+                  {analysisSummary}
+                </p>
+              </div>
+            )}
+            
+            {/* Issue Details Table */}
+            {detailedIssues && detailedIssues.length > 0 ? (
+              <IssueDetailsTable issues={detailedIssues} />
+            ) : issues && (
+              <AttentionList items={issues} />
+            )}
+          </div>
+          
+          {/* Footer Section */}
+          <div className="border-t border-secondary px-4 py-4 sm:px-6 flex items-center justify-between gap-4">
+            {/* File Link */}
+            <button 
+              className="flex items-center gap-2 text-sm text-tertiary hover:text-secondary transition-colors min-w-0"
+              onClick={handleViewFile}
+            >
+              <File04 className="size-4 text-quaternary flex-shrink-0" />
+              <span className="truncate">{filename}</span>
+            </button>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {exportState === 'idle' && (
+                <>
+                  <Button 
+                    size="md" 
+                    color="secondary"
+                    iconLeading={Mail01}
+                    onClick={() => setShowContactVendorModal(true)}
+                  >
+                    Contact
+                  </Button>
+                  <Button 
+                    size="md" 
+                    color="secondary"
+                    iconLeading={RefreshCw05}
+                    onClick={() => openCrispChat(`I'd like to request a reprocess for file "${filename}". The problem is [enter details here]`)}
+                  >
+                    Reprocess
+                  </Button>
+                  <Button 
+                    size="md" 
+                    color="primary"
+                    iconTrailing={ArrowRight}
+                    onClick={handleExportClick}
+                    isLoading={isExporting}
+                  >
+                    Export
+                  </Button>
+                </>
+              )}
+              
+              {exportState === 'queued' && (
+                <Button 
+                  size="md" 
+                  color="secondary"
+                  isDisabled
+                  iconLeading={RefreshCw05}
+                >
+                  Queued
+                </Button>
+              )}
+              
+              {exportState === 'exported' && (
+                <div className="flex items-center gap-2 text-success-primary">
+                  <CheckCircle className="size-5" />
+                  <span className="text-sm font-semibold">Export Successful</span>
+                </div>
+              )}
+              
+              {exportState === 'error' && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-error-primary">
+                    <AlertTriangle className="size-5" />
+                    <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
+                  </div>
+                  <Button
+                    size="md"
+                    color="secondary-destructive"
+                    onClick={initiateExport}
+                  >
+                    Retry Export
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         {renderModals()}
       </>

@@ -3,23 +3,29 @@
  */
 
 /**
- * Opens the Crisp chatbox
- * This function checks if Crisp is loaded and opens the chat window
+ * Opens the Crisp chatbox with optional prepopulated message
+ * @param message - Optional message to prepopulate in the chat input
  */
-export function openCrispChat(): void {
+export function openCrispChat(message?: string): void {
+  const openChat = () => {
+    if (window.$crisp) {
+      // If a message is provided, set it in the chat input first
+      if (message) {
+        window.$crisp.push(['set', 'message:text', message]);
+      }
+      // Open the chat window
+      window.$crisp.push(['do', 'chat:open']);
+    } else {
+      console.warn('Crisp chatbox is not available');
+    }
+  };
+
   // Check if Crisp is loaded
   if (typeof window !== 'undefined' && window.$crisp) {
-    // Crisp API: open the chat window
-    window.$crisp.push(['do', 'chat:open']);
+    openChat();
   } else {
     // If Crisp isn't loaded yet, wait a bit and try again
-    setTimeout(() => {
-      if (window.$crisp) {
-        window.$crisp.push(['do', 'chat:open']);
-      } else {
-        console.warn('Crisp chatbox is not available');
-      }
-    }, 500);
+    setTimeout(openChat, 500);
   }
 }
 

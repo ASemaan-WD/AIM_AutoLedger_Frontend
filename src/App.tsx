@@ -15,8 +15,9 @@ import { LoadingIndicator } from './components/application/loading-indicator/loa
 import './styles/theme.css';
 import './styles/typography.css';
 
-// Font variables - these are now loaded via CSS
-const fontVariables = 'font-inter font-public-sans font-jetbrains-mono';
+// Font class - use Public Sans as the default body font
+// Inter is used for headings (applied via CSS), JetBrains Mono for data (applied via utility classes)
+const fontClass = 'font-sans';
 
 // Auth Wrapper Component
 const RequireAuth = ({ children }: { children: JSX.Element }) => {
@@ -83,7 +84,7 @@ function App() {
   }
 
   return (
-    <div className={cx(fontVariables, 'bg-primary antialiased')}>
+    <div className={cx(fontClass, 'bg-primary antialiased')}>
       <Theme>
         <Routes>
           {/* Public Route: Login */}

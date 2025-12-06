@@ -29,15 +29,77 @@
     transition-timing-function: inherit;
 }
 
+/* =============================================================================
+ * AUTOLEDGER DESIGN SYSTEM
+ * 
+ * A modern instrument for a serious job.
+ * Like a high-end architectural blueprint printed on quality cream paper,
+ * stamped with authoritative blue ink.
+ * 
+ * Typography:
+ * - Headings: Inter (600 Semi-Bold) with -2% tracking
+ * - Body: Public Sans (400) - developed by US Government (GSA)
+ * - Numbers/Data: JetBrains Mono
+ * 
+ * Colors:
+ * - Primary "Ledger Blue": #1554C0 - deep, authoritative like a Bic pen
+ * - Background "Audit Bone": #FDFBF7 - warm paper white, reduces eye strain
+ * - Text "The Ink": #0F172A (Slate 900) for headings
+ * - Body text: #334155 (Slate 700) for softer reading
+ * - Borders "Warm Grey": #E2E0DC - creates "paper creases"
+ * - Success "Emerald": #059669
+ * - Warning "Ochre": #D97706
+ * ============================================================================= */
+
 html,
 body {
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
+    color: var(--color-gray-700); /* Slate 700 - softer ink for body text */
+    background-color: var(--color-gray-50); /* Audit Bone background */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-variant-ligatures: contextual;
     font-variant-ligatures: contextual;
     -webkit-font-kerning: normal;
     font-kerning: normal;
+}
+
+/* AutoLedger Heading Styles
+ * Inter Semi-Bold with -2% letter-spacing for authority */
+h1, h2, h3, h4, h5, h6,
+.heading {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-gray-900); /* The Ink */
+}
+
+/* AutoLedger Data Typography
+ * JetBrains Mono for financial data clarity */
+.data-text,
+.font-mono {
+    font-family: var(--font-mono);
+}
+
+/* Clickable data (Invoice #s, links) - Ledger Blue */
+.data-link,
+.data-clickable {
+    font-family: var(--font-mono);
+    color: var(--color-brand-600); /* Ledger Blue #1554C0 */
+    cursor: pointer;
+}
+
+.data-link:hover,
+.data-clickable:hover {
+    color: var(--color-brand-700);
+    text-decoration: underline;
+}
+
+/* Static data (Amounts, dates) - The Ink */
+.data-static,
+.data-amount {
+    font-family: var(--font-mono);
+    color: var(--color-gray-900); /* The Ink #0F172A */
 }
 
 /* Hide the default expand arrow on Safari.  */

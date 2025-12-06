@@ -103,6 +103,8 @@ export default function UploadStatusDemoPage() {
               onExport={() => handleAction('Export', 'success-with-caveats')}
               onRemove={() => handleAction('Remove', 'success-with-caveats')}
               onViewFile={() => handleAction('View File', 'success-with-caveats')}
+              onReprocess={() => handleAction('Reprocess', 'success-with-caveats')}
+              onContactVendor={() => handleAction('Contact Vendor', 'success-with-caveats')}
             />
           </div>
 

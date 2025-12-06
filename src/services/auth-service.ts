@@ -3,6 +3,9 @@
  * Frontend service for Authentication operations
  */
 
+// ⚠️ AUTH BYPASS - Remove before production
+const BYPASS_AUTH = true;
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const TOKEN_KEY = 'auth_token';
 
@@ -21,6 +24,12 @@ interface TokenResponse {
  * @returns Promise that resolves when login is successful
  */
 export async function login(username: string, password: string): Promise<void> {
+  if (BYPASS_AUTH) {
+    console.log(`🔓 [BYPASS] Auto-login for: ${username}`);
+    localStorage.setItem(TOKEN_KEY, 'bypass-token');
+    return;
+  }
+
   console.log(`🚀 Logging in user: ${username}`);
 
   try {
@@ -70,6 +79,7 @@ export function logout() {
  * @returns The stored auth token or null if not found
  */
 export function getToken(): string | null {
+  if (BYPASS_AUTH) return 'bypass-token';
   return localStorage.getItem(TOKEN_KEY);
 }
 
@@ -82,6 +92,11 @@ export function getToken(): string | null {
  * @returns Promise resolving to true if token is valid, false otherwise
  */
 export async function validateToken(): Promise<boolean> {
+  if (BYPASS_AUTH) {
+    console.log(`🔓 [BYPASS] Token always valid`);
+    return true;
+  }
+
   const token = getToken();
   if (!token) return false;
 
@@ -125,5 +140,6 @@ export async function validateToken(): Promise<boolean> {
  * @returns true if token exists
  */
 export function isAuthenticated(): boolean {
+  if (BYPASS_AUTH) return true;
   return !!getToken();
 }

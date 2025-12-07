@@ -2,13 +2,22 @@ import { UploadStatusCard } from '@/components/application/upload-status/upload-
 import {
   uploadStatusFixtures,
   stateDescriptions,
+  mockInvoiceAcme,
+  mockInvoiceRBW,
+  mockInvoiceGlobal,
 } from '@/components/application/upload-status/fixtures';
 
 /**
  * Upload Status Component Library
  *
  * This page serves as the central component library for all upload status card states.
- * Update the fixtures.ts file to see changes reflected here and in all implementations.
+ * 
+ * MOCK DATA:
+ * - Invoice 1 (Acme): Used for uploading, processing, connecting, success, exported
+ * - Invoice 2 (RB&W): Used for success-with-caveats (has issues)
+ * - Invoice 3 (Global): Used for error states (duplicate, no-match, error)
+ * 
+ * Update fixtures.ts to modify these examples.
  */
 export default function UploadStatusDemoPage() {
   const handleAction = (action: string, state: string) => {
@@ -23,10 +32,28 @@ export default function UploadStatusDemoPage() {
           <h1 className="text-display-xs font-semibold text-primary mb-2">
             Upload Status Component Library
           </h1>
-          <p className="text-md text-tertiary">
-            Visual demonstrations of all upload and processing states. Update fixtures.ts to modify these
-            examples.
+          <p className="text-md text-tertiary mb-6">
+            Visual demonstrations of all upload and processing states. Update fixtures.ts to modify these examples.
           </p>
+          
+          {/* Mock Data Legend */}
+          <div className="bg-secondary rounded-lg p-4 space-y-2">
+            <h3 className="text-sm font-semibold text-primary">Mock Invoice Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="space-y-1">
+                <span className="font-medium text-secondary">Invoice 1: {mockInvoiceAcme.vendor}</span>
+                <p className="text-tertiary">{mockInvoiceAcme.amount} • Used for standard flow</p>
+              </div>
+              <div className="space-y-1">
+                <span className="font-medium text-secondary">Invoice 2: {mockInvoiceRBW.vendor}</span>
+                <p className="text-tertiary">{mockInvoiceRBW.amount} • Used for issues/caveats</p>
+              </div>
+              <div className="space-y-1">
+                <span className="font-medium text-secondary">Invoice 3: {mockInvoiceGlobal.vendor}</span>
+                <p className="text-tertiary">{mockInvoiceGlobal.amount} • Used for error states</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Demo Sections */}
@@ -56,10 +83,11 @@ export default function UploadStatusDemoPage() {
             <UploadStatusCard
               {...uploadStatusFixtures.processing}
               onCancel={() => handleAction('Cancel', 'processing')}
+              onViewFile={() => handleAction('View File', 'processing')}
             />
           </div>
 
-          {/* Connecting/Analyzing State */}
+          {/* Connecting/Matching State */}
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-primary mb-1">
@@ -84,6 +112,7 @@ export default function UploadStatusDemoPage() {
             </div>
             <UploadStatusCard
               {...uploadStatusFixtures.success}
+              onCancel={() => handleAction('Cancel', 'success')}
               onExport={() => handleAction('Export', 'success')}
               onRemove={() => handleAction('Remove', 'success')}
               onViewFile={() => handleAction('View File', 'success')}
@@ -100,6 +129,7 @@ export default function UploadStatusDemoPage() {
             </div>
             <UploadStatusCard
               {...uploadStatusFixtures.successWithCaveats}
+              onCancel={() => handleAction('Cancel', 'success-with-caveats')}
               onExport={() => handleAction('Export', 'success-with-caveats')}
               onRemove={() => handleAction('Remove', 'success-with-caveats')}
               onViewFile={() => handleAction('View File', 'success-with-caveats')}
@@ -190,4 +220,3 @@ export default function UploadStatusDemoPage() {
     </div>
   );
 }
-

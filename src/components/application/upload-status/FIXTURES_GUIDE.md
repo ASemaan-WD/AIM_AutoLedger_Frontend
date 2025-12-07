@@ -2,190 +2,238 @@
 
 ## Overview
 
-The Upload Status Card uses a centralized fixtures system that serves as a "component library" for easy viewing and updating of all states. This guide explains how to use fixtures effectively.
+The Upload Status Card uses a centralized fixtures system with **3 consistent mock invoices** that are reused across all states. This ensures visual consistency and makes it easy to preview all states with realistic data.
 
-## Component Library Workflow
+## Mock Invoice Data
 
-### Central Fixtures File
+The fixtures system uses 3 mock invoices that represent different scenarios:
 
-The `fixtures.ts` file serves as the single source of truth for all component states:
-
+### Invoice 1: Acme Corporation (Standard Flow)
 ```typescript
-// src/components/application/upload-status/fixtures.ts
-
-export const uploadStatusFixtures = {
-  uploading: { /* fixture data */ },
-  processing: { /* fixture data */ },
-  connecting: { /* fixture data */ },
-  success: { /* fixture data */ },
-  successWithCaveats: { /* fixture data */ },
-  error: { /* fixture data */ },
-}
-
-export const stateDescriptions = {
-  uploading: { title: "...", description: "..." },
-  // ... other states
+mockInvoiceAcme = {
+  recordId: "recAcme001",
+  vendor: "Acme Corporation",
+  date: "Mar 15, 2024",
+  daysAgo: 5,
+  amount: "$2,450.00",
+  description: "Fastener nuts assortment including SPAC HGLF Os, Lt, and SPL types",
+  invoiceNumber: "INV-2024-0315",
 }
 ```
+**Used for:** uploading, processing, connecting, success, exported
 
-### Demo Page (Component Library)
+### Invoice 2: RB&W Corporation (Issues/Caveats)
+```typescript
+mockInvoiceRBW = {
+  recordId: "recRBW002",
+  vendor: "RB&W Corporation of Canada",
+  date: "Oct 2, 2025",
+  daysAgo: 65,
+  amount: "$31,371.22",
+  description: "Various nuts and bolts shipped to LTC Roll",
+  invoiceNumber: "INV-2025-1002",
+}
+```
+**Used for:** success-with-caveats (has variance info and detailed issues)
 
-The `/upload-status-demo` page imports and displays all fixtures:
+### Invoice 3: Global Industrial (Error Scenarios)
+```typescript
+mockInvoiceGlobal = {
+  recordId: "recGlobal003",
+  vendor: "Global Industrial Supplies",
+  date: "Nov 28, 2024",
+  daysAgo: 12,
+  amount: "$847.50",
+  description: "Miscellaneous hardware and mounting brackets",
+  invoiceNumber: "INV-2024-1128",
+}
+```
+**Used for:** error, duplicate, no-match
+
+## Fixture Configurations
+
+Each state has a fixture configuration in `uploadStatusFixtures`:
+
+| State | Invoice Used | Additional Data |
+|-------|--------------|-----------------|
+| `uploading` | None (filename only) | fileSize |
+| `processing` | mockInvoiceAcme | pageCount |
+| `connecting` | mockInvoiceAcme | - |
+| `success` | mockInvoiceAcme | - |
+| `successWithCaveats` | mockInvoiceRBW | issues, detailedIssues, analysisSummary, varianceInfo |
+| `exported` | mockInvoiceAcme | - |
+| `error` | None (filename only) | errorMessage |
+| `processingError` | None (filename only) | errorMessage |
+| `duplicate` | mockInvoiceGlobal | duplicateInfo |
+| `noMatch` | mockInvoiceGlobal | - |
+
+## Using Fixtures
+
+### Import Fixtures
+```typescript
+import { 
+  uploadStatusFixtures,
+  stateDescriptions,
+  mockInvoiceAcme,
+  mockInvoiceRBW,
+  mockInvoiceGlobal,
+} from "@/components/application/upload-status/fixtures"
+```
+
+### Use in Components
+```tsx
+<UploadStatusCard
+  {...uploadStatusFixtures.success}
+  onExport={handleExport}
+  onCancel={handleCancel}
+/>
+```
+
+### Use Individual Mock Invoices
+```tsx
+<UploadStatusCard
+  filename="custom-invoice.pdf"
+  status="success"
+  invoices={[mockInvoiceAcme]}
+  onExport={handleExport}
+/>
+```
+
+## Demo Page
+
+The demo page (`/upload-status-demo`) displays all states with their fixtures:
 
 ```typescript
 import { uploadStatusFixtures, stateDescriptions } from "@/components/application/upload-status/fixtures"
 
-<UploadStatusCard {...uploadStatusFixtures.uploading} />
-<UploadStatusCard {...uploadStatusFixtures.processing} />
-// ... etc
+// Each state uses its fixture
+<UploadStatusCard {...uploadStatusFixtures.success} onExport={handleExport} />
+<UploadStatusCard {...uploadStatusFixtures.error} onRemove={handleRemove} />
 ```
 
-**Benefits:**
-- View all states in one place
-- Update `fixtures.ts` to see changes reflected immediately
-- Serves as living documentation
-- Easy to share with designers/stakeholders
+## Modifying Fixtures
 
-### Implementation Pages
+### To change mock invoice data:
 
-Pages like `home2` use the same component but with real data:
-
+1. Edit the mock invoice in `fixtures.ts`:
 ```typescript
-import { UploadStatusCard } from "@/components/application/upload-status/upload-status-card"
-import type { UploadStatus } from "@/components/application/upload-status/upload-status-card"
-
-<UploadStatusCard
-  filename={file.name}
-  status={file.status}
-  invoiceInfo={file.invoiceInfo}
-  onExport={() => handleExport(file.id)}
-  // ... other props
-/>
-```
-
-## How to Use Fixtures
-
-### To modify a state's appearance:
-
-1. **Edit fixtures.ts**
-   ```typescript
-   export const uploadStatusFixtures = {
-     success: {
-       filename: "invoice-march-2024.pdf",
-       status: "success",
-       invoiceInfo: {
-         vendor: "Updated Vendor Name", // ← Change here
-         // ...
-       }
-     }
-   }
-   ```
-
-2. **View changes in `/upload-status-demo`**
-   - Navigate to the demo page
-   - See the updated state immediately
-
-3. **Changes automatically reflect in all implementations**
-   - Any page using the component will use the same structure
-   - Only data differs between demo and production
-
-### To add a new state:
-
-1. Add state to `UploadStatus` type in `upload-status-card.tsx`
-2. Add fixture to `fixtures.ts`
-3. Add state description to `stateDescriptions`
-4. Implement state logic in `upload-status-card.tsx`
-5. Add to demo page
-
-## Available Fixtures
-
-All fixtures are exported from `fixtures.ts`:
-
-- `uploadStatusFixtures` - Object containing fixture data for each state
-- `stateDescriptions` - Object containing titles and descriptions for each state
-- `sampleInvoiceInfo` - Sample invoice data for use in fixtures
-- `sampleIssues` - Sample issues array for success-with-caveats state
-- `sampleDuplicateInfo` - Sample duplicate information
-
-## Fixture Structure
-
-Each fixture in `uploadStatusFixtures` follows the `UploadStatusCardProps` interface (minus callback functions):
-
-```typescript
-{
-  filename: string
-  status: UploadStatus
-  pageCount?: number
-  fileSize?: number
-  invoiceInfo?: InvoiceInfo
-  issues?: string[]
-  errorMessage?: string
-  duplicateInfo?: DuplicateInfo
-  // Note: Callbacks (onCancel, onExport, etc.) are omitted from fixtures
+export const mockInvoiceAcme = {
+  vendor: "New Vendor Name",  // ← Change here
+  amount: "$3,000.00",        // ← Change here
+  // ...
 }
 ```
 
-## Pages Using Fixtures
+2. Changes automatically reflect in:
+   - Demo page (`/upload-status-demo`)
+   - All fixtures using that invoice
+   - Any component using `mockInvoiceAcme`
 
-### 1. `/upload-status-demo` - Component Library
-- **Purpose**: Visual reference for all upload status card states
-- **Usage**: Design review, documentation, component testing
-- **Data Source**: `fixtures.ts`
-- **Update Process**: Edit `fixtures.ts` → changes reflect immediately
+### To add a new state:
 
-### 2. `/home2` - New Upload Experience
-- **Purpose**: Production-ready upload page with new status cards
-- **Features**:
-  - File upload with drag & drop
-  - Real-time status transitions (uploading → processing → connecting → success/error)
-  - Simulated workflow for demonstration
-  - Full action handlers (cancel, export, remove, get help, view file)
+1. Add status to `UploadStatus` type in `upload-status-card.tsx`
+2. Add fixture configuration:
+```typescript
+export const uploadStatusFixtures = {
+  // ...existing states
+  newState: {
+    filename: "invoice.pdf",
+    status: "new-state",
+    invoices: [mockInvoiceAcme],
+    // additional props
+  },
+}
+```
+3. Add state description:
+```typescript
+export const stateDescriptions = {
+  // ...existing descriptions
+  newState: {
+    title: "11. New State",
+    description: "Description of the new state"
+  },
+}
+```
+4. Implement render logic in `upload-status-card.tsx`
+5. Add to demo page
 
-## Benefits of Fixtures System
+## Issue Data
 
-### 1. **Single Source of Truth**
-- Fixtures file defines all states
-- Easy to update and maintain
-- Consistent across all usages
+### Simple Issues (string array)
+```typescript
+export const sampleIssues = [
+  "This invoice is 45 days old",
+  "No matching PO found in the system",
+  "Vendor address differs from records",
+]
+```
 
-### 2. **Component Library**
-- Demo page serves as living documentation
-- Designers can review all states
-- Stakeholders can see progress
-- Easy to test edge cases
+### Detailed Issues (structured data)
+```typescript
+export const sampleDetailedIssues: DetailedIssue[] = [
+  {
+    type: 'price-variance',
+    severity: 'warning',
+    lineNumber: 3,
+    lineReference: 'EACR55932',
+    description: 'Unit price mismatch.',
+    impact: '+22.7%',
+    dollarImpact: '+$354.12',
+    details: {
+      invoiceValue: '$0.09813',
+      poValue: '$0.08000',
+    },
+  },
+  // ... more issues
+]
+```
 
-### 3. **Rapid Development**
-- Update fixtures to see changes immediately
-- No need to trigger real workflows
-- Test all states in one place
+## State Descriptions
+
+Each state has a title and description for documentation:
+
+```typescript
+export const stateDescriptions = {
+  uploading: {
+    title: "1. Uploading",
+    description: "File is being uploaded to the server",
+  },
+  processing: {
+    title: "2. Processing",
+    description: "Extracting text and data from the document",
+  },
+  // ... etc
+}
+```
 
 ## Testing with Fixtures
 
-### Component Library Testing
-```bash
-# Navigate to demo page
-http://localhost:3000/upload-status-demo
-
-# Verify all states render correctly
-# Test interactions (buttons, links)
-# Review with design team
-```
-
-### Using Fixtures in Tests
 ```typescript
 import { uploadStatusFixtures } from "@/components/application/upload-status/fixtures"
 
 test('renders success state correctly', () => {
-  render(<UploadStatusCard {...uploadStatusFixtures.success} />)
-  // ... assertions
+  render(
+    <UploadStatusCard 
+      {...uploadStatusFixtures.success} 
+      onExport={jest.fn()}
+    />
+  )
+  expect(screen.getByText('Complete')).toBeInTheDocument()
+  expect(screen.getByText('Acme Corporation')).toBeInTheDocument()
 })
 ```
 
+## Best Practices
+
+1. **Always use mock invoices** - Don't create new mock data inline
+2. **Consistent filenames** - Use descriptive filenames matching the scenario
+3. **Keep fixtures updated** - Update fixtures when adding new features
+4. **Test with fixtures** - Use fixtures in unit tests for consistency
+5. **Document changes** - Update this guide when modifying fixture structure
+
 ## Resources
 
-- **Fixtures File**: `src/components/application/upload-status/fixtures.ts`
-- **Component Documentation**: `src/components/application/upload-status/COMPONENT_ARCHITECTURE.md`
-- **Quick Reference**: `src/components/application/upload-status/QUICK_REFERENCE.md`
-- **Demo Page**: `/upload-status-demo`
-- **Implementation**: `/home2`
-
+- **Fixtures File:** `src/components/application/upload-status/fixtures.ts`
+- **Component Architecture:** `COMPONENT_ARCHITECTURE.md`
+- **Quick Reference:** `QUICK_REFERENCE.md`
+- **Demo Page:** `/upload-status-demo`

@@ -1,6 +1,5 @@
 "use client"
 
-import { Badge } from "@/components/base/badges/badges"
 import { Dot } from "@/components/foundations/dot-icon"
 import type { DetailedIssue } from "../upload-status-card"
 
@@ -43,18 +42,13 @@ export function IssueDetailsTable({ issues }: IssueDetailsTableProps) {
                   {issueTypeLabels[issue.type]}
                 </span>
                 
-                {/* Invoice Line + Item Reference Badge */}
+                {/* Invoice Line + Item Reference */}
                 {issue.lineNumber && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm text-tertiary">
-                      Invoice line {issue.lineNumber}{issue.type === 'unmatched-item' ? ' not found on PO' : ''}
-                    </span>
-                    {issue.lineReference && (
-                      <Badge size="sm" color="gray" type="color" className="font-mono">
-                        {issue.lineReference}
-                      </Badge>
-                    )}
-                  </div>
+                  <span className="text-sm text-tertiary">
+                    Invoice line {issue.lineNumber}
+                    {issue.lineReference && ` - ${issue.lineReference}`}
+                    {issue.type === 'unmatched-item' ? ' not found on PO' : ''}
+                  </span>
                 )}
                 
                 {/* Additional Details */}
@@ -70,9 +64,9 @@ export function IssueDetailsTable({ issues }: IssueDetailsTableProps) {
               </div>
             </div>
             
-            {/* Impact */}
+            {/* Impact - Always dollar amount */}
             <span className="text-sm font-semibold whitespace-nowrap text-utility-warning-700">
-              {issue.impact}
+              {issue.dollarImpact}
             </span>
           </div>
         ))}

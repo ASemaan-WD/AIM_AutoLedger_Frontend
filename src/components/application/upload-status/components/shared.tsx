@@ -27,11 +27,19 @@ export interface Invoice {
 
 interface CardContainerProps {
   children: ReactNode
+  /** Enable animated gradient border for active/processing states */
+  animated?: boolean
 }
 
-export function CardContainer({ children }: CardContainerProps) {
+export function CardContainer({ children, animated = false }: CardContainerProps) {
   return (
-    <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl shadow-xs overflow-hidden">
+    <div 
+      className={`bg-primary rounded-xl shadow-xs overflow-hidden ${
+        animated 
+          ? 'animated-gradient-border' 
+          : 'ring-1 ring-inset ring-secondary'
+      }`}
+    >
       {children}
     </div>
   )
@@ -84,19 +92,33 @@ interface InvoiceHeaderProps {
   subtitle?: string
   description?: string
   amount?: string
+  /** File metadata to display under the title (e.g., file size and page count) */
+  fileMetadata?: {
+    fileSize?: string
+    pageCount?: number
+  }
   varianceInfo?: {
     amount: string
     direction: 'over' | 'under'
   }
 }
 
-export function InvoiceHeader({ title, subtitle, description, amount, varianceInfo }: InvoiceHeaderProps) {
+export function InvoiceHeader({ title, subtitle, description, amount, fileMetadata, varianceInfo }: InvoiceHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
         <h3 className="text-lg font-semibold text-primary">
           {title}
         </h3>
+        {/* File metadata: file size and page count */}
+        {fileMetadata && (fileMetadata.fileSize || fileMetadata.pageCount) && (
+          <p className="mt-1 text-sm text-tertiary">
+            {fileMetadata.fileSize}
+            {fileMetadata.fileSize && fileMetadata.pageCount && ' • '}
+            {fileMetadata.pageCount && `${fileMetadata.pageCount} ${fileMetadata.pageCount === 1 ? 'page' : 'pages'}`}
+          </p>
+        )}
+        {/* Subtitle and description (for invoice context) */}
         {(subtitle || description) && (
           <div className="flex items-center gap-2 mt-1 text-sm text-tertiary">
             {subtitle && <span>{subtitle}</span>}

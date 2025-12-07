@@ -401,12 +401,12 @@ export function UploadStatusCard({
   
   if (status === "uploading") {
     return (
-      <CardContainer>
+      <CardContainer animated>
         <CardHeaderSection>
           <StatusBadge color="gray-blue">Uploading</StatusBadge>
           <InvoiceHeader 
             title={filename} 
-            amount={formatFileSize(fileSize)} 
+            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
           />
           <CardProgress value={0} />
         </CardHeaderSection>
@@ -428,10 +428,13 @@ export function UploadStatusCard({
   
   if (status === "queued") {
     return (
-      <CardContainer>
+      <CardContainer animated>
         <CardHeaderSection>
           <StatusBadge color="gray-blue">Processing</StatusBadge>
-          <InvoiceHeader title={filename} />
+          <InvoiceHeader 
+            title={filename} 
+            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+          />
           <StatusMessage>
             {`Attempting to extract text from ${pageCount || '...'} pages...`}
           </StatusMessage>
@@ -461,7 +464,7 @@ export function UploadStatusCard({
         : 'Processing...'
     
     return (
-      <CardContainer>
+      <CardContainer animated>
         <CardHeaderSection>
           <StatusBadge color="gray-blue">Processing</StatusBadge>
           <InvoiceHeader 
@@ -491,7 +494,7 @@ export function UploadStatusCard({
   
   if (status === "connecting") {
     return (
-      <CardContainer>
+      <CardContainer animated>
         <CardHeaderSection>
           <StatusBadge color="gray-blue">Matching</StatusBadge>
           <InvoiceHeader 
@@ -624,7 +627,10 @@ export function UploadStatusCard({
       <CardContainer>
         <CardHeaderSection>
           <StatusBadge color="error">Error Occurred</StatusBadge>
-          <InvoiceHeader title={filename} />
+          <InvoiceHeader 
+            title={filename} 
+            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+          />
           <StatusMessage variant="error">
             {errorMessage || "Unable to process this file"}
           </StatusMessage>
@@ -704,7 +710,10 @@ export function UploadStatusCard({
       <CardContainer>
         <CardHeaderSection>
           <StatusBadge color="error">{badgeText}</StatusBadge>
-          <InvoiceHeader title={filename} />
+          <InvoiceHeader 
+            title={filename} 
+            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+          />
           <StatusMessage variant="error">
             {errorMessage || "An error occurred during processing"}
           </StatusMessage>

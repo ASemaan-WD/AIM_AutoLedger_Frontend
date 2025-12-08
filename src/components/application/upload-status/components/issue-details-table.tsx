@@ -59,6 +59,14 @@ export function IssueDetailsTable({ issues }: IssueDetailsTableProps) {
                       {' / '}
                       PO: <span className="font-medium text-secondary">{issue.details.poValue}</span>
                     </span>
+                    {/* For quantity mismatch: show unit price */}
+                    {issue.type === 'quantity-mismatch' && issue.details.unitPrice && (
+                      <span> @ <span className="font-medium text-secondary">{issue.details.unitPrice}</span>/unit</span>
+                    )}
+                    {/* For price variance: show quantity */}
+                    {issue.type === 'price-variance' && issue.details.quantity && (
+                      <span> × <span className="font-medium text-secondary">{issue.details.quantity.toLocaleString()}</span> units</span>
+                    )}
                   </div>
                 )}
               </div>

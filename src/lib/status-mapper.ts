@@ -1,27 +1,53 @@
 /**
  * Status Mapping Utility
- * Maps Airtable Status + Processing-Status to UI UploadStatus
+ * Single source of truth for all status text, mapping, and progress
  */
 
 import { FILE_STATUS, PROCESSING_STATUS } from './airtable/schema-types';
 import type { UploadStatus } from '@/components/application/upload-status/upload-status-card';
 
+// =============================================================================
+// STATUS TEXT - Single source of truth for all user-facing status messages
+// =============================================================================
+
+export const STATUS_TEXT = {
+  // Processing status messages (shown during file processing)
+  processing: {
+    UPL: 'Uploading...',
+    DETINV: 'Reading document...',
+    PARSE: 'Extracting data...',
+    RELINV: 'Reading document...',
+    MATCHING: 'Checking with AIM Vision...',
+    MATCHED: 'Match complete',
+    ERROR: 'Error',
+    default: 'Processing...',
+  },
+  
+  // Final state messages (shown when processing completes)
+  result: {
+    success: '✓ Ready to export',
+    exported: '✓ Exported to AIM',
+    processingError: 'Unable to process file',
+    duplicate: 'Already uploaded',
+    noMatch: 'No matching PO found',
+    error: 'Processing failed',
+  },
+} as const;
+
+// =============================================================================
+// STATUS MAPPING
+// =============================================================================
+
 /**
  * Map Airtable File statuses to UI status
  * 
- * @param status - Main status from Airtable Files.Status field
- * @param processingStatus - Sub-status from Airtable Files.Processing-Status field
- * @returns UI status for UploadStatusCard
- * 
  * Mapping Rules:
  * - Queued + UPL → "queued"
- * - Processing + DETINV → "processing" (OCR)
- * - Processing + PARSE → "processing" (Parsing)
- * - Processing + RELINV → "processing" (Finding invoices)
- * - Processing + MATCHING → "connecting" (Matching POs)
+ * - Processing + DETINV/PARSE/RELINV → "processing"
+ * - Processing + MATCHING → "connecting"
  * - Processing + MATCHED → "success"
  * - Processed → "success"
- * - Error → "error"
+ * - Attention/ERROR → "error"
  */
 export function mapFileStatusToUI(
   status: string,
@@ -34,10 +60,6 @@ export function mapFileStatusToUI(
 
   // Handle queued state
   if (status === FILE_STATUS.QUEUED) {
-    if (processingStatus === PROCESSING_STATUS.UPL) {
-      return 'queued';
-    }
-    // Default queued state
     return 'queued';
   }
 
@@ -45,17 +67,15 @@ export function mapFileStatusToUI(
   if (status === FILE_STATUS.PROCESSING) {
     switch (processingStatus) {
       case PROCESSING_STATUS.DETINV:
-        return 'processing'; // OCR in progress
       case PROCESSING_STATUS.PARSE:
-        return 'processing'; // Parsing invoice data
       case PROCESSING_STATUS.RELINV:
-        return 'processing'; // Finding related invoices
+        return 'processing';
       case PROCESSING_STATUS.MATCHING:
-        return 'connecting'; // Matching with PO headers
+        return 'connecting';
       case PROCESSING_STATUS.MATCHED:
-        return 'success'; // Matching complete
+        return 'success';
       default:
-        return 'processing'; // Default processing state
+        return 'processing';
     }
   }
 
@@ -69,51 +89,52 @@ export function mapFileStatusToUI(
   return 'processing';
 }
 
+// =============================================================================
+// STATUS TEXT HELPERS
+// =============================================================================
+
 /**
  * Get user-friendly text for processing status
- * Used to display what operation is currently happening
  */
 export function getProcessingStatusText(processingStatus?: string): string {
-  switch (processingStatus) {
-    case PROCESSING_STATUS.UPL:
-      return 'Uploaded, waiting to start...';
-    case PROCESSING_STATUS.DETINV:
-      return 'Detecting invoices (OCR)...';
-    case PROCESSING_STATUS.PARSE:
-      return 'Parsing invoice data...';
-    case PROCESSING_STATUS.RELINV:
-      return 'Finding related invoices...';
-    case PROCESSING_STATUS.MATCHING:
-      return 'Matching with PO headers...';
-    case PROCESSING_STATUS.MATCHED:
-      return 'Matching complete';
-    case PROCESSING_STATUS.ERROR:
-      return 'Error occurred';
-    default:
-      return 'Processing...';
-  }
+  if (!processingStatus) return STATUS_TEXT.processing.default;
+  
+  const key = processingStatus as keyof typeof STATUS_TEXT.processing;
+  return STATUS_TEXT.processing[key] ?? STATUS_TEXT.processing.default;
 }
 
 /**
+ * Get result message for final states
+ */
+export function getResultStatusText(
+  status: 'success' | 'exported' | 'processingError' | 'duplicate' | 'noMatch' | 'error'
+): string {
+  return STATUS_TEXT.result[status];
+}
+
+// =============================================================================
+// PROGRESS
+// =============================================================================
+
+/**
  * Get progress percentage based on processing status
- * Used for progress bars
  */
 export function getProcessingProgress(processingStatus?: string): number {
   switch (processingStatus) {
     case PROCESSING_STATUS.UPL:
-      return 10; // Just uploaded
+      return 10;
     case PROCESSING_STATUS.DETINV:
-      return 30; // OCR in progress
+      return 30;
     case PROCESSING_STATUS.PARSE:
-      return 50; // Parsing
+      return 50;
     case PROCESSING_STATUS.RELINV:
-      return 70; // Relating invoices
+      return 70;
     case PROCESSING_STATUS.MATCHING:
-      return 90; // Matching
+      return 90;
     case PROCESSING_STATUS.MATCHED:
-      return 100; // Complete
+      return 100;
     default:
-      return 50; // Default mid-progress
+      return 50;
   }
 }
 

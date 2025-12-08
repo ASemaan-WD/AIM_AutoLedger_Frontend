@@ -19,7 +19,7 @@ import {
 } from "./components"
 import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal, CancelFileModal } from "./modals"
 import { Dropdown } from "@/components/base/dropdown/dropdown"
-import { getProcessingStatusText, getProcessingProgress } from "@/lib/status-mapper"
+import { getProcessingStatusText, getProcessingProgress, getResultStatusText } from "@/lib/status-mapper"
 import { createAirtableClient } from "@/lib/airtable/client"
 import { openCrispChat } from "@/utils/crisp"
 
@@ -53,6 +53,8 @@ export interface DetailedIssue {
     poValue?: string
     itemDescription?: string
     quantity?: number
+    /** Unit price for quantity mismatch issues (to show alongside quantity comparison) */
+    unitPrice?: string
   }
 }
 
@@ -169,7 +171,11 @@ export function UploadStatusCard({
   // =============================================================================
 
   const handleViewFile = () => {
-    onViewFile?.() || window.open("", "_blank")
+    if (onViewFile) {
+      onViewFile()
+    } else {
+      window.open("", "_blank")
+    }
   }
 
   const handleExportClick = async () => {
@@ -346,8 +352,8 @@ export function UploadStatusCard({
             </>
           )}
           {!showContactVendor && (
-            <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
-              Cancel
+            <Button size="md" color="secondary" iconLeading={Trash01} onClick={() => setShowDeleteModal(true)}>
+              Remove
             </Button>
           )}
           <Button 
@@ -439,7 +445,7 @@ export function UploadStatusCard({
   }
 
   // =============================================================================
-  // QUEUED STATE
+  // QUEUED STATE (UPL - file uploaded, waiting to process)
   // =============================================================================
   
   if (status === "queued") {
@@ -447,13 +453,13 @@ export function UploadStatusCard({
       <>
         <CardContainer animated>
           <CardHeaderSection>
-            <StatusBadge color="gray-blue">Processing</StatusBadge>
+            <StatusBadge color="gray-blue">Uploading</StatusBadge>
             <InvoiceHeader 
               title={filename} 
               fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
             />
             <StatusMessage>
-              {`Attempting to extract text from ${pageCount || '...'} pages...`}
+              {getProcessingStatusText(processingStatus)}
             </StatusMessage>
             <CardProgress value={getProcessingProgress(processingStatus)} />
           </CardHeaderSection>
@@ -476,11 +482,7 @@ export function UploadStatusCard({
   // =============================================================================
   
   if (status === "processing") {
-    const helperText = processingStatus 
-      ? getProcessingStatusText(processingStatus)
-      : pageCount 
-        ? `Extracting text from ${pageCount} pages...`
-        : 'Processing...'
+    const helperText = getProcessingStatusText(processingStatus)
     
     return (
       <>
@@ -529,7 +531,7 @@ export function UploadStatusCard({
               amount={invoice?.amount}
             />
             <StatusMessage>
-              {getProcessingStatusText(processingStatus) || "Checking with AIM Vision..."}
+              {getProcessingStatusText(processingStatus)}
             </StatusMessage>
             <CardProgress value={getProcessingProgress(processingStatus)} />
           </CardHeaderSection>
@@ -564,7 +566,7 @@ export function UploadStatusCard({
               description={invoice?.description}
               amount={invoice?.amount}
             />
-            <StatusMessage variant="brand">✓ Everything checks out</StatusMessage>
+            <StatusMessage variant="brand">{getResultStatusText('success')}</StatusMessage>
           </CardHeaderSection>
           <CardFooter>
             <FileLink filename={filename} onClick={handleViewFile} />
@@ -638,7 +640,7 @@ export function UploadStatusCard({
             description={invoice?.description}
             amount={invoice?.amount}
           />
-          <StatusMessage variant="success">✓ Successfully exported to AIM</StatusMessage>
+          <StatusMessage variant="success">{getResultStatusText('exported')}</StatusMessage>
         </CardHeaderSection>
         <CardFooter>
           <FileLink filename={filename} onClick={handleViewFile} />
@@ -663,7 +665,7 @@ export function UploadStatusCard({
               fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
             />
             <StatusMessage variant="error">
-              {errorMessage || "Unable to process this file"}
+              {errorMessage || getResultStatusText('processingError')}
             </StatusMessage>
           </CardHeaderSection>
           <CardFooter>
@@ -696,7 +698,7 @@ export function UploadStatusCard({
             <StatusMessage variant="error">
               {duplicateInfo
                 ? `Already uploaded as "${duplicateInfo.originalFilename}" on ${duplicateInfo.uploadedDate}`
-                : "This file has already been uploaded"}
+                : getResultStatusText('duplicate')}
             </StatusMessage>
           </CardHeaderSection>
           <CardFooter>
@@ -727,7 +729,7 @@ export function UploadStatusCard({
               amount={invoice?.amount}
             />
             <StatusMessage variant="error">
-              Could not find matching PO in AIM
+              {getResultStatusText('noMatch')}
             </StatusMessage>
           </CardHeaderSection>
           <CardFooter>
@@ -757,7 +759,7 @@ export function UploadStatusCard({
               fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
             />
             <StatusMessage variant="error">
-              {errorMessage || "An error occurred during processing"}
+              {errorMessage || getResultStatusText('error')}
             </StatusMessage>
           </CardHeaderSection>
           <CardFooter>

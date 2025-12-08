@@ -1,18 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { FileUpload } from '@/components/application/file-upload/file-upload-base';
-import { UploadStatusCard, type UploadStatus, type UploadStatusCardProps } from '@/components/application/upload-status/upload-status-card';
+import { UploadStatusCard, type UploadStatus } from '@/components/application/upload-status/upload-status-card';
 import { Accordion } from '@/components/application/accordion/accordion';
 import { Badge } from '@/components/base/badges/badges';
-import { uploadStatusFixtures } from '@/components/application/upload-status/fixtures';
-
-// =============================================================================
-// TYPES
-// =============================================================================
-
-interface MockFile extends Omit<UploadStatusCardProps, 'onCancel' | 'onExport' | 'onRemove' | 'onGetHelp' | 'onViewFile' | 'onReprocess' | 'onContactVendor'> {
-  id: string;
-  createdAt: Date;
-}
+import { transformMockFilesToUI, type TransformedMockFile } from '@/components/application/upload-status/fixtures';
 
 // =============================================================================
 // STATE GROUP CONFIGURATION
@@ -24,7 +15,7 @@ interface StateGroupConfig {
   id: string;
   label: string;
   description: string;
-  priority: number; // Higher = appears first
+  priority: number;
   statuses: UploadStatus[];
   badgeColor: 'gray-blue' | 'brand' | 'success' | 'warning' | 'error';
 }
@@ -73,44 +64,6 @@ const stateGroups: StateGroupConfig[] = [
 ];
 
 // =============================================================================
-// MOCK DATA GENERATOR
-// Uses existing fixtures directly with timestamps for sorting
-// =============================================================================
-
-function generateMockFiles(): MockFile[] {
-  const now = new Date();
-  
-  // Helper to create dates relative to now
-  const minutesAgo = (mins: number) => new Date(now.getTime() - mins * 60 * 1000);
-  const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000);
-  const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-
-  // Map existing fixtures to MockFile format with timestamps
-  // Order determines relative time (first = most recent)
-  return [
-    // Active/Processing (most recent)
-    { id: 'uploading', createdAt: minutesAgo(1), ...uploadStatusFixtures.uploading, pageCount: 6 },
-    { id: 'processing', createdAt: minutesAgo(5), ...uploadStatusFixtures.processing },
-    { id: 'connecting', createdAt: minutesAgo(8), ...uploadStatusFixtures.connecting },
-    
-    // Needs Review
-    { id: 'successWithCaveats', createdAt: minutesAgo(15), ...uploadStatusFixtures.successWithCaveats },
-    
-    // Ready to Export
-    { id: 'success', createdAt: hoursAgo(1), ...uploadStatusFixtures.success },
-    
-    // Errors
-    { id: 'processingError', createdAt: hoursAgo(3), ...uploadStatusFixtures.processingError },
-    { id: 'duplicate', createdAt: hoursAgo(5), ...uploadStatusFixtures.duplicate },
-    { id: 'noMatch', createdAt: hoursAgo(6), ...uploadStatusFixtures.noMatch },
-    { id: 'error', createdAt: hoursAgo(8), ...uploadStatusFixtures.error },
-    
-    // Exported (oldest)
-    { id: 'exported', createdAt: daysAgo(1), ...uploadStatusFixtures.exported },
-  ];
-}
-
-// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
@@ -127,7 +80,9 @@ function getGreeting() {
 
 export default function MockHomePage() {
   const [greeting, setGreeting] = useState<string>('Hello');
-  const [files] = useState<MockFile[]>(generateMockFiles);
+  
+  // Use the transformed mock data - same format as real HomePage.tsx would use
+  const [files] = useState<TransformedMockFile[]>(() => transformMockFilesToUI());
 
   useEffect(() => {
     setGreeting(getGreeting());
@@ -135,7 +90,7 @@ export default function MockHomePage() {
 
   // Group and sort files by state
   const groupedFiles = useMemo(() => {
-    const groups: Map<string, MockFile[]> = new Map();
+    const groups: Map<string, TransformedMockFile[]> = new Map();
 
     // Initialize all groups
     stateGroups.forEach(group => {
@@ -154,7 +109,11 @@ export default function MockHomePage() {
 
     // Sort files within each group by createdAt (newest first)
     groups.forEach((groupFiles, groupId) => {
-      groupFiles.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      groupFiles.sort((a, b) => {
+        const aTime = a.createdAt?.getTime() ?? 0;
+        const bTime = b.createdAt?.getTime() ?? 0;
+        return bTime - aTime;
+      });
       groups.set(groupId, groupFiles);
     });
 
@@ -196,9 +155,10 @@ export default function MockHomePage() {
         {/* Upload Area (Mocked) */}
         <FileUpload.Root>
           <FileUpload.DropZone
-            hint="All document types accepted - PDF, DOC, XLS, images, and more up to 50MB"
+            hint="PDF and image files accepted up to 50MB"
             maxSize={50 * 1024 * 1024}
-            allowsMultiple={false}
+            allowsMultiple={true}
+            accept="image/*,application/pdf"
             onDropFiles={handleMockUpload}
             onDropUnacceptedFiles={(rejectedFiles) => {
               console.log('🎭 [Mock] Rejected files:', rejectedFiles);
@@ -236,18 +196,25 @@ export default function MockHomePage() {
                         {groupFiles.map((file) => (
                           <UploadStatusCard
                             key={file.id}
+                            // Core props - same names as UploadStatusCardProps
                             filename={file.filename}
                             status={file.status}
                             processingStatus={file.processingStatus}
                             pageCount={file.pageCount}
                             fileSize={file.fileSize}
+                            // Invoice data - transformed to UI format
                             invoices={file.invoices}
+                            // Issues/warnings - derived from Airtable Warnings + Balance
                             issues={file.issues}
                             detailedIssues={file.detailedIssues}
                             analysisSummary={file.analysisSummary}
                             varianceInfo={file.varianceInfo}
+                            // Error info
+                            errorCode={file.errorCode}
                             errorMessage={file.errorMessage}
+                            // Duplicate info
                             duplicateInfo={file.duplicateInfo}
+                            // Callbacks
                             onCancel={() => handleAction('Cancel', file.id)}
                             onExport={() => handleAction('Export', file.id)}
                             onRemove={() => handleAction('Remove', file.id)}
@@ -276,4 +243,3 @@ export default function MockHomePage() {
     </div>
   );
 }
-

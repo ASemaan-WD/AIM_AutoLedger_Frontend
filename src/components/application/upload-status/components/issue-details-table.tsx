@@ -41,9 +41,16 @@ export function IssueDetailsTable({ issues }: IssueDetailsTableProps) {
                 <span className="text-sm font-semibold text-primary">
                   {issueTypeLabels[issue.type]}
                 </span>
+
+                {/* Description - Show for all types if present, providing context beyond the label */}
+                {issue.description && (
+                  <span className="text-sm text-secondary">
+                    {issue.description}
+                  </span>
+                )}
                 
                 {/* Invoice Line + Item Reference */}
-                {issue.lineNumber && (
+                {issue.lineNumber !== undefined && issue.lineNumber !== 0 && (
                   <span className="text-sm text-tertiary">
                     Invoice line {issue.lineNumber}
                     {issue.lineReference && ` - ${issue.lineReference}`}
@@ -52,23 +59,33 @@ export function IssueDetailsTable({ issues }: IssueDetailsTableProps) {
                 )}
                 
                 {/* Additional Details */}
-                {issue.details && issue.details.invoiceValue && issue.details.poValue && (
-                  <div className="text-sm text-tertiary">
-                    <span>
-                      Inv: <span className="font-medium text-secondary">{issue.details.invoiceValue}</span>
-                      {' / '}
-                      PO: <span className="font-medium text-secondary">{issue.details.poValue}</span>
-                    </span>
-                    {/* For quantity mismatch: show unit price */}
-                    {issue.type === 'quantity-mismatch' && issue.details.unitPrice && (
-                      <span> @ <span className="font-medium text-secondary">{issue.details.unitPrice}</span>/unit</span>
-                    )}
-                    {/* For price variance: show quantity */}
-                    {issue.type === 'price-variance' && issue.details.quantity && (
-                      <span> × <span className="font-medium text-secondary">{issue.details.quantity.toLocaleString()}</span> units</span>
-                    )}
-                  </div>
-                )}
+                <div className="text-sm text-tertiary">
+                  {/* Variance Details (Price/Quantity) */}
+                  {issue.details && issue.details.invoiceValue && issue.details.poValue && (
+                    <div>
+                      <span>
+                        Inv: <span className="font-medium text-secondary">{issue.details.invoiceValue}</span>
+                        {' / '}
+                        PO: <span className="font-medium text-secondary">{issue.details.poValue}</span>
+                      </span>
+                      {/* For quantity mismatch: show unit price */}
+                      {issue.type === 'quantity-mismatch' && issue.details.unitPrice && (
+                        <span> @ <span className="font-medium text-secondary">{issue.details.unitPrice}</span>/unit</span>
+                      )}
+                      {/* For price variance: show quantity */}
+                      {issue.type === 'price-variance' && issue.details.quantity && (
+                        <span> × <span className="font-medium text-secondary">{issue.details.quantity.toLocaleString()}</span> units</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Item Description (Unmatched Items) */}
+                  {issue.details?.itemDescription && (
+                    <div className="mt-0.5">
+                      Item: <span className="font-medium text-secondary">{issue.details.itemDescription}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             

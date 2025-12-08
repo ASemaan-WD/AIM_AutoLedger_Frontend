@@ -2,8 +2,8 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-12-03T14:34:30.547Z
- * Base ID: applFPNMYrcJY8Z0C
+ * Generated: 2025-12-08T13:59:23.681Z
+ * Base ID: appuCyekfNZBULRYT
  * 
  * DO NOT EDIT MANUALLY
  * Run 'node scripts/generate-schema-types.js' to regenerate
@@ -37,6 +37,8 @@ export const FIELD_IDS = {
     ORGANIZATIONID: 'fldKExnglFOvmEjKS',
     IMAGEIDS: 'fldC5s2vHB7VMCh9d',
     IMAGERECORDIDS: 'fldfrN7ocMWaGhj8J',
+    CLEARED: 'fldRQC0opkdUvzvJO',
+    CLEARED_AT: 'fldWcVsJnWczAvfOD',
   },
   IMAGES: {
     IMAGEID: 'fldf6wxF1QGSrZ7iI',
@@ -54,6 +56,8 @@ export const FIELD_IDS = {
     VENDOR_NAME: 'fldJGXLYs7xaXP7xR',
     AMOUNT: 'fldO8fN0NWv8dqDKC',
     DATE: 'fldEx6RyGqFl0WivA',
+    DISCOUNT_AMOUNT: 'fldQUPUpHtXmZ4UPB',
+    DISCOUNT_DATE: 'fldz5ZPOnLmehqS3h',
     FREIGHT_CHARGE: 'fldYXCLntMTfENKJa',
     MISC_CHARGE: 'fldX0qPQMAgKaRFX3',
     SURCHARGE: 'fldIgWe2IFDOqnYO1',
@@ -80,6 +84,7 @@ export const FIELD_IDS = {
     SUMMARY: 'fldhZQz3sZGhJHYts',
     NAME_CANDIDATES: 'fldUqMvWCDZq1HAAu',
     WARNINGS: 'flduKtm4zmcsDYR74',
+    ITEMS: 'fldVuCDJcehGTk6B8',
   },
   POINVOICEHEADERS: {
     RECORDID: 'fldhszvX1XbN0cGah',
@@ -290,6 +295,8 @@ export const FIELD_NAMES = {
     ORGANIZATIONID: 'OrganizationId',
     IMAGEIDS: 'ImageIDs',
     IMAGERECORDIDS: 'ImageRecordIDs',
+    CLEARED: 'Cleared',
+    CLEARED_AT: 'Cleared-At',
   },
   IMAGES: {
     IMAGEID: 'ImageID',
@@ -307,6 +314,8 @@ export const FIELD_NAMES = {
     VENDOR_NAME: 'Vendor-Name',
     AMOUNT: 'Amount',
     DATE: 'Date',
+    DISCOUNT_AMOUNT: 'Discount-Amount',
+    DISCOUNT_DATE: 'Discount-Date',
     FREIGHT_CHARGE: 'Freight-Charge',
     MISC_CHARGE: 'Misc-Charge',
     SURCHARGE: 'Surcharge',
@@ -333,6 +342,7 @@ export const FIELD_NAMES = {
     SUMMARY: 'Summary',
     NAME_CANDIDATES: 'Name-Candidates',
     WARNINGS: 'Warnings',
+    ITEMS: 'Items',
   },
   POINVOICEHEADERS: {
     RECORDID: 'RecordID',
@@ -589,6 +599,8 @@ export interface FilesRecord {
     OrganizationId?: string;
     ImageIDs?: string[];
     ImageRecordIDs?: any;
+    Cleared?: boolean;
+    'Cleared-At'?: string;
   };
 }
 
@@ -616,6 +628,8 @@ export interface InvoicesRecord {
     'Vendor-Name'?: string;
     Amount?: number;
     Date?: string;
+    'Discount-Amount'?: any;
+    'Discount-Date'?: any;
     'Freight-Charge'?: number;
     'Misc-Charge'?: number;
     Surcharge?: number;
@@ -642,6 +656,7 @@ export interface InvoicesRecord {
     Summary?: string;
     'Name-Candidates'?: string;
     Warnings?: string;
+    Items?: string;
   };
 }
 

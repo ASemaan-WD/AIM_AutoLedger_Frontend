@@ -213,7 +213,8 @@ export default function HomePage() {
       // 1. Fetch all files
       console.log('📥 Fetching existing files...');
       const filesRecords = await client.getAllRecords('Files', {
-        sort: [{ field: 'Created-At', direction: 'desc' }]
+        sort: [{ field: 'Created-At', direction: 'desc' }],
+        filterByFormula: 'NOT({Cleared})'
       });
       console.log(`✅ Fetched ${filesRecords.length} files`);
 
@@ -712,7 +713,7 @@ export default function HomePage() {
     }
   };
 
-  const handleDelete = (fileId: string) => {
+  const handleDelete = async (fileId: string) => {
     // Abort the upload if it's in progress
     const abortController = abortControllersRef.current.get(fileId);
     if (abortController) {
@@ -722,6 +723,23 @@ export default function HomePage() {
     }
     
     stopPolling(fileId);
+    
+    // Find the file to get its airtableRecordId and mark as cleared
+    const file = files.find(f => f.id === fileId);
+    if (file?.airtableRecordId) {
+      try {
+        const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+        if (baseId) {
+          const client = createAirtableClient(baseId);
+          await client.updateRecords('Files', {
+            records: [{ id: file.airtableRecordId, fields: { 'Cleared': true } }]
+          });
+          console.log(`✅ Cleared file ${fileId} (record ${file.airtableRecordId})`);
+        }
+      } catch (error) {
+        console.error("Failed to clear file in Airtable:", error);
+      }
+    }
     
     // Remove file from UI
     setFiles((prev) => prev.filter((f) => f.id !== fileId));

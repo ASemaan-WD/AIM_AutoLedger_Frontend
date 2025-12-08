@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/base/badges/badges"
 import { Button } from "@/components/base/buttons/button"
-import { Trash01 } from "@untitledui/icons"
+import { Trash01, XClose } from "@untitledui/icons"
 
 type BadgeColor = "gray-blue" | "success" | "warning" | "error"
 
@@ -54,9 +54,9 @@ export function CardHeader({
         <Button 
           size="sm"
           color="tertiary"
-          iconLeading={Trash01}
+          iconLeading={XClose}
           className="flex-shrink-0 -mt-1 -mr-2"
-          aria-label="Delete"
+          aria-label="Clear"
           onClick={onDelete}
         />
       )}

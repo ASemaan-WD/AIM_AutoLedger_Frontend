@@ -1,6 +1,6 @@
 "use client"
 
-import { Trash01 } from "@untitledui/icons"
+import { Eraser } from "@untitledui/icons"
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal"
 import { Button } from "@/components/base/buttons/button"
@@ -37,10 +37,10 @@ export function DeleteFileModal({ isOpen, onOpenChange, filename, onConfirm }: D
               <div className="flex flex-col gap-4 px-4 pt-5 sm:px-6 sm:pt-6">
                 <div className="relative w-max">
                   <FeaturedIcon 
-                    color="error" 
+                    color="gray" 
                     size="lg" 
                     theme="light" 
-                    icon={Trash01} 
+                    icon={Eraser} 
                   />
                   <BackgroundPattern 
                     pattern="circle" 
@@ -51,10 +51,10 @@ export function DeleteFileModal({ isOpen, onOpenChange, filename, onConfirm }: D
                 
                 <div className="z-10 flex flex-col gap-0.5">
                   <AriaHeading slot="title" className="text-md font-semibold text-primary">
-                    Delete file
+                    Clear file
                   </AriaHeading>
                   <p className="text-sm text-tertiary">
-                    Are you sure you want to delete "{filename}"? This action cannot be undone.
+                    Are you sure you want to clear "{filename}"? This will hide it from the list but keep it in the records.
                   </p>
                 </div>
               </div>
@@ -68,11 +68,11 @@ export function DeleteFileModal({ isOpen, onOpenChange, filename, onConfirm }: D
                   Cancel
                 </Button>
                 <Button 
-                  color="primary-destructive" 
+                  color="primary" 
                   size="lg" 
                   onClick={handleDelete}
                 >
-                  Delete
+                  Clear
                 </Button>
               </div>
             </div>

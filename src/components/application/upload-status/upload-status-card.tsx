@@ -17,7 +17,7 @@ import {
   FileLink,
   ActionButtons
 } from "./components"
-import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal } from "./modals"
+import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal, CancelFileModal } from "./modals"
 import { Dropdown } from "@/components/base/dropdown/dropdown"
 import { getProcessingStatusText, getProcessingProgress } from "@/lib/status-mapper"
 import { createAirtableClient } from "@/lib/airtable/client"
@@ -150,6 +150,7 @@ export function UploadStatusCard({
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showContactVendorModal, setShowContactVendorModal] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
   const [exportState, setExportState] = useState<'idle' | 'queued' | 'exported' | 'error'>('idle')
   const [exportError, setExportError] = useState<string | null>(null)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -264,6 +265,9 @@ export function UploadStatusCard({
   // SHARED RENDER HELPERS
   // =============================================================================
 
+  // Determine if we have invoice data (for modal text)
+  const hasInvoiceData = invoices && invoices.length > 0
+
   const renderModals = () => (
     <>
       {showDeleteModal && (
@@ -295,6 +299,15 @@ export function UploadStatusCard({
           }}
         />
       )}
+      {showCancelModal && (
+        <CancelFileModal
+          isOpen={showCancelModal}
+          onOpenChange={setShowCancelModal}
+          filename={invoice?.vendor || filename}
+          isInvoice={hasInvoiceData}
+          onConfirm={() => onCancel?.()}
+        />
+      )}
     </>
   )
 
@@ -316,8 +329,8 @@ export function UploadStatusCard({
                     />
                     <Dropdown.Item 
                       icon={Trash01}
-                      label="Cancel"
-                      onAction={onCancel}
+                      label="Remove"
+                      onAction={() => setShowCancelModal(true)}
                     />
                   </Dropdown.Menu>
                 </Dropdown.Popover>
@@ -333,7 +346,7 @@ export function UploadStatusCard({
             </>
           )}
           {!showContactVendor && (
-            <Button size="md" color="secondary" iconLeading={XClose} onClick={onCancel}>
+            <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
               Cancel
             </Button>
           )}
@@ -388,7 +401,7 @@ export function UploadStatusCard({
         size="md" 
         color="secondary-destructive"
         iconLeading={Trash01}
-        onClick={onRemove}
+        onClick={() => setShowDeleteModal(true)}
       >
         Remove
       </Button>
@@ -401,24 +414,27 @@ export function UploadStatusCard({
   
   if (status === "uploading") {
     return (
-      <CardContainer animated>
-        <CardHeaderSection>
-          <StatusBadge color="gray-blue">Uploading</StatusBadge>
-          <InvoiceHeader 
-            title={filename} 
-            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-          />
-          <CardProgress value={0} />
-        </CardHeaderSection>
-        <CardFooter>
-          <div />
-          <ActionButtons>
-            <Button size="md" color="secondary" iconLeading={XClose} onClick={onCancel}>
-              Cancel
-            </Button>
-          </ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Uploading</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <CardProgress value={0} />
+          </CardHeaderSection>
+          <CardFooter>
+            <div />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
@@ -428,27 +444,30 @@ export function UploadStatusCard({
   
   if (status === "queued") {
     return (
-      <CardContainer animated>
-        <CardHeaderSection>
-          <StatusBadge color="gray-blue">Processing</StatusBadge>
-          <InvoiceHeader 
-            title={filename} 
-            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-          />
-          <StatusMessage>
-            {`Attempting to extract text from ${pageCount || '...'} pages...`}
-          </StatusMessage>
-          <CardProgress value={getProcessingProgress(processingStatus)} />
-        </CardHeaderSection>
-        <CardFooter>
-          <FileLink filename={filename} onClick={onViewFile} />
-          <ActionButtons>
-            <Button size="md" color="secondary" iconLeading={XClose} onClick={onCancel}>
-              Cancel
-            </Button>
-          </ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Processing</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <StatusMessage>
+              {`Attempting to extract text from ${pageCount || '...'} pages...`}
+            </StatusMessage>
+            <CardProgress value={getProcessingProgress(processingStatus)} />
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={onViewFile} />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
@@ -464,27 +483,31 @@ export function UploadStatusCard({
         : 'Processing...'
     
     return (
-      <CardContainer animated>
-        <CardHeaderSection>
-          <StatusBadge color="gray-blue">Processing</StatusBadge>
-          <InvoiceHeader 
-            title={invoice?.vendor || getCardTitle()} 
-            subtitle={invoice?.date}
-            description={invoice?.description}
-            amount={invoice?.amount}
-          />
-          <StatusMessage>{helperText}</StatusMessage>
-          <CardProgress value={getProcessingProgress(processingStatus)} />
-        </CardHeaderSection>
-        <CardFooter>
-          <FileLink filename={filename} onClick={onViewFile} />
-          <ActionButtons>
-            <Button size="md" color="secondary" iconLeading={XClose} onClick={onCancel}>
-              Cancel
-            </Button>
-          </ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Processing</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage>{helperText}</StatusMessage>
+            <CardProgress value={getProcessingProgress(processingStatus)} />
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={onViewFile} />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
@@ -494,29 +517,33 @@ export function UploadStatusCard({
   
   if (status === "connecting") {
     return (
-      <CardContainer animated>
-        <CardHeaderSection>
-          <StatusBadge color="gray-blue">Matching</StatusBadge>
-          <InvoiceHeader 
-            title={invoice?.vendor || getCardTitle()} 
-            subtitle={invoice?.date}
-            description={invoice?.description}
-            amount={invoice?.amount}
-          />
-          <StatusMessage>
-            {getProcessingStatusText(processingStatus) || "Checking with AIM Vision..."}
-          </StatusMessage>
-          <CardProgress value={getProcessingProgress(processingStatus)} />
-        </CardHeaderSection>
-        <CardFooter>
-          <FileLink filename={filename} onClick={onViewFile} />
-          <ActionButtons>
-            <Button size="md" color="secondary" iconLeading={XClose} onClick={onCancel}>
-              Cancel
-            </Button>
-          </ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Matching</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage>
+              {getProcessingStatusText(processingStatus) || "Checking with AIM Vision..."}
+            </StatusMessage>
+            <CardProgress value={getProcessingProgress(processingStatus)} />
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={onViewFile} />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
@@ -532,6 +559,7 @@ export function UploadStatusCard({
             <StatusBadge color="brand">Complete</StatusBadge>
             <InvoiceHeader 
               title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
               subtitle={invoice?.date}
               description={invoice?.description}
               amount={invoice?.amount}
@@ -560,6 +588,7 @@ export function UploadStatusCard({
             <StatusBadge color="warning">Needs Review</StatusBadge>
             <InvoiceHeader 
               title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
               subtitle={invoice?.date}
               description={invoice?.description}
               amount={invoice?.amount}
@@ -604,6 +633,7 @@ export function UploadStatusCard({
           <StatusBadge color="success">Exported</StatusBadge>
           <InvoiceHeader 
             title={invoice?.vendor || getCardTitle()} 
+            invoiceNumber={invoice?.invoiceNumber}
             subtitle={invoice?.date}
             description={invoice?.description}
             amount={invoice?.amount}
@@ -624,22 +654,25 @@ export function UploadStatusCard({
   
   if (status === "processing-error") {
     return (
-      <CardContainer>
-        <CardHeaderSection>
-          <StatusBadge color="error">Error Occurred</StatusBadge>
-          <InvoiceHeader 
-            title={filename} 
-            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-          />
-          <StatusMessage variant="error">
-            {errorMessage || "Unable to process this file"}
-          </StatusMessage>
-        </CardHeaderSection>
-        <CardFooter>
-          <FileLink filename={filename} onClick={handleViewFile} />
-          <ActionButtons>{renderErrorActions()}</ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">Error Occurred</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <StatusMessage variant="error">
+              {errorMessage || "Unable to process this file"}
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
@@ -649,26 +682,30 @@ export function UploadStatusCard({
   
   if (status === "duplicate") {
     return (
-      <CardContainer>
-        <CardHeaderSection>
-          <StatusBadge color="error">Duplicate</StatusBadge>
-          <InvoiceHeader 
-            title={invoice?.vendor || getCardTitle()} 
-            subtitle={invoice?.date}
-            description={invoice?.description}
-            amount={invoice?.amount}
-          />
-          <StatusMessage variant="error">
-            {duplicateInfo
-              ? `Already uploaded as "${duplicateInfo.originalFilename}" on ${duplicateInfo.uploadedDate}`
-              : "This file has already been uploaded"}
-          </StatusMessage>
-        </CardHeaderSection>
-        <CardFooter>
-          <FileLink filename={filename} onClick={handleViewFile} />
-          <ActionButtons>{renderErrorActions()}</ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">Duplicate</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage variant="error">
+              {duplicateInfo
+                ? `Already uploaded as "${duplicateInfo.originalFilename}" on ${duplicateInfo.uploadedDate}`
+                : "This file has already been uploaded"}
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
@@ -678,24 +715,28 @@ export function UploadStatusCard({
   
   if (status === "no-match") {
     return (
-      <CardContainer>
-        <CardHeaderSection>
-          <StatusBadge color="error">No Match</StatusBadge>
-          <InvoiceHeader 
-            title={invoice?.vendor || getCardTitle()} 
-            subtitle={invoice?.date}
-            description={invoice?.description}
-            amount={invoice?.amount}
-          />
-          <StatusMessage variant="error">
-            Could not find matching PO in AIM
-          </StatusMessage>
-        </CardHeaderSection>
-        <CardFooter>
-          <FileLink filename={filename} onClick={handleViewFile} />
-          <ActionButtons>{renderErrorActions()}</ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">No Match</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage variant="error">
+              Could not find matching PO in AIM
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
@@ -707,22 +748,25 @@ export function UploadStatusCard({
     const badgeText = (processingStatus === 'ERROR' && errorCode) ? errorCode : "Error Occurred"
     
     return (
-      <CardContainer>
-        <CardHeaderSection>
-          <StatusBadge color="error">{badgeText}</StatusBadge>
-          <InvoiceHeader 
-            title={filename} 
-            fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-          />
-          <StatusMessage variant="error">
-            {errorMessage || "An error occurred during processing"}
-          </StatusMessage>
-        </CardHeaderSection>
-        <CardFooter>
-          <FileLink filename={filename} onClick={handleViewFile} />
-          <ActionButtons>{renderErrorActions()}</ActionButtons>
-        </CardFooter>
-      </CardContainer>
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">{badgeText}</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <StatusMessage variant="error">
+              {errorMessage || "An error occurred during processing"}
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 

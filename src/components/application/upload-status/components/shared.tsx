@@ -89,6 +89,8 @@ export function StatusBadge({ color, children }: StatusBadgeProps) {
 
 interface InvoiceHeaderProps {
   title: string
+  /** Invoice number to display next to the title */
+  invoiceNumber?: string
   subtitle?: string
   description?: string
   amount?: string
@@ -103,13 +105,20 @@ interface InvoiceHeaderProps {
   }
 }
 
-export function InvoiceHeader({ title, subtitle, description, amount, fileMetadata, varianceInfo }: InvoiceHeaderProps) {
+export function InvoiceHeader({ title, invoiceNumber, subtitle, description, amount, fileMetadata, varianceInfo }: InvoiceHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
-        <h3 className="text-lg font-semibold text-primary">
-          {title}
-        </h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-lg font-semibold text-primary">
+            {title}
+          </h3>
+          {invoiceNumber && (
+            <span className="text-sm font-medium text-tertiary bg-secondary px-2 py-0.5 rounded">
+              {invoiceNumber}
+            </span>
+          )}
+        </div>
         {/* File metadata: file size and page count */}
         {fileMetadata && (fileMetadata.fileSize || fileMetadata.pageCount) && (
           <p className="mt-1 text-sm text-tertiary">
@@ -120,10 +129,10 @@ export function InvoiceHeader({ title, subtitle, description, amount, fileMetada
         )}
         {/* Subtitle and description (for invoice context) */}
         {(subtitle || description) && (
-          <div className="flex items-center gap-2 mt-1 text-sm text-tertiary">
-            {subtitle && <span>{subtitle}</span>}
-            {subtitle && description && <span className="text-quaternary">|</span>}
-            {description && <span className="truncate">{description}</span>}
+          <div className="flex items-center gap-2 mt-1 text-sm text-tertiary flex-nowrap">
+            {subtitle && <span className="whitespace-nowrap flex-shrink-0">{subtitle}</span>}
+            {subtitle && description && <span className="text-quaternary flex-shrink-0"> • </span>}
+            {description && <span className="truncate min-w-0">{description}</span>}
           </div>
         )}
       </div>

@@ -89,7 +89,7 @@ function generateMockFiles(): MockFile[] {
   // Order determines relative time (first = most recent)
   return [
     // Active/Processing (most recent)
-    { id: 'uploading', createdAt: minutesAgo(1), ...uploadStatusFixtures.uploading },
+    { id: 'uploading', createdAt: minutesAgo(1), ...uploadStatusFixtures.uploading, pageCount: 6 },
     { id: 'processing', createdAt: minutesAgo(5), ...uploadStatusFixtures.processing },
     { id: 'connecting', createdAt: minutesAgo(8), ...uploadStatusFixtures.connecting },
     
@@ -179,11 +179,6 @@ export default function MockHomePage() {
     console.log(`🎭 [Mock] ${action} clicked for file: ${fileId}`);
   };
 
-  // Default expanded groups (active and needs-review)
-  const defaultExpanded = activeGroups
-    .filter(g => ['active', 'needs-review', 'ready'].includes(g.id))
-    .map(g => g.id);
-
   return (
     <div className="h-full overflow-auto bg-primary">
       <div className="container mx-auto max-w-4xl p-6">
@@ -219,14 +214,14 @@ export default function MockHomePage() {
           <div className="mt-8">
             <Accordion.Root 
               allowMultiple 
-              defaultExpanded={defaultExpanded}
+              persistKey="upload-status-groups"
               className="space-y-2"
             >
               {activeGroups.map((group) => {
                 const groupFiles = groupedFiles.get(group.id) || [];
                 
                 return (
-                  <Accordion.Item key={group.id} id={group.id}>
+                  <Accordion.Item key={group.id} id={group.id} itemCount={groupFiles.length}>
                     <Accordion.Trigger
                       badge={
                         <Badge size="sm" color={group.badgeColor} type="color">

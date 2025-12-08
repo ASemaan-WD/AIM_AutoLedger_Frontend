@@ -47,6 +47,7 @@ export const transformWarningToDetailedIssues = (warning: InvoiceWarningType): D
            severity: 'warning',
            lineNumber: parseInt(item.LineNo) || 0,
            lineReference: item.LineNo ? `Line ${item.LineNo}` : 'Unknown Line',
+           itemNumber: item.ItemName,
            description: 'Quantity mismatch vs PO',
            impact: impactStr, 
            dollarImpact: dollarImpactStr,
@@ -76,6 +77,7 @@ export const transformWarningToDetailedIssues = (warning: InvoiceWarningType): D
            severity: 'warning',
            lineNumber: parseInt(item.LineNo) || 0,
            lineReference: item.LineNo ? `Line ${item.LineNo}` : 'Unknown Line',
+           itemNumber: item.ItemName,
            description: 'Unit price mismatch vs PO',
            impact: impactStr,
            dollarImpact: dollarImpactStr,
@@ -106,6 +108,7 @@ export const transformWarningToDetailedIssues = (warning: InvoiceWarningType): D
           severity: 'error',
           lineNumber: parseInt(detail.line_number) || 0,
           lineReference: detail.line_number ? `Line ${detail.line_number}` : 'Unknown Line',
+          itemNumber: detail.item_name, // Use item_name as the "Reference" code similar to mock
           description: 'Item not found on original PO',
           impact: 'Full value',
           dollarImpact: dollarImpactStr,

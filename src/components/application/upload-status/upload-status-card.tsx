@@ -45,6 +45,7 @@ export interface DetailedIssue {
   severity: 'warning' | 'error'
   lineNumber?: number
   lineReference?: string
+  itemNumber?: string
   description: string
   impact: string
   dollarImpact?: string

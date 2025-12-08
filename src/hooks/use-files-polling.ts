@@ -210,6 +210,21 @@ export function useFilesPolling() {
     airtableRecordId: string
   ): Promise<void> => {
     try {
+      if (file.type.startsWith('image/')) {
+        console.log('🖼️ [Background] File is an image, skipping PDF conversion...');
+        
+        // Update page count to 1
+        setFiles(prev => prev.map(f => 
+          f.id === uploadId ? { ...f, pageCount: 1 } : f
+        ));
+
+        console.log(`🚀 [Background] Triggering OCR for file ID ${fileId}...`);
+        const ocrResponse = await triggerOCRByFile(fileId);
+        console.log('✅ [Background] OCR triggered, job ID:', ocrResponse.id);
+        
+        return;
+      }
+
       console.log('🖼️  [Background] Converting PDF to images...');
       const images = await convertPDFToImages(fileUrl, file);
       console.log(`✅ [Background] PDF converted to ${images.length} images`);

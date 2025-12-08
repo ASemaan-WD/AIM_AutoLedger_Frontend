@@ -46,7 +46,7 @@ export function IssueDetailsTable({ issues }: IssueDetailsTableProps) {
                 {issue.lineNumber !== undefined && issue.lineNumber !== 0 && (
                   <span className="text-sm text-tertiary">
                     Invoice line {issue.lineNumber}
-                    {issue.lineReference && ` - ${issue.lineReference}`}
+                    {issue.itemNumber ? ` - ${issue.itemNumber}`:''}
                     {issue.type === 'unmatched-item' ? ' not found on PO' : ''}
                   </span>
                 )}

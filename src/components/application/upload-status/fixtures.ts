@@ -512,6 +512,7 @@ export const sampleDetailedIssues: DetailedIssue[] = [
     severity: 'warning',
     lineNumber: 3,
     lineReference: 'EACR55932',
+    itemNumber: 'EACR55932',
     description: 'Unit price mismatch.',
     impact: '+22.7%',
     // 137,000 units × ($0.09813 - $0.08000) = $2,483.81
@@ -527,6 +528,7 @@ export const sampleDetailedIssues: DetailedIssue[] = [
     severity: 'error',
     lineNumber: 4,
     lineReference: '51-2C-072C-90',
+    itemNumber: '51-2C-072C-90',
     description: 'Item not found on original PO.',
     // 1,950 units × $0.236 per unit = $460.20
     impact: '+$460.20',

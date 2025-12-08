@@ -91,9 +91,10 @@ export default function HomePage() {
         {/* Upload Area */}
         <FileUpload.Root>
           <FileUpload.DropZone
-            hint="All document types accepted - PDF, DOC, XLS, images, and more up to 50MB"
-            maxSize={50 * 1024 * 1024} // 50MB
+            hint="PDF and image files accepted up to 50MB"
+            maxSize={50 * 1024 * 1024}
             allowsMultiple={true}
+            accept="image/*,application/pdf"
             onDropFiles={uploadFiles}
             onDropUnacceptedFiles={(rejectedFiles) => {
               console.log('Rejected files:', rejectedFiles);

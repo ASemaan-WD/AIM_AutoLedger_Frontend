@@ -95,6 +95,12 @@ export const transformWarningToDetailedIssues = (warning: InvoiceWarningType): D
     if (warning.ItemDetails && Array.isArray(warning.ItemDetails)) {
       const details = warning.ItemDetails as any[];
       details.forEach(detail => {
+        // Calculate dollar impact from invoice_amount
+        const invoiceAmount = detail.invoice_amount ? parseFloat(detail.invoice_amount) : 0;
+        const dollarImpactStr = invoiceAmount > 0 
+          ? `+$${invoiceAmount.toFixed(2)}` 
+          : `$${invoiceAmount.toFixed(2)}`;
+
         issues.push({
           type: 'unmatched-item',
           severity: 'error',
@@ -102,8 +108,11 @@ export const transformWarningToDetailedIssues = (warning: InvoiceWarningType): D
           lineReference: detail.line_number ? `Line ${detail.line_number}` : 'Unknown Line',
           description: 'Item not found on original PO',
           impact: 'Full value',
+          dollarImpact: dollarImpactStr,
           details: {
-             itemDescription: detail.item_name || 'Unmatched item'
+             itemDescription: detail.item_name || 'Unmatched item',
+             quantity: detail.invoice_quantity,
+             unitPrice: detail.invoice_price
           }
         });
       });
@@ -123,16 +132,16 @@ export const transformWarningToDetailedIssues = (warning: InvoiceWarningType): D
     }
   }
   
-  // AI Matching warning
-  if (warning.Type === 'ai_matching' && warning.Message) {
-    issues.push({
-      type: 'missing-po',
-      severity: 'warning',
-      description: warning.Message,
-      impact: 'Review needed',
-      lineReference: 'General'
-    });
-  }
+//   // AI Matching warning - Treat as Unmatched Item (using missing-po data)
+//   if (warning.Type === 'ai_matching' && warning.Message) {
+//     issues.push({
+//       type: 'unmatched-item',
+//       severity: 'error',
+//       description: warning.Message,
+//       impact: 'Review needed',
+//       lineReference: 'General'
+//     });
+//   }
 
   return issues;
 };
@@ -149,8 +158,6 @@ export const generateAnalysisSummary = (detailedIssues: DetailedIssue[], vendor:
       part += ` shows quantity of ${issue.details?.invoiceValue} vs PO ${issue.details?.poValue}`;
     } else if (issue.type === 'unmatched-item') {
       part += ` has no matching PO receipt`;
-    } else {
-      part += `: ${issue.description}`;
     }
     
     if (issue.dollarImpact) {
@@ -203,11 +210,11 @@ export const formatInvoiceWarning = (warning: InvoiceWarningType): string | null
     }
   }
 
-  if (warning.Type === 'ai_matching') {
-    if (warning.Message) {
-      return warning.Message;
-    }
-  }
+//   if (warning.Type === 'ai_matching') {
+//     if (warning.Message) {
+//       return warning.Message;
+//     }
+//   }
   return null;
 };
 

@@ -16,7 +16,7 @@ import type { UploadStatusCardProps, DetailedIssue } from "./upload-status-card"
 
 /** Warning types from Invoices.Warnings field */
 export interface InvoiceWarning {
-  Type: 'balance' | 'line_amount' | 'missing_receipts' | 'ai_matching'
+  Type: 'balance' | 'line_amount' | 'missing_receipts'// | 'ai_matching'
   Message?: string
   Items?: Array<{
     LineNo: string
@@ -159,9 +159,9 @@ export function formatInvoiceWarning(warning: InvoiceWarning): string | null {
     return `Line(s) ${warning.ItemLineNumbers} – item(s) not on PO.`
   }
 
-  if (warning.Type === 'ai_matching' && warning.Message) {
-    return warning.Message
-  }
+  // if (warning.Type === 'ai_matching' && warning.Message) {
+  //   return warning.Message
+  // }
 
   return null
 }

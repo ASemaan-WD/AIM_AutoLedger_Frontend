@@ -42,13 +42,6 @@ export function IssueDetailsTable({ issues }: IssueDetailsTableProps) {
                   {issueTypeLabels[issue.type]}
                 </span>
 
-                {/* Description - Show for all types if present, providing context beyond the label */}
-                {issue.description && (
-                  <span className="text-sm text-secondary">
-                    {issue.description}
-                  </span>
-                )}
-                
                 {/* Invoice Line + Item Reference */}
                 {issue.lineNumber !== undefined && issue.lineNumber !== 0 && (
                   <span className="text-sm text-tertiary">

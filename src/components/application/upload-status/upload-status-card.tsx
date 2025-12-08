@@ -1,37 +1,67 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05 } from "@untitledui/icons"
+import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05, Mail01, ArrowRight, LinkExternal01, DotsVertical, Trash01, HelpCircle, XClose } from "@untitledui/icons"
+import { Button } from "@/components/base/buttons/button"
+import { Badge } from "@/components/base/badges/badges"
 import { 
-  CardLayout,
-  CardHeader, 
   CardProgress, 
-  InvoiceDetails, 
-  OriginalFileLink, 
   AttentionList, 
-  CardActions 
+  IssueDetailsTable,
+  CardContainer,
+  CardHeaderSection,
+  StatusBadge,
+  InvoiceHeader,
+  StatusMessage,
+  CardFooter,
+  FileLink,
+  ActionButtons
 } from "./components"
-import { DeleteFileModal, ExportWithIssuesModal } from "./modals"
-import { getProcessingStatusText, getProcessingProgress } from "@/lib/status-mapper"
+import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal, CancelFileModal } from "./modals"
+import { Dropdown } from "@/components/base/dropdown/dropdown"
+import { getProcessingStatusText, getProcessingProgress, getResultStatusText } from "@/lib/status-mapper"
 import { createAirtableClient } from "@/lib/airtable/client"
+import { openCrispChat } from "@/utils/crisp"
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 export type UploadStatus = 
   | "uploading" 
-  | "queued"              // NEW: File uploaded, waiting for processing to start
+  | "queued"
   | "processing" 
   | "connecting" 
   | "success" 
-  | "success-with-caveats"  // TODO: Review usage
+  | "success-with-caveats"
   | "exported"
   | "error"
   | "duplicate"
-  | "no-match"              // TODO: Review usage
-  | "processing-error"      // TODO: Review usage
+  | "no-match"
+  | "processing-error"
+
+export interface DetailedIssue {
+  type: 'price-variance' | 'unmatched-item' | 'quantity-mismatch' | 'missing-po'
+  severity: 'warning' | 'error'
+  lineNumber?: number
+  lineReference?: string
+  description: string
+  impact: string
+  dollarImpact?: string
+  details?: {
+    invoiceValue?: string
+    poValue?: string
+    itemDescription?: string
+    quantity?: number
+    /** Unit price for quantity mismatch issues (to show alongside quantity comparison) */
+    unitPrice?: string
+  }
+}
 
 export interface UploadStatusCardProps {
   filename: string
   status: UploadStatus
-  processingStatus?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR' // New prop
+  processingStatus?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR'
   errorCode?: string
   pageCount?: number
   fileSize?: number
@@ -42,9 +72,15 @@ export interface UploadStatusCardProps {
     amount: string
     description: string
     invoiceNumber?: string
-    recordId?: string // Airtable record ID for updating status
+    recordId?: string
   }>
   issues?: string[]
+  detailedIssues?: DetailedIssue[]
+  analysisSummary?: string
+  varianceInfo?: {
+    amount: string
+    direction: 'over' | 'under'
+  }
   errorMessage?: string
   duplicateInfo?: {
     originalFilename: string
@@ -56,17 +92,24 @@ export interface UploadStatusCardProps {
   onRemove?: () => void
   onGetHelp?: () => void
   onViewFile?: () => void
+  onReprocess?: () => void
+  onContactVendor?: () => void
 }
 
-// Helper function to format file size
+// =============================================================================
+// HELPERS
+// =============================================================================
+
 const formatFileSize = (bytes?: number): string => {
   if (!bytes) return "0 KB"
-  
   const suffixes = ["B", "KB", "MB", "GB"]
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  
   return Math.floor(bytes / Math.pow(1024, i)) + " " + suffixes[i]
 }
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 
 export function UploadStatusCard({
   filename,
@@ -77,6 +120,9 @@ export function UploadStatusCard({
   fileSize,
   invoices,
   issues,
+  detailedIssues,
+  analysisSummary,
+  varianceInfo,
   errorMessage,
   duplicateInfo,
   isExporting = false,
@@ -85,22 +131,32 @@ export function UploadStatusCard({
   onRemove,
   onGetHelp,
   onViewFile,
+  onReprocess,
+  onContactVendor,
 }: UploadStatusCardProps) {
+  
+  // Get first invoice for display
+  const invoice = invoices?.[0]
+  
   // Helper to get display title
   const getCardTitle = () => {
-    if (!invoices || invoices.length === 0) return filename;
-    if (invoices.length === 1) return `Invoice by ${invoices[0].vendor}`;
-    return `${invoices.length} Invoices`;
-  };
+    if (!invoices || invoices.length === 0) return filename
+    if (invoices.length === 1) return invoices[0].vendor
+    return `${invoices.length} Invoices`
+  }
+
+  // =============================================================================
+  // STATE MANAGEMENT
+  // =============================================================================
+  
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
-  
-  // Export state management
+  const [showContactVendorModal, setShowContactVendorModal] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
   const [exportState, setExportState] = useState<'idle' | 'queued' | 'exported' | 'error'>('idle')
   const [exportError, setExportError] = useState<string | null>(null)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       if (pollingIntervalRef.current) {
@@ -110,12 +166,16 @@ export function UploadStatusCard({
     }
   }, [])
 
-  const handleRemoveClick = () => {
-    setShowDeleteModal(true)
-  }
+  // =============================================================================
+  // HANDLERS
+  // =============================================================================
 
-  const handleDeleteConfirm = () => {
-    onRemove?.()
+  const handleViewFile = () => {
+    if (onViewFile) {
+      onViewFile()
+    } else {
+      window.open("", "_blank")
+    }
   }
 
   const handleExportClick = async () => {
@@ -131,131 +191,89 @@ export function UploadStatusCard({
   }
 
   const initiateExport = async () => {
-    // Set invoice status to "Queued" for export
     await setInvoiceStatusToQueued()
-    
-    // Set export state to queued and start polling
     setExportState('queued')
     setExportError(null)
     startExportPolling()
-    
     onExport?.()
   }
 
   const setInvoiceStatusToQueued = async () => {
-    if (!invoices || invoices.length === 0) {
-      console.warn('⚠️ No invoices to export')
-      return
-    }
+    if (!invoices || invoices.length === 0) return
 
     const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID
-    if (!baseId) {
-      console.error('VITE_AIRTABLE_BASE_ID not configured')
-      return
-    }
+    if (!baseId) return
 
     try {
       const client = createAirtableClient(baseId)
-      
-      // Update all invoices to "Queued" status for export
       const updates = invoices
-        .filter(invoice => invoice.recordId) // Only update if we have recordId
-        .map(invoice => ({
-          id: invoice.recordId!,
-          fields: {
-            'Status': 'Queued'
-          }
-        }))
+        .filter(inv => inv.recordId)
+        .map(inv => ({ id: inv.recordId!, fields: { 'Status': 'Queued' } }))
 
       if (updates.length > 0) {
         await client.updateRecords('Invoices', { records: updates })
-        console.log(`✅ Set ${updates.length} invoice(s) to Queued status`)
-      } else {
-        console.warn('⚠️ No invoice record IDs available for status update')
       }
     } catch (error) {
-      console.error('❌ Failed to set invoice status to Queued:', error)
+      console.error('Failed to set invoice status:', error)
     }
   }
 
   const startExportPolling = () => {
     const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID
-    if (!baseId) {
-      console.error('VITE_AIRTABLE_BASE_ID not configured')
-      return
-    }
+    if (!baseId || !invoices?.length) return
 
     const pollInvoiceStatus = async () => {
-      if (!invoices || invoices.length === 0) return
-
       try {
         const client = createAirtableClient(baseId)
         let allExported = true
         let hasError = false
         let errorCode: string | null = null
 
-        // Check status of all invoices
-        for (const invoice of invoices) {
-          if (!invoice.recordId) continue
-
-          const record = await client.getRecord('Invoices', invoice.recordId)
-          if (record && record.fields) {
-            const invoiceStatus = record.fields['Status'] as string
-            const invoiceErrorCode = record.fields['ErrorCode'] as string
-
-            console.log(`📊 [Export Polling] Invoice ${invoice.recordId}: ${invoiceStatus}`)
-
-            if (invoiceStatus === 'Error') {
+        for (const inv of invoices) {
+          if (!inv.recordId) continue
+          const record = await client.getRecord('Invoices', inv.recordId)
+          if (record?.fields) {
+            const invStatus = record.fields['Status'] as string
+            if (invStatus === 'Error') {
               hasError = true
-              errorCode = invoiceErrorCode || 'Unknown error'
-              allExported = false
-            } else if (invoiceStatus !== 'Exported') {
+              errorCode = (record.fields['ErrorCode'] as string) || 'Unknown error'
+            } else if (invStatus !== 'Exported') {
               allExported = false
             }
           }
         }
 
-        // Update export state based on results
         if (hasError) {
           setExportState('error')
           setExportError(errorCode)
           stopExportPolling()
-          console.log('❌ [Export Polling] Export failed with error:', errorCode)
         } else if (allExported) {
           setExportState('exported')
           stopExportPolling()
-          console.log('✅ [Export Polling] All invoices exported successfully')
         }
       } catch (error) {
-        console.error('❌ [Export Polling] Error checking invoice status:', error)
+        console.error('Export polling error:', error)
       }
     }
 
-    // Poll immediately, then every 3 seconds
     pollInvoiceStatus()
-    const interval = setInterval(pollInvoiceStatus, 3000)
-    pollingIntervalRef.current = interval
+    pollingIntervalRef.current = setInterval(pollInvoiceStatus, 3000)
   }
 
   const stopExportPolling = () => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current)
       pollingIntervalRef.current = null
-      console.log('🛑 [Export Polling] Stopped polling')
     }
   }
 
+  // =============================================================================
+  // SHARED RENDER HELPERS
+  // =============================================================================
 
-  const handleViewFile = () => {
-    if (onViewFile) {
-      onViewFile()
-    } else {
-      // Open empty tab for now
-      window.open("", "_blank")
-    }
-  }
+  // Determine if we have invoice data (for modal text)
+  const hasInvoiceData = invoices && invoices.length > 0
 
-  // Render modals at the end of the component
   const renderModals = () => (
     <>
       {showDeleteModal && (
@@ -263,10 +281,9 @@ export function UploadStatusCard({
           isOpen={showDeleteModal}
           onOpenChange={setShowDeleteModal}
           filename={filename}
-          onConfirm={handleDeleteConfirm}
+          onConfirm={() => onRemove?.()}
         />
       )}
-      
       {showExportModal && issues && (
         <ExportWithIssuesModal
           isOpen={showExportModal}
@@ -275,484 +292,483 @@ export function UploadStatusCard({
           onConfirm={handleExportConfirm}
         />
       )}
+      {showContactVendorModal && invoice && (
+        <ContactVendorModal
+          isOpen={showContactVendorModal}
+          onOpenChange={setShowContactVendorModal}
+          vendorName={invoice.vendor}
+          issues={issues || []}
+          invoiceInfo={{
+            invoiceNumber: invoice.invoiceNumber,
+            date: invoice.date,
+            amount: invoice.amount,
+          }}
+        />
+      )}
+      {showCancelModal && (
+        <CancelFileModal
+          isOpen={showCancelModal}
+          onOpenChange={setShowCancelModal}
+          filename={invoice?.vendor || filename}
+          isInvoice={hasInvoiceData}
+          onConfirm={() => onCancel?.()}
+        />
+      )}
     </>
   )
-  // Uploading State
+
+  /** Renders export-related action buttons */
+  const renderExportActions = (showContactVendor = false) => (
+    <>
+      {exportState === 'idle' && (
+        <>
+          {showContactVendor && (
+            <>
+              <Dropdown.Root>
+                <Button size="md" color="secondary" iconLeading={DotsVertical} />
+                <Dropdown.Popover>
+                  <Dropdown.Menu>
+                    <Dropdown.Item 
+                      icon={RefreshCw05}
+                      label="Reprocess"
+                      onAction={() => openCrispChat(`I'd like to request a reprocess for file "${filename}". The problem is [enter details here]`)}
+                    />
+                    <Dropdown.Item 
+                      icon={Trash01}
+                      label="Remove"
+                      onAction={() => setShowCancelModal(true)}
+                    />
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown.Root>
+              <Button 
+                size="md" 
+                color="secondary"
+                iconLeading={Mail01}
+                onClick={() => setShowContactVendorModal(true)}
+              >
+                Contact Vendor
+              </Button>
+            </>
+          )}
+          {!showContactVendor && (
+            <Button size="md" color="secondary" iconLeading={Trash01} onClick={() => setShowDeleteModal(true)}>
+              Remove
+            </Button>
+          )}
+          <Button 
+            size="md" 
+            color="primary"
+            iconTrailing={ArrowRight}
+            onClick={handleExportClick}
+            isLoading={isExporting}
+          >
+            Export
+          </Button>
+        </>
+      )}
+      {exportState === 'queued' && (
+        <Button size="md" color="secondary" isDisabled iconLeading={RefreshCw05}>
+          Queued
+        </Button>
+      )}
+      {exportState === 'exported' && (
+        <div className="flex items-center gap-2 text-success-primary">
+          <CheckCircle className="size-5" />
+          <span className="text-sm font-semibold">Export Successful</span>
+        </div>
+      )}
+      {exportState === 'error' && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-error-primary">
+            <AlertTriangle className="size-5" />
+            <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
+          </div>
+          <Button size="md" color="secondary-destructive" iconLeading={RefreshCw05} onClick={handleExportClick}>
+            Retry Export
+          </Button>
+        </div>
+      )}
+    </>
+  )
+
+  /** Renders error action buttons (Get Help + Remove) */
+  const renderErrorActions = () => (
+    <>
+      <Button 
+        size="md" 
+        color="secondary"
+        iconLeading={HelpCircle}
+        onClick={() => openCrispChat(`I'm having an issue with "${filename}"`)}
+      >
+        Get Help
+      </Button>
+      <Button 
+        size="md" 
+        color="secondary-destructive"
+        iconLeading={Trash01}
+        onClick={() => setShowDeleteModal(true)}
+      >
+        Remove
+      </Button>
+    </>
+  )
+
+  // =============================================================================
+  // UPLOADING STATE
+  // =============================================================================
+  
   if (status === "uploading") {
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={File04} iconColor="brand">
-          <CardHeader
-            title={filename}
-            badgeText="Uploading"
-            badgeColor="gray-blue"
-            helperText={formatFileSize(fileSize)}
-            showCancelButton
-            onCancel={onCancel}
-          />
-          <CardProgress value={0} />
-        </CardLayout>
-      </div>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Uploading</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <CardProgress value={0} />
+          </CardHeaderSection>
+          <CardFooter>
+            <div />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
-  // Queued State - File uploaded, waiting for processing to start
+  // =============================================================================
+  // QUEUED STATE (UPL - file uploaded, waiting to process)
+  // =============================================================================
+  
   if (status === "queued") {
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={File04} iconColor="brand">
-          <CardHeader
-            title={filename}
-            badgeText="Processing"
-            badgeColor="gray-blue"
-            helperText={`Attempting to extract text from ${pageCount || '...'} pages...`}
-            showCancelButton
-            onCancel={onCancel}
-          />
-          <CardProgress value={getProcessingProgress(processingStatus)} />
-        </CardLayout>
-      </div>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Uploading</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <StatusMessage>
+              {getProcessingStatusText(processingStatus)}
+            </StatusMessage>
+            <CardProgress value={getProcessingProgress(processingStatus)} />
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={onViewFile} />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
-  // Processing State
+  // =============================================================================
+  // PROCESSING STATE
+  // =============================================================================
+  
   if (status === "processing") {
-    const helperText = processingStatus 
-      ? getProcessingStatusText(processingStatus)
-      : pageCount 
-        ? `Extracting text from ${pageCount} pages...`
-        : 'Processing...';
+    const helperText = getProcessingStatusText(processingStatus)
     
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={File04} iconColor="brand">
-          <CardHeader
-            title={getCardTitle()}
-            badgeText="Processing"
-            badgeColor="gray-blue"
-            helperText={helperText}
-            showCancelButton
-            onCancel={onCancel}
-          />
-          
-          {/* Show all invoice details if available during processing */}
-          {invoices && invoices.map((invoice, index) => (
-            <div key={index} className={index > 0 ? "mt-4" : ""}>
-              <InvoiceDetails
-                description={invoice.description}
-                date={invoice.date}
-                amount={invoice.amount}
-              />
-            </div>
-          ))}
-          
-          <CardProgress value={getProcessingProgress(processingStatus)} />
-        </CardLayout>
-        
-        {/* Show original file link if we have invoices */}
-        {invoices && invoices.length > 0 && (
-          <OriginalFileLink
-            filename={filename}
-            onClick={onViewFile}
-          />
-        )}
-      </div>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Processing</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage>{helperText}</StatusMessage>
+            <CardProgress value={getProcessingProgress(processingStatus)} />
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={onViewFile} />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
-  // Connecting/Analyzing State
+  // =============================================================================
+  // CONNECTING/MATCHING STATE
+  // =============================================================================
+  
   if (status === "connecting") {
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={File06} iconColor="brand">
-          <CardHeader
-            title={getCardTitle()}
-            badgeText="Matching"
-            badgeColor="gray-blue"
-            helperText={getProcessingStatusText(processingStatus) || "Connecting to AIM to match POs..."}
-            showCancelButton
-            onCancel={onCancel}
-          />
-          
-          {/* Show all invoice details if available */}
-          {invoices && invoices.map((invoice, index) => (
-            <div key={index} className={index > 0 ? "mt-4" : ""}>
-              <InvoiceDetails
-                description={invoice.description}
-                date={invoice.date}
-                amount={invoice.amount}
-              />
-            </div>
-          ))}
-          
-          <CardProgress value={getProcessingProgress(processingStatus)} />
-        </CardLayout>
-        
-        {/* Show original file link if we have invoices */}
-        {invoices && invoices.length > 0 && (
-          <OriginalFileLink
-            filename={filename}
-            onClick={onViewFile}
-          />
-        )}
-      </div>
+      <>
+        <CardContainer animated>
+          <CardHeaderSection>
+            <StatusBadge color="gray-blue">Matching</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage>
+              {getProcessingStatusText(processingStatus)}
+            </StatusMessage>
+            <CardProgress value={getProcessingProgress(processingStatus)} />
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={onViewFile} />
+            <ActionButtons>
+              <Button size="md" color="secondary" iconLeading={XClose} onClick={() => setShowCancelModal(true)}>
+                Cancel
+              </Button>
+            </ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
-  // Success State
+  // =============================================================================
+  // SUCCESS STATE
+  // =============================================================================
+  
   if (status === "success") {
     return (
       <>
-        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-          <CardLayout icon={CheckCircle} iconColor="success">
-            <CardHeader
-              title={getCardTitle()}
-              badgeText="Complete"
-              badgeColor="success"
-              helperText="Everything checks out"
-              showDeleteButton
-              onDelete={handleRemoveClick}
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="brand">Complete</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
             />
-            
-            {/* Show all invoice details */}
-            {invoices && invoices.map((invoice, index) => (
-              <div key={index} className={index > 0 ? "mt-4" : ""}>
-                <InvoiceDetails
-                  description={invoice.description}
-                  date={invoice.date}
-                  amount={invoice.amount}
-                />
-              </div>
-            ))}
-          </CardLayout>
-          
-          <OriginalFileLink
-            filename={filename}
-            onClick={handleViewFile}
-          />
-          
-          {/* Custom export UI based on export state */}
-          <div className="mt-4 flex items-center gap-3">
-            {exportState === 'idle' && (
-              <CardActions
-                type="success"
-                onPrimaryAction={handleExportClick}
-                isLoading={isExporting}
-              />
-            )}
-            
-            {exportState === 'queued' && (
-              <button
-                disabled
-                className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2.5 text-sm font-semibold text-tertiary shadow-xs cursor-not-allowed"
-              >
-                <RefreshCw05 className="size-4 animate-spin" />
-                Queued
-              </button>
-            )}
-            
-            {exportState === 'exported' && (
-              <div className="flex items-center gap-2 text-success-primary">
-                <CheckCircle className="size-5" />
-                <span className="text-sm font-semibold">Export Successful</span>
-              </div>
-            )}
-            
-            {exportState === 'error' && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-error-primary">
-                  <AlertTriangle className="size-5" />
-                  <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
-                </div>
-                <button
-                  onClick={handleExportClick}
-                  className="inline-flex items-center gap-2 rounded-lg border border-error bg-primary px-4 py-2.5 text-sm font-semibold text-error-primary shadow-xs hover:bg-error-50 transition-colors"
-                >
-                  Retry Export
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+            <StatusMessage variant="brand">{getResultStatusText('success')}</StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderExportActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
         {renderModals()}
       </>
     )
   }
 
-  // Success with Caveats State
-  // TODO: Review usage - may need to be updated for new backend flow
-  if (status === "success-with-caveats" && issues) {
+  // =============================================================================
+  // SUCCESS WITH CAVEATS STATE
+  // =============================================================================
+  
+  if (status === "success-with-caveats" && (issues || detailedIssues)) {
     return (
       <>
-        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-          <CardLayout icon={AlertTriangle} iconColor="warning">
-            <CardHeader
-              title={getCardTitle()}
-              badgeText="Complete"
-              badgeColor="warning"
-              helperText="Everything is in order, but:"
-              showDeleteButton
-              onDelete={handleRemoveClick}
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="warning">Needs Review</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+              varianceInfo={varianceInfo}
             />
             
-            <AttentionList items={issues} />
-            
-            {/* Show all invoice details */}
-            {invoices && invoices.map((invoice, index) => (
-              <div key={index} className={index > 0 ? "mt-4" : ""}>
-                <InvoiceDetails
-                  description={invoice.description}
-                  date={invoice.date}
-                  amount={invoice.amount}
-                />
+            {analysisSummary && (
+              <div className="mt-5 border-l-4 border-utility-warning-500 bg-utility-warning-50 rounded-r-lg px-4 py-3">
+                <div className="text-xs font-semibold text-utility-warning-700 uppercase tracking-wider mb-1.5">
+                  Analysis Summary
+                </div>
+                <p className="text-sm text-secondary leading-relaxed">
+                  {analysisSummary}
+                </p>
               </div>
-            ))}
-          </CardLayout>
-          
-          <OriginalFileLink
-            filename={filename}
-            onClick={handleViewFile}
-          />
-          
-          {exportState === 'idle' ? (
-            <CardActions
-              type="success"
-              onPrimaryAction={handleExportClick}
-              isLoading={isExporting}
-            />
-          ) : (
-            <div className="mt-4 flex items-center gap-3">
-              {exportState === 'queued' && (
-                <button
-                  disabled
-                  className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2.5 text-sm font-semibold text-tertiary shadow-xs cursor-not-allowed"
-                >
-                  <RefreshCw05 className="size-4 animate-spin" />
-                  Queued
-                </button>
-              )}
-              
-              {exportState === 'exported' && (
-                <div className="flex items-center gap-2 text-success-primary">
-                  <CheckCircle className="size-5" />
-                  <span className="text-sm font-semibold">Export Successful</span>
-                </div>
-              )}
-              
-              {exportState === 'error' && (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-error-primary">
-                    <AlertTriangle className="size-5" />
-                    <span className="text-sm font-medium">{exportError || 'Export failed'}</span>
-                  </div>
-                  <button
-                    onClick={initiateExport}
-                    className="inline-flex items-center gap-2 rounded-lg border border-error bg-primary px-4 py-2.5 text-sm font-semibold text-error-primary shadow-xs hover:bg-error-50 transition-colors"
-                  >
-                    Retry Export
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+            
+            {detailedIssues && detailedIssues.length > 0 ? (
+              <IssueDetailsTable issues={detailedIssues} />
+            ) : issues && (
+              <AttentionList items={issues} />
+            )}
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderExportActions(true)}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
         {renderModals()}
       </>
     )
   }
 
-  // Exported State
+  // =============================================================================
+  // EXPORTED STATE
+  // =============================================================================
+  
   if (status === "exported") {
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={CheckCircle} iconColor="success">
-          <CardHeader
-            title={getCardTitle()}
-            badgeText="Exported"
-            badgeColor="success"
-            helperText="Successfully exported to AIM"
+      <CardContainer>
+        <CardHeaderSection>
+          <StatusBadge color="success">Exported</StatusBadge>
+          <InvoiceHeader 
+            title={invoice?.vendor || getCardTitle()} 
+            invoiceNumber={invoice?.invoiceNumber}
+            subtitle={invoice?.date}
+            description={invoice?.description}
+            amount={invoice?.amount}
           />
-          
-          {/* Show all invoice details */}
-          {invoices && invoices.map((invoice, index) => (
-            <div key={index} className={index > 0 ? "mt-4" : ""}>
-              <InvoiceDetails
-                description={invoice.description}
-                date={invoice.date}
-                amount={invoice.amount}
-              />
-            </div>
-          ))}
-        </CardLayout>
-        
-        <OriginalFileLink
-          filename={filename}
-          onClick={handleViewFile}
-        />
-      </div>
+          <StatusMessage variant="success">{getResultStatusText('exported')}</StatusMessage>
+        </CardHeaderSection>
+        <CardFooter>
+          <FileLink filename={filename} onClick={handleViewFile} />
+          <div />
+        </CardFooter>
+      </CardContainer>
     )
   }
 
-  // Processing Error State (prior to OCR - no data available)
-  // TODO: Review usage - may need to be updated or removed for new backend flow
+  // =============================================================================
+  // PROCESSING ERROR STATE
+  // =============================================================================
+  
   if (status === "processing-error") {
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={XCircle} iconColor="error">
-          <CardHeader
-            title={filename}
-            badgeText="Error Occurred"
-            badgeColor="error"
-            helperText={errorMessage || "Unable to process this file"}
-          />
-        </CardLayout>
-        
-        <OriginalFileLink
-          filename={filename}
-          onClick={handleViewFile}
-        />
-        
-        <CardActions
-          type="error"
-          onPrimaryAction={onRemove}
-          onSecondaryAction={onGetHelp}
-        />
-      </div>
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">Error Occurred</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <StatusMessage variant="error">
+              {errorMessage || getResultStatusText('processingError')}
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
-  // Duplicate File State
+  // =============================================================================
+  // DUPLICATE STATE
+  // =============================================================================
+  
   if (status === "duplicate") {
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={Copy01} iconColor="error">
-          <CardHeader
-            title={getCardTitle()}
-            badgeText="Duplicate"
-            badgeColor="error"
-            helperText={
-              duplicateInfo
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">Duplicate</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage variant="error">
+              {duplicateInfo
                 ? `Already uploaded as "${duplicateInfo.originalFilename}" on ${duplicateInfo.uploadedDate}`
-                : "This file has already been uploaded"
-            }
-          />
-          
-          {/* Show all invoice details */}
-          {invoices && invoices.map((invoice, index) => (
-            <div key={index} className={index > 0 ? "mt-4" : ""}>
-              <InvoiceDetails
-                description={invoice.description}
-                date={invoice.date}
-                amount={invoice.amount}
-              />
-            </div>
-          ))}
-        </CardLayout>
-        
-        <OriginalFileLink
-          filename={filename}
-          onClick={handleViewFile}
-        />
-        
-        <CardActions
-          type="error"
-          onPrimaryAction={onRemove}
-          onSecondaryAction={onGetHelp}
-        />
-      </div>
+                : getResultStatusText('duplicate')}
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
-  // Could Not Match State
-  // TODO: Review usage - backend now handles matching automatically, may need different handling
+  // =============================================================================
+  // NO MATCH STATE
+  // =============================================================================
+  
   if (status === "no-match") {
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={LinkBroken01} iconColor="error">
-          <CardHeader
-            title={getCardTitle()}
-            badgeText="No Match"
-            badgeColor="error"
-            helperText="Could not find matching PO in AIM"
-          />
-          
-          {/* Show all invoice details */}
-          {invoices && invoices.map((invoice, index) => (
-            <div key={index} className={index > 0 ? "mt-4" : ""}>
-              <InvoiceDetails
-                description={invoice.description}
-                date={invoice.date}
-                amount={invoice.amount}
-              />
-            </div>
-          ))}
-        </CardLayout>
-        
-        <OriginalFileLink
-          filename={filename}
-          onClick={handleViewFile}
-        />
-        
-        <CardActions
-          type="error"
-          onPrimaryAction={onRemove}
-          onSecondaryAction={onGetHelp}
-        />
-      </div>
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">No Match</StatusBadge>
+            <InvoiceHeader 
+              title={invoice?.vendor || getCardTitle()} 
+              invoiceNumber={invoice?.invoiceNumber}
+              subtitle={invoice?.date}
+              description={invoice?.description}
+              amount={invoice?.amount}
+            />
+            <StatusMessage variant="error">
+              {getResultStatusText('noMatch')}
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 
-  // Generic Error State (kept for backward compatibility)
+  // =============================================================================
+  // GENERIC ERROR STATE
+  // =============================================================================
+  
   if (status === "error") {
-    // Special handling for Attention/Error case
-    if (processingStatus === 'ERROR' && errorCode) {
-      return (
-        <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-          <CardLayout icon={XCircle} iconColor="error">
-            <CardHeader
-              title={filename}
-              badgeText={errorCode}
-              badgeColor="error"
-              helperText={errorMessage || "An error occurred during processing"}
-            />
-          </CardLayout>
-          
-          <OriginalFileLink
-            filename={filename}
-            onClick={handleViewFile}
-          />
-          
-          <CardActions
-            type="error"
-            onPrimaryAction={onRemove}
-            onSecondaryAction={onGetHelp}
-          />
-        </div>
-      )
-    }
-
+    const badgeText = (processingStatus === 'ERROR' && errorCode) ? errorCode : "Error Occurred"
+    
     return (
-      <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-        <CardLayout icon={XCircle} iconColor="error">
-          <CardHeader
-            title={filename}
-            badgeText="Error Occurred"
-            badgeColor="error"
-            helperText={errorMessage}
-          />
-        </CardLayout>
-        
-        <OriginalFileLink
-          filename={filename}
-          onClick={handleViewFile}
-        />
-        
-        <CardActions
-          type="error"
-          onPrimaryAction={onRemove}
-          onSecondaryAction={onGetHelp}
-        />
-      </div>
+      <>
+        <CardContainer>
+          <CardHeaderSection>
+            <StatusBadge color="error">{badgeText}</StatusBadge>
+            <InvoiceHeader 
+              title={filename} 
+              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+            />
+            <StatusMessage variant="error">
+              {errorMessage || getResultStatusText('error')}
+            </StatusMessage>
+          </CardHeaderSection>
+          <CardFooter>
+            <FileLink filename={filename} onClick={handleViewFile} />
+            <ActionButtons>{renderErrorActions()}</ActionButtons>
+          </CardFooter>
+        </CardContainer>
+        {renderModals()}
+      </>
     )
   }
 

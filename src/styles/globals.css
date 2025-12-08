@@ -123,3 +123,66 @@ input[type="number"] {
 input[type="search"]::-webkit-search-cancel-button {
     -webkit-appearance: none;
 }
+
+/* =============================================================================
+ * ANIMATED GRADIENT BORDER
+ * Professional snake effect using brand colors (Ledger Blue + Purple + Teal)
+ * Head: vibrant brand colors, Tail: fades to existing border color
+ * ============================================================================= */
+
+@keyframes gradient-rotate {
+    0% {
+        --gradient-angle: 0deg;
+    }
+    100% {
+        --gradient-angle: 360deg;
+    }
+}
+
+@property --gradient-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.animated-gradient-border {
+    position: relative;
+    isolation: isolate;
+}
+
+.animated-gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+        from var(--gradient-angle),
+        /* Head - Brand colors: Ledger Blue → Purple → Indigo → Teal */
+        var(--color-brand-600),      /* #1554C0 - Ledger Blue */
+        var(--color-brand-500),      /* Lighter blue */
+        var(--color-indigo-500),     /* Indigo transition */
+        var(--color-purple-500),     /* Purple accent */
+        var(--color-purple-600),     /* Deeper purple */
+        var(--color-indigo-600),     /* Back to indigo */
+        var(--color-brand-700),      /* Deep Ledger Blue */
+        var(--color-cyan-500),       /* Teal/Cyan accent */
+        var(--color-brand-400),      /* Lighter blue */
+        /* Tail - fade to border color */
+        var(--color-gray-300) 55%,
+        var(--color-gray-200) 70%,
+        var(--color-gray-200) 90%,
+        var(--color-brand-600)
+    );
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: gradient-rotate 3s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}

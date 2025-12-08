@@ -2,372 +2,253 @@
 
 ## Overview
 
-The `UploadStatusCard` has been refactored into a modular, component-based architecture for better maintainability, reusability, and flexibility. Each part of the card is now its own component that can be composed together based on the state and available data.
+The `UploadStatusCard` is a modular, component-based system for displaying invoice upload and processing states. It uses shared components for maximum reusability and consistency across all states.
 
-## Component Structure
+## Directory Structure
 
 ```
 upload-status/
 ├── components/
-│   ├── card-header.tsx          # Icon, title, badge, helper text, cancel button
-│   ├── card-progress.tsx        # Progress bar for in-progress states
-│   ├── invoice-details.tsx      # Invoice description, date, and amount
-│   ├── original-file-link.tsx   # Link to view the original file
-│   ├── attention-list.tsx       # Warning/issue list for attention states
-│   ├── card-actions.tsx         # Action buttons (Export/Cancel or Remove/Get Help)
-│   └── index.tsx                # Barrel export
-├── upload-status-card.tsx       # Main orchestrator component
-└── README.md                    # Usage documentation
+│   ├── shared.tsx              # Shared UI components (NEW)
+│   ├── card-layout.tsx         # Legacy layout component
+│   ├── card-header.tsx         # Legacy header component
+│   ├── card-progress.tsx       # Progress bar
+│   ├── invoice-details.tsx     # Legacy invoice details
+│   ├── original-file-link.tsx  # Legacy file link
+│   ├── attention-list.tsx      # Warning/issue list
+│   ├── card-actions.tsx        # Legacy action buttons
+│   ├── issue-details-table.tsx # Detailed issues table
+│   └── index.tsx               # Barrel exports
+├── modals/
+│   ├── contact-vendor-modal.tsx
+│   ├── delete-file-modal.tsx
+│   ├── export-with-issues-modal.tsx
+│   └── index.tsx
+├── fixtures.ts                 # Mock data & state configurations
+├── upload-status-card.tsx      # Main component
+├── COMPONENT_ARCHITECTURE.md   # This file
+├── FIXTURES_GUIDE.md           # Fixtures documentation
+├── QUICK_REFERENCE.md          # Quick reference
+└── README.md                   # Usage documentation
 ```
 
-## Individual Components
+## Shared Components (components/shared.tsx)
 
-### 1. CardHeader
+These components ensure visual consistency across all card states:
 
-**Purpose:** Displays the icon, title, badge, helper text, and optional cancel button.
+### CardContainer
 
-**Props:**
-```typescript
-interface CardHeaderProps {
-  icon: ComponentType<{ className?: string }>  // Icon component (File04, File06, CheckCircle, etc.)
-  iconColor: "brand" | "success" | "warning" | "error"  // Icon/FeaturedIcon color
-  title: string                                 // File name or "Invoice by [Vendor]"
-  badgeText: string                            // Badge label (Uploading, Processing, etc.)
-  badgeColor: "gray-blue" | "success" | "warning" | "error"  // Badge color
-  helperText?: string                          // Optional helper text (file size, status message)
-  showCancelButton?: boolean                   // Whether to show cancel/trash button
-  onCancel?: () => void                        // Cancel button click handler
-}
-```
+Wrapper for all card states with consistent styling.
 
-**Usage:**
 ```tsx
-<CardHeader
-  icon={File04}
-  iconColor="brand"
-  title="invoice-march-2024.pdf"
-  badgeText="Uploading"
-  badgeColor="gray-blue"
-  helperText="2 MB"
-  showCancelButton
-  onCancel={() => console.log('Cancelled')}
-/>
+<CardContainer>
+  {/* Card content */}
+</CardContainer>
 ```
 
----
+### CardHeaderSection
 
-### 2. CardProgress
+Container for the header content area.
 
-**Purpose:** Displays a progress bar for operations in progress.
-
-**Props:**
-```typescript
-interface CardProgressProps {
-  value: number      // Progress percentage (0-100)
-  show?: boolean     // Whether to show the progress bar (default: true)
-}
-```
-
-**Usage:**
 ```tsx
-<CardProgress value={75} />
-<CardProgress value={90} show={isProcessing} />
+<CardHeaderSection>
+  <StatusBadge color="success">Complete</StatusBadge>
+  <InvoiceHeader ... />
+</CardHeaderSection>
 ```
 
----
+### StatusBadge
 
-### 3. InvoiceDetails
+Badge displayed at the top of each card.
 
-**Purpose:** Displays invoice description, date, and amount.
-
-**Props:**
-```typescript
-interface InvoiceDetailsProps {
-  description: string  // Invoice description
-  date: string        // Invoice date
-  amount: string      // Invoice amount
-  show?: boolean      // Whether to show this section (default: true)
-}
-```
-
-**Usage:**
 ```tsx
-<InvoiceDetails
-  description="Fastener nuts assortment including SPAC HGLF Os, Lt, and SPL types"
-  date="Mar 15, 2024"
+<StatusBadge color="gray-blue">Processing</StatusBadge>
+<StatusBadge color="brand">Complete</StatusBadge>
+<StatusBadge color="success">Exported</StatusBadge>
+<StatusBadge color="warning">Needs Review</StatusBadge>
+<StatusBadge color="error">Error Occurred</StatusBadge>
+```
+
+### InvoiceHeader
+
+Displays vendor name, date, description, and amount.
+
+```tsx
+<InvoiceHeader 
+  title="Acme Corporation" 
+  subtitle="Mar 15, 2024"
+  description="Fastener nuts assortment"
   amount="$2,450.00"
-/>
-
-<InvoiceDetails
-  description={invoiceInfo?.description || ""}
-  date={invoiceInfo?.date || ""}
-  amount={invoiceInfo?.amount || ""}
-  show={!!invoiceInfo}
+  varianceInfo={{ amount: '$100.00', direction: 'over' }}
 />
 ```
 
----
+### StatusMessage
 
-### 4. OriginalFileLink
+Message displayed below invoice header.
 
-**Purpose:** Displays a clickable link to view the original file.
-
-**Props:**
-```typescript
-interface OriginalFileLinkProps {
-  filename: string      // Original filename
-  show?: boolean        // Whether to show this section (default: true)
-  onClick?: () => void  // Click handler
-}
-```
-
-**Usage:**
 ```tsx
-<OriginalFileLink
-  filename="invoice-march-2024.pdf"
-  onClick={() => window.open('/files/invoice-march-2024.pdf')}
-/>
+<StatusMessage>Processing...</StatusMessage>
+<StatusMessage variant="success">✓ Everything checks out</StatusMessage>
+<StatusMessage variant="error">Unable to process this file</StatusMessage>
+<StatusMessage variant="brand">✓ Everything checks out</StatusMessage>
 ```
 
----
+### CardFooter
 
-### 5. AttentionList
+Footer container for file link and action buttons.
 
-**Purpose:** Displays a list of warnings or issues with warning icons.
-
-**Props:**
-```typescript
-interface AttentionListProps {
-  items: string[]    // Array of warning/issue messages
-  show?: boolean     // Whether to show this section (default: true)
-}
-```
-
-**Usage:**
 ```tsx
-<AttentionList
-  items={[
-    "This invoice is 45 days old",
-    "No matching PO found in the system",
-    "Vendor address differs from records"
-  ]}
-/>
+<CardFooter>
+  <FileLink filename="invoice.pdf" onClick={handleViewFile} />
+  <ActionButtons>{/* buttons */}</ActionButtons>
+</CardFooter>
 ```
 
----
+### FileLink
 
-### 6. CardActions
+Clickable link to view the original file.
 
-**Purpose:** Displays action buttons appropriate for the card state.
-
-**Props:**
-```typescript
-interface CardActionsProps {
-  type: "success" | "error"           // Determines button styling and defaults
-  show?: boolean                      // Whether to show buttons (default: true)
-  onPrimaryAction?: () => void        // Primary button click handler
-  onSecondaryAction?: () => void      // Secondary button click handler
-  primaryLabel?: string               // Custom primary button label
-  secondaryLabel?: string             // Custom secondary button label
-}
-```
-
-**Defaults by Type:**
-- **success**: Primary = "Export" (primary color), Secondary = "Cancel" (secondary color)
-- **error**: Primary = "Remove" (destructive color), Secondary = "Get Help" (secondary color)
-
-**Usage:**
 ```tsx
-<CardActions
-  type="success"
-  onPrimaryAction={handleExport}
-  onSecondaryAction={handleCancel}
-/>
-
-<CardActions
-  type="error"
-  onPrimaryAction={handleRemove}
-  onSecondaryAction={handleGetHelp}
-  primaryLabel="Delete"
-  secondaryLabel="Contact Support"
-/>
+<FileLink filename="invoice-march-2024.pdf" onClick={handleViewFile} />
 ```
 
----
+### ActionButtons
 
-## Main Component: UploadStatusCard
+Container for action buttons.
 
-The main `UploadStatusCard` component orchestrates these sub-components based on the current status.
-
-### Props
-
-```typescript
-interface UploadStatusCardProps {
-  filename: string
-  status: "uploading" | "processing" | "connecting" | "success" | "success-with-caveats" | "error"
-  pageCount?: number
-  fileSize?: number
-  invoiceInfo?: {
-    vendor: string
-    date: string
-    daysAgo: number
-    amount: string
-    description: string
-  }
-  issues?: string[]
-  errorMessage?: string
-  onCancel?: () => void
-  onExport?: () => void
-  onRemove?: () => void
-  onGetHelp?: () => void
-  onViewFile?: () => void
-}
+```tsx
+<ActionButtons>
+  <Button>Cancel</Button>
+  <Button>Export</Button>
+</ActionButtons>
 ```
 
-### State Compositions
+## State Compositions
 
-Each state uses a different combination of components:
+Each state uses shared components consistently:
 
-#### Uploading State
-- ✅ CardHeader (File04 icon, brand color, cancel button)
-- ✅ CardProgress (50%)
+### Uploading
+- `StatusBadge` (gray-blue): "Uploading"
+- `InvoiceHeader`: filename, file size
+- `CardProgress`: 0%
+- Footer: Cancel button only
 
-#### Processing State
-- ✅ CardHeader (File04 icon, brand color, cancel button)
-- ✅ CardProgress (75%)
+### Processing
+- `StatusBadge` (gray-blue): "Processing"
+- `InvoiceHeader`: vendor, date, description, amount
+- `StatusMessage`: processing status
+- `CardProgress`: dynamic %
+- Footer: file link + Cancel button
 
-#### Connecting State
-- ✅ CardHeader (File06 icon, brand color, cancel button)
-- ✅ InvoiceDetails
-- ✅ OriginalFileLink
-- ✅ CardProgress (90%)
+### Connecting/Matching
+- `StatusBadge` (gray-blue): "Matching"
+- `InvoiceHeader`: vendor, date, description, amount
+- `StatusMessage`: "Checking with AIM Vision..."
+- `CardProgress`: dynamic %
+- Footer: file link + Cancel button
 
-#### Success State
-- ✅ CardHeader (CheckCircle icon, success color)
-- ✅ InvoiceDetails (conditional)
-- ✅ OriginalFileLink
-- ✅ CardActions (success type)
+### Success (Complete)
+- `StatusBadge` (brand/blue): "Complete"
+- `InvoiceHeader`: vendor, date, description, amount
+- `StatusMessage` (brand): "✓ Everything checks out"
+- Footer: file link + Cancel/Export buttons
 
-#### Success with Caveats State
-- ✅ CardHeader (AlertTriangle icon, warning color)
-- ✅ AttentionList
-- ✅ InvoiceDetails (conditional)
-- ✅ OriginalFileLink
-- ✅ CardActions (success type)
+### Success with Caveats (Needs Review)
+- `StatusBadge` (warning): "Needs Review"
+- `InvoiceHeader`: vendor, date, description, amount + variance
+- Analysis Summary (optional)
+- `IssueDetailsTable` or `AttentionList`
+- Footer: file link + Dropdown menu + Contact Vendor + Export
 
-#### Error State
-- ✅ CardHeader (XCircle icon, error color)
-- ✅ OriginalFileLink
-- ✅ CardActions (error type)
+### Exported
+- `StatusBadge` (success): "Exported"
+- `InvoiceHeader`: vendor, date, description, amount
+- `StatusMessage` (success): "✓ Successfully exported to AIM"
+- Footer: file link only
 
----
+### Error States (error, processing-error, duplicate, no-match)
+- `StatusBadge` (error): varies by state
+- `InvoiceHeader`: vendor/filename, date, description, amount
+- `StatusMessage` (error): error message
+- Footer: file link + Get Help + Remove buttons
 
-## Benefits of This Architecture
+## Mock Data System
 
-### 1. **Modularity**
-Each component has a single responsibility and can be tested independently.
+The component uses 3 consistent mock invoices across all states:
+
+| Invoice | Vendor | Amount | Used For |
+|---------|--------|--------|----------|
+| 1 | Acme Corporation | $2,450.00 | Standard flow (uploading → exported) |
+| 2 | RB&W Corporation of Canada | $31,371.22 | Success with caveats (has issues) |
+| 3 | Global Industrial Supplies | $847.50 | Error states |
+
+See `fixtures.ts` for full mock data definitions.
+
+## Benefits
+
+### 1. **Consistency**
+All states use the same shared components, ensuring visual uniformity.
 
 ### 2. **Reusability**
-Components can be used in other contexts beyond the UploadStatusCard.
+Shared components can be used independently or in new states.
 
 ### 3. **Maintainability**
-Changes to a specific section only require editing one component file.
+Changes to a shared component automatically update all states.
 
-### 4. **Flexibility**
-Easy to add new states or modify existing ones by composing components differently.
+### 4. **Type Safety**
+All components have TypeScript interfaces.
 
-### 5. **Type Safety**
-Each component has well-defined TypeScript interfaces.
+### 5. **Easy Testing**
+Shared components can be tested in isolation.
 
-### 6. **Conditional Rendering**
-Components have `show` props for easy conditional display without cluttering the parent.
+## Adding a New State
 
----
-
-## Example: Creating a Custom State
+1. Add status type to `UploadStatus` union
+2. Add fixture data to `fixtures.ts`
+3. Add state description to `stateDescriptions`
+4. Implement render logic using shared components:
 
 ```tsx
-// Custom "Validating" state
-if (status === "validating") {
+if (status === "new-state") {
   return (
-    <div className="bg-primary ring-1 ring-inset ring-secondary rounded-xl px-4 py-5 shadow-xs sm:p-6">
-      <CardHeader
-        icon={File06}
-        iconColor="brand"
-        title={`Invoice by ${invoiceInfo.vendor}`}
-        badgeText="Validating"
-        badgeColor="gray-blue"
-        helperText="Running validation checks..."
-      />
-      
-      <InvoiceDetails
-        description={invoiceInfo.description}
-        date={invoiceInfo.date}
-        amount={invoiceInfo.amount}
-      />
-      
-      <CardProgress value={60} />
-    </div>
+    <CardContainer>
+      <CardHeaderSection>
+        <StatusBadge color="brand">New State</StatusBadge>
+        <InvoiceHeader 
+          title={invoice?.vendor || getCardTitle()} 
+          subtitle={invoice?.date}
+          description={invoice?.description}
+          amount={invoice?.amount}
+        />
+        <StatusMessage>Status message here</StatusMessage>
+      </CardHeaderSection>
+      <CardFooter>
+        <FileLink filename={filename} onClick={handleViewFile} />
+        <ActionButtons>
+          {/* Action buttons */}
+        </ActionButtons>
+      </CardFooter>
+    </CardContainer>
   )
 }
 ```
 
----
-
-## Testing Strategy
-
-Each component can be tested independently:
-
-```tsx
-// Example: Testing CardHeader
-describe('CardHeader', () => {
-  it('renders with all props', () => {
-    render(
-      <CardHeader
-        icon={File04}
-        iconColor="brand"
-        title="test.pdf"
-        badgeText="Uploading"
-        badgeColor="gray-blue"
-        helperText="2 MB"
-        showCancelButton
-        onCancel={mockCancel}
-      />
-    )
-    
-    expect(screen.getByText('test.pdf')).toBeInTheDocument()
-    expect(screen.getByText('Uploading')).toBeInTheDocument()
-    expect(screen.getByText('2 MB')).toBeInTheDocument()
-  })
-})
-```
-
----
-
 ## Migration Notes
 
-The refactored component maintains the same external API as the original monolithic version, so existing usage remains unchanged:
+The refactored component maintains backward compatibility. Existing usage remains unchanged:
 
 ```tsx
-// This still works exactly the same
 <UploadStatusCard
-  filename="invoice-march-2024.pdf"
+  filename="invoice.pdf"
   status="success"
-  invoiceInfo={{
+  invoices={[{
     vendor: "Acme Corporation",
     date: "Mar 15, 2024",
     daysAgo: 5,
     amount: "$2,450.00",
     description: "Office supplies"
-  }}
+  }]}
+  onExport={handleExport}
 />
 ```
-
-The only difference is the internal implementation is now modular and maintainable.
-
-
-
-
-
-
-

@@ -8,6 +8,7 @@ import FilesPage from './pages/FilesPage';
 import InvoicesPage from './pages/InvoicesPage';
 import Home2Page from './pages/Home2Page';
 import UploadStatusDemoPage from './pages/UploadStatusDemoPage';
+import MockHomePage from './pages/MockHomePage';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import { getToken, validateToken, logout } from './services/auth-service';
@@ -103,6 +104,7 @@ function App() {
             <Route path="/files" element={<FilesPage />} />
             <Route path="/invoices" element={<InvoicesPage />} />
             <Route path="/upload-status-demo" element={<UploadStatusDemoPage />} />
+            <Route path="/mock-home" element={<MockHomePage />} />
           </Route>
           
           {/* Unknown routes -> Login */}

@@ -325,30 +325,30 @@ export function UploadStatusCard({
         <>
           {showContactVendor && (
             <>
-              <Dropdown.Root>
-                <Button size="md" color="secondary" iconLeading={DotsVertical} />
-                <Dropdown.Popover>
-                  <Dropdown.Menu>
-                    <Dropdown.Item 
-                      icon={RefreshCw05}
-                      label="Reprocess"
-                      onAction={() => openCrispChat(`I'd like to request a reprocess for file "${filename}". The problem is [enter details here]`)}
-                    />
-                    <Dropdown.Item 
-                      icon={Trash01}
-                      label="Remove"
-                      onAction={() => setShowCancelModal(true)}
-                    />
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown.Root>
-              <Button 
+              {/* <Button 
                 size="md" 
                 color="secondary"
                 iconLeading={Mail01}
                 onClick={() => setShowContactVendorModal(true)}
               >
                 Contact Vendor
+              </Button> */}
+
+              <Button 
+                size="md" 
+                color="secondary" 
+                iconLeading={RefreshCw05} 
+                onClick={() => openCrispChat(`I'd like to request a reprocess for file "${filename}". The problem is [enter details here]`)}
+              >
+                Reprocess
+              </Button>
+              <Button 
+                size="md" 
+                color="secondary"
+                iconLeading={Trash01}
+                onClick={() => setShowCancelModal(true)}
+              >
+                Remove
               </Button>
             </>
           )}

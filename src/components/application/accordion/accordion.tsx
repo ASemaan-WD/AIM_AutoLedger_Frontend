@@ -85,6 +85,19 @@ function AccordionRoot({
     return new Set()
   })
 
+  // Force update trigger to ensure UI reflects registered items
+  const [, forceUpdate] = useState({})
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Track all registered item IDs and their content counts
   const registeredItemsRef = useRef<Set<string>>(new Set())
   const previousItemsRef = useRef<Set<string>>(new Set())
@@ -108,7 +121,17 @@ function AccordionRoot({
   // Register an item and auto-expand if it's new or has new content
   const registerItem = useCallback((id: string, itemCount?: number) => {
     const isNewItem = !registeredItemsRef.current.has(id)
-    registeredItemsRef.current.add(id)
+    if (isNewItem) {
+      registeredItemsRef.current.add(id)
+      // Batch updates to handle initial render of multiple items efficiently
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current)
+      }
+      updateTimeoutRef.current = setTimeout(() => {
+        forceUpdate({})
+        updateTimeoutRef.current = null
+      }, 100)
+    }
     
     // Track item count and detect if new content was added
     const previousCount = itemCountsRef.current.get(id) ?? 0

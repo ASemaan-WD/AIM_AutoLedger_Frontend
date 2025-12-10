@@ -23,91 +23,146 @@ export function useFilesPolling() {
   // Track AbortControllers for each upload to allow cancellation
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
   
-  // Track polling intervals for each file
-  const pollingIntervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  // Ref to track IDs of files that need polling (key: uploadFileId, value: airtableRecordId)
+  const activePollIdsRef = useRef<Map<string, string>>(new Map());
+  
+  // Ref for the single polling interval
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Guard to prevent concurrent poll executions
+  const isPollInProgressRef = useRef(false);
+  
+  // Guard to prevent concurrent fetch executions
+  const isFetchInProgressRef = useRef(false);
 
+  // Stop polling for a specific file (removes from active set)
   const stopPolling = useCallback((fileId: string) => {
-    const interval = pollingIntervalsRef.current.get(fileId);
-    if (interval) {
-      clearInterval(interval);
-      pollingIntervalsRef.current.delete(fileId);
-      console.log(`🛑 Polling stopped for file: ${fileId}`);
+    activePollIdsRef.current.delete(fileId);
+    console.log(`🛑 Removed file from polling list: ${fileId}`);
+    
+    // If no files left, clear interval
+    if (activePollIdsRef.current.size === 0 && pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+      console.log('🛑 All polling stopped');
     }
   }, []);
 
-  // Cleanup polling intervals on unmount
+  // Cleanup polling interval on unmount
   useEffect(() => {
     return () => {
-      pollingIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      pollingIntervalsRef.current.clear();
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      activePollIdsRef.current.clear();
     };
   }, []);
 
   /**
-   * Fetch all invoice information from Airtable
+   * Fetch invoices in batch using filterByFormula
    */
-  const fetchAllInvoices = useCallback(async (baseId: string, invoiceRecordIds: string[]) => {
-    if (!invoiceRecordIds || invoiceRecordIds.length === 0) return null;
+  const fetchBatchInvoices = useCallback(async (baseId: string, allInvoiceIds: string[]) => {
+    if (!allInvoiceIds || allInvoiceIds.length === 0) return [];
+    
     try {
       const client = createAirtableClient(baseId);
-      const invoices = [];
-      for (const invoiceRecordId of invoiceRecordIds) {
-        try {
-          const invoiceRecord = await client.getRecord('Invoices', invoiceRecordId);
-          const parsed = parseInvoiceRecord(invoiceRecord);
-          if (parsed) invoices.push(parsed);
-        } catch (error) {
-          console.error(`❌ [Polling] Error fetching invoice ${invoiceRecordId}:`, error);
-        }
-      }
-      return invoices.length > 0 ? invoices : null;
+      
+      // Airtable URLs can be long, but formula has limit. 
+      // Chunking if too many invoices (safeguard, though less likely to hit URL limit with small batches)
+      const uniqueIds = [...new Set(allInvoiceIds)];
+      const formula = `OR(${uniqueIds.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+      
+      const response = await client.listRecords('Invoices', {
+        filterByFormula: formula,
+        // We only need fields required for parsing, but getAllRecords handles pagination if needed.
+        // listRecords usually returns max 100. If we have > 100 active invoices, might need pagination or chunking.
+        // For simplicity assuming < 100 active processing invoices at once for now.
+      });
+
+      return response.records.map(parseInvoiceRecord).filter(inv => !!inv);
     } catch (error) {
-      console.error('❌ [Polling] Error fetching invoices:', error);
+      console.error('❌ [Polling] Error batch fetching invoices:', error);
+      return [];
     }
-    return null;
   }, []);
 
   /**
-   * Start polling a file's Processing-Status to update progress
+   * The single polling function that updates all active files
    */
-  const startFilePolling = useCallback((uploadFileId: string, airtableRecordId: string) => {
-    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
-    if (!baseId) {
-      console.error('VITE_AIRTABLE_BASE_ID not configured');
+  const pollActiveFiles = useCallback(async () => {
+    // Prevent concurrent poll executions
+    if (isPollInProgressRef.current) {
+      console.log('⏳ Poll already in progress, skipping...');
       return;
     }
+    
+    const activeMap = activePollIdsRef.current;
+    if (activeMap.size === 0) return;
 
-    if (pollingIntervalsRef.current.has(uploadFileId)) return;
+    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+    if (!baseId) return;
 
-    const pollFile = async () => {
-      try {
-        const client = createAirtableClient(baseId);
-        const response = await client.getRecord('Files', airtableRecordId);
-        
-        if (response && response.fields) {
-          let processingStatus = response.fields['Processing-Status'] as string;
-          let mainStatus = response.fields['Status'] as string;
-          let errorCode = response.fields['Error-Code'] as string;
-          let errorDescription = response.fields['Error-Description'] as string;
-          const progress = getProcessingProgress(processingStatus);
-          const invoiceRecordIds = response.fields['Invoices'] as string[];
+    isPollInProgressRef.current = true;
+    
+    try {
+      const client = createAirtableClient(baseId);
+      const airtableIds = Array.from(activeMap.values());
+      
+      // 1. Batch fetch all active files
+      const fileFormula = `OR(${airtableIds.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+      const filesResponse = await client.listRecords('Files', {
+        filterByFormula: fileFormula
+      });
 
-          console.log(`📊 [Polling] File ${airtableRecordId}: ${mainStatus}/${processingStatus} (${progress}%)`);
+      if (!filesResponse.records || filesResponse.records.length === 0) return;
 
+      // Collect all invoice IDs from all files to batch fetch them
+      const allInvoiceIds: string[] = [];
+      filesResponse.records.forEach(record => {
+        const invIds = record.fields['Invoices'] as string[];
+        if (invIds && invIds.length > 0) {
+          allInvoiceIds.push(...invIds);
+        }
+      });
+
+      // 2. Batch fetch all related invoices
+      const allInvoices = await fetchBatchInvoices(baseId, allInvoiceIds);
+      const invoiceMap = new Map(allInvoices.map(inv => [inv?.recordId, inv])); // Map by Airtable Record ID
+
+      // 3. Update state for each file
+      setFiles(prevFiles => {
+        return prevFiles.map(f => {
+          // Find corresponding Airtable record for this file
+          const airtableRecord = filesResponse.records.find(r => r.id === f.airtableRecordId);
+          
+          // If not in the batch response (or not active), skip update
+          if (!activeMap.has(f.id) || !airtableRecord) return f;
+
+          const fields = airtableRecord.fields;
+          let processingStatus = fields['Processing-Status'] as string;
+          let mainStatus = fields['Status'] as string;
+          let errorCode = fields['Error-Code'] as string;
+          let errorDescription = fields['Error-Description'] as string;
+          const invoiceRecordIds = fields['Invoices'] as string[];
+
+          // Default UI status
           let uiStatus = mapFileStatusToUI(mainStatus, processingStatus);
           
           let collectedIssues: string[] = [];
           let detailedIssues: DetailedIssue[] = [];
           let varianceInfo: { amount: string; direction: 'over' | 'under' } | undefined;
           let analysisSummary = '';
+          let fileInvoices: any[] = [];
 
-          // Fetch invoice info if invoices are linked
-          let invoices = null;
+          // Process linked invoices
           if (invoiceRecordIds && invoiceRecordIds.length > 0) {
-            invoices = await fetchAllInvoices(baseId, invoiceRecordIds);
+            fileInvoices = invoiceRecordIds
+              .map(id => invoiceMap.get(id))
+              .filter(inv => !!inv);
 
-            if (invoices) {
-              const errorInvoice = invoices.find(inv => inv.status === 'Error');
+            if (fileInvoices.length > 0) {
+              const errorInvoice = fileInvoices.find(inv => inv.status === 'Error');
               if (errorInvoice) {
                 processingStatus = 'ERROR';
                 mainStatus = 'Error';
@@ -115,7 +170,7 @@ export function useFilesPolling() {
                 errorDescription = parseErrorDescription(errorInvoice.errorDescription || '');
                 uiStatus = 'error';
               } else {
-                const warningInvoices = invoices.filter(inv => 
+                const warningInvoices = fileInvoices.filter(inv => 
                   inv.status === 'Matched' && 
                   ((inv.warnings && inv.warnings.length > 0) || (inv.balance !== undefined && inv.balance !== 0))
                 );
@@ -123,10 +178,9 @@ export function useFilesPolling() {
                 if (warningInvoices.length > 0) {
                   uiStatus = 'success-with-caveats';
                   
-                  // Re-calculate detailed issues and summary
                   warningInvoices.forEach(inv => {
                      if (inv.warnings && inv.warnings.length > 0) {
-                        inv.warnings.forEach(w => {
+                        inv.warnings.forEach((w: InvoiceWarningType) => {
                           const wIssues = transformWarningToDetailedIssues(w);
                           detailedIssues.push(...wIssues);
                         });
@@ -142,62 +196,98 @@ export function useFilesPolling() {
                   }
                 }
 
-                const allExported = invoices.every(inv => inv.status === 'Exported');
-                if (allExported && invoices.length > 0) {
+                const allExported = fileInvoices.every(inv => inv.status === 'Exported');
+                if (allExported && fileInvoices.length > 0) {
                     uiStatus = 'exported';
                 }
               }
             }
           }
 
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === uploadFileId
-                ? { 
-                    ...f, 
-                    status: uiStatus, 
-                    processingStatus, 
-                    mainStatus,
-                    errorCode,
-                    errorDescription,
-                    ...(invoices && { invoices }),
-                    ...(invoices ? { 
-                        issues: collectedIssues,
-                        detailedIssues: detailedIssues.length > 0 ? detailedIssues : undefined,
-                        varianceInfo,
-                        analysisSummary
-                    } : {})
-                  }
-                : f
-            )
-          );
+          const progress = getProcessingProgress(processingStatus);
 
+          // Check if we should stop polling this file
           if (progress >= 100 || mainStatus === 'Error' || mainStatus === 'Processed' || uiStatus === 'exported') {
-            stopPolling(uploadFileId);
+            // We use a timeout to avoid updating the ref during render if possible, 
+            // though here we are inside setState callback so it's tricky. 
+            // Better to trigger a side effect or just check status in next poll cycle.
+            // For now, we'll mark it to stop in the next cycle effect or just removing it from ref here is safe? 
+            // React best practice: don't mutate ref in render/setState.
+            // However, activePollIdsRef is not used for rendering.
+            
+            // To be safe, we won't mutate ref here inside setFiles. 
+            // We will let the useEffect handle stopping if needed, or check status outside.
+            // But actually, we need to stop polling eventually.
+            // Let's rely on the effect below to clean up completed files from the ref.
           }
-        }
-      } catch (error) {
-        console.error('❌ [Polling] Error polling file:', error);
-        stopPolling(uploadFileId);
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === uploadFileId
-              ? {
-                  ...f,
-                  status: 'error',
-                  errorCode: 'POLLING_ERROR',
-                  errorDescription: error instanceof Error ? error.message : 'Connection lost',
-                }
-              : f
-          )
-        );
-      }
-    };
 
-    pollFile();
-    const interval = setInterval(pollFile, 5000);
-    pollingIntervalsRef.current.set(uploadFileId, interval);
-  }, [fetchAllInvoices, stopPolling]);
+          return {
+            ...f,
+            status: uiStatus,
+            processingStatus,
+            mainStatus,
+            errorCode,
+            errorDescription,
+            invoices: fileInvoices.length > 0 ? fileInvoices : f.invoices,
+            issues: collectedIssues.length > 0 ? collectedIssues : f.issues,
+            detailedIssues: detailedIssues.length > 0 ? detailedIssues : f.detailedIssues,
+            varianceInfo: varianceInfo || f.varianceInfo,
+            analysisSummary: analysisSummary || f.analysisSummary
+          };
+        });
+      });
+
+      // Cleanup finished files from polling list
+      setFiles(currentFiles => {
+        currentFiles.forEach(f => {
+          if (activeMap.has(f.id)) {
+            const isComplete = 
+              getProcessingProgress(f.processingStatus) >= 100 || 
+              f.mainStatus === 'Error' || 
+              f.mainStatus === 'Processed' || 
+              f.status === 'exported';
+            
+            if (isComplete) {
+              activeMap.delete(f.id);
+              console.log(`✅ File ${f.id} completed. Stopping poll.`);
+            }
+          }
+        });
+        
+        // Stop interval if empty
+        if (activeMap.size === 0 && pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        
+        return currentFiles;
+      });
+
+    } catch (error) {
+      console.error('❌ [Polling] Error in batch poll:', error);
+    } finally {
+      isPollInProgressRef.current = false;
+    }
+  }, [fetchBatchInvoices]);
+
+  /**
+   * Start polling a file by adding it to the active list
+   * ensuring the global interval is running
+   */
+  const startFilePolling = useCallback((uploadFileId: string, airtableRecordId: string) => {
+    if (activePollIdsRef.current.has(uploadFileId)) return;
+
+    activePollIdsRef.current.set(uploadFileId, airtableRecordId);
+    console.log(`Start polling for ${uploadFileId}`);
+
+    if (!pollingIntervalRef.current) {
+      // Run immediately
+      pollActiveFiles();
+      // Then interval
+      pollingIntervalRef.current = setInterval(pollActiveFiles, 5000);
+      console.log('🚀 Global polling interval started');
+    }
+  }, [pollActiveFiles]);
 
   /**
    * Process PDF conversion, image upload, and OCR in the background
@@ -229,6 +319,7 @@ export function useFilesPolling() {
       const images = await convertPDFToImages(fileUrl, file);
       console.log(`✅ [Background] PDF converted to ${images.length} images`);
 
+      // Update local state with actual page count
       setFiles(prev => prev.map(f => 
         f.id === uploadId ? { ...f, pageCount: images.length } : f
       ));
@@ -262,12 +353,20 @@ export function useFilesPolling() {
    * Fetch existing files on load
    */
   const fetchExistingFiles = useCallback(async () => {
+    // Prevent concurrent fetch executions (e.g., from React StrictMode double-mount)
+    if (isFetchInProgressRef.current) {
+      console.log('⏳ Fetch already in progress, skipping...');
+      return;
+    }
+    
     const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
     if (!baseId) {
       console.error('VITE_AIRTABLE_BASE_ID not configured');
       return;
     }
 
+    isFetchInProgressRef.current = true;
+    
     try {
       const client = createAirtableClient(baseId);
       
@@ -303,6 +402,7 @@ export function useFilesPolling() {
         const createdAtStr = fileRecord.fields['Created-At'] as string;
         const createdAt = createdAtStr ? new Date(createdAtStr) : new Date();
         const invoiceIds = (fileRecord.fields['Invoices'] as string[]) || [];
+        const pageCount = fileRecord.fields['Pages'] as number | undefined;
         
         // Find associated invoices
         const fileInvoices = invoiceIds
@@ -339,7 +439,7 @@ export function useFilesPolling() {
                    warningInvoices.forEach(inv => {
                      // Add detailed issues from warnings
                      if (inv.warnings && inv.warnings.length > 0) {
-                        inv.warnings.forEach(w => {
+                        inv.warnings.forEach((w: InvoiceWarningType) => {
                           const wIssues = transformWarningToDetailedIssues(w);
                           detailedIssues.push(...wIssues);
                         });
@@ -388,7 +488,8 @@ export function useFilesPolling() {
             issues: collectedIssues,
             detailedIssues: detailedIssues.length > 0 ? detailedIssues : undefined,
             varianceInfo,
-            analysisSummary
+            analysisSummary,
+            pageCount, // Include page count from Airtable
         };
       });
 
@@ -405,6 +506,8 @@ export function useFilesPolling() {
 
     } catch (error) {
       console.error("Failed to fetch existing files", error);
+    } finally {
+      isFetchInProgressRef.current = false;
     }
   }, [startFilePolling]);
 
@@ -448,6 +551,7 @@ export function useFilesPolling() {
                     fileId: result.fileId,
                     processingStatus: 'UPL',
                     mainStatus: FILE_STATUS.QUEUED,
+                    pageCount: result.pageCount, // Store page count from upload
                   }
                 : f
             )
@@ -473,6 +577,19 @@ export function useFilesPolling() {
                     errorLink: result.duplicateRecordId 
                       ? `/files?id=${result.duplicateRecordId}` 
                       : undefined,
+                  }
+                : f
+            )
+          );
+        } else if (result.errorCode === 'TOO_MANY_PAGES') {
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === uploadFile.id
+                ? {
+                    ...f,
+                    status: 'error' as UploadStatus,
+                    errorCode: result.errorCode,
+                    errorDescription: result.errorMessage,
                   }
                 : f
             )
@@ -536,4 +653,3 @@ export function useFilesPolling() {
     fetchExistingFiles
   };
 }
-

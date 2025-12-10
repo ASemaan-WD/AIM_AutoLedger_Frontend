@@ -2,7 +2,7 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-12-08T13:59:23.681Z
+ * Generated: 2025-12-10T20:30:19.010Z
  * Base ID: appuCyekfNZBULRYT
  * 
  * DO NOT EDIT MANUALLY
@@ -19,6 +19,7 @@ export const FIELD_IDS = {
     FILEURL: 'fldxdxWbvC9KDHee7',
     FILEHASH: 'fldAkFbKnjYLzQJqS',
     FILENAME: 'fld7E1dvgRISwW0Pt',
+    PAGES: 'fldQy3FJyx6mqMKOi',
     UPLOADEDDATE: 'fldX1faf1UWuRF2p3',
     STATUS: 'fldV1n0WIjvaQVFjz',
     PARSEDAT: 'fldbB5yMnHs6fITao',
@@ -277,6 +278,7 @@ export const FIELD_NAMES = {
     FILEURL: 'FileURL',
     FILEHASH: 'FileHash',
     FILENAME: 'FileName',
+    PAGES: 'Pages',
     UPLOADEDDATE: 'UploadedDate',
     STATUS: 'Status',
     PARSEDAT: 'ParsedAt',
@@ -581,6 +583,7 @@ export interface FilesRecord {
     FileURL?: string;
     FileHash?: string;
     FileName?: string;
+    Pages?: number;
     UploadedDate?: string;
     Status?: 'Queued' | 'Processing' | 'Processed' | 'Attention';
     ParsedAt?: string;

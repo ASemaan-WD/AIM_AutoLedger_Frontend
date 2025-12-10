@@ -11,6 +11,7 @@ import { uploadToBlob } from '@/lib/vercel-blob';
 import { createRecords } from './airtable-service';
 import { generateArrayBufferHash } from '@/utils/file-hash';
 import { checkFileHashDuplicate } from '@/lib/duplicate-detection';
+import { validatePageCount, MAX_PDF_PAGES } from '@/utils/file-validation';
 
 export interface UploadResponse {
   success: boolean;
@@ -21,6 +22,7 @@ export interface UploadResponse {
   fileId?: number; // Numeric FileID from Airtable
   airtableRecordId?: string; // Airtable record ID (recXXXX)
   ocrJobId?: number; // OCR job ID returned from backend
+  pageCount?: number; // Number of pages in the document
   error?: string;
   errorCode?: string;
   errorMessage?: string;
@@ -77,6 +79,21 @@ export async function uploadFile(file: File, signal?: AbortSignal): Promise<Uplo
     }
     console.log('✅ No duplicates found');
 
+    // Step 2.5: Validate page count (max 30 pages for PDFs)
+    console.log('📄 Step 2.5: Validating page count...');
+    const pageCountResult = await validatePageCount(file, MAX_PDF_PAGES);
+    if (!pageCountResult.isValid) {
+      console.warn('⚠️  Page count validation failed:', pageCountResult.errorMessage);
+      return {
+        success: false,
+        error: 'Too many pages',
+        errorCode: 'TOO_MANY_PAGES',
+        errorMessage: pageCountResult.errorMessage || `File exceeds maximum of ${MAX_PDF_PAGES} pages`,
+      };
+    }
+    const pageCount = pageCountResult.pageCount || 1;
+    console.log(`✅ Page count valid: ${pageCount} pages`);
+
     // Step 3: Upload to Vercel Blob
     console.log('📤 Step 3: Uploading to Vercel Blob...');
     // Pass just the filename - uploadToBlob will add timestamp and random suffix
@@ -97,6 +114,7 @@ export async function uploadFile(file: File, signal?: AbortSignal): Promise<Uplo
           'Status': 'Queued',
           'Processing-Status': 'UPL',
           'UploadedDate': new Date().toISOString().split('T')[0],
+          'Pages': pageCount, // Store the page count
           'Attachments': [
             {
               url: blobResult.url,
@@ -150,6 +168,7 @@ export async function uploadFile(file: File, signal?: AbortSignal): Promise<Uplo
       type: file.type,
       fileId,
       airtableRecordId: createdRecord.id,
+      pageCount, // Include page count in response
     };
 
   } catch (error) {

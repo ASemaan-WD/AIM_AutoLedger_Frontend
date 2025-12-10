@@ -2,10 +2,21 @@
  * File validation utilities
  */
 
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker (same as pdf-converter.ts)
+if (typeof pdfjsLib !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+}
+
+// Maximum allowed pages for PDF files
+export const MAX_PDF_PAGES = 30;
+
 export interface FileValidationResult {
   isValid: boolean;
-  errorCode?: 'UNSUPPORTED_FORMAT' | 'FILE_TOO_LARGE' | 'PDF_CORRUPTED';
+  errorCode?: 'UNSUPPORTED_FORMAT' | 'FILE_TOO_LARGE' | 'PDF_CORRUPTED' | 'TOO_MANY_PAGES';
   errorMessage?: string;
+  pageCount?: number;
 }
 
 // Supported file types and their MIME types
@@ -131,7 +142,73 @@ export async function validatePDFIntegrity(file: File): Promise<FileValidationRe
 }
 
 /**
- * Comprehensive file validation
+ * Get the page count of a PDF file
+ * Uses PDF.js to load the document and count pages
+ * 
+ * @param file - PDF file to check
+ * @returns Promise<number> - Number of pages, or 1 for non-PDF files
+ */
+export async function getPDFPageCount(file: File): Promise<number> {
+  // For images, always return 1 page
+  if (file.type.startsWith('image/')) {
+    return 1;
+  }
+
+  // Only process PDFs
+  if (file.type !== 'application/pdf') {
+    return 1;
+  }
+
+  try {
+    // Read file as ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Load PDF document
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    
+    const pageCount = pdf.numPages;
+    console.log(`📄 PDF page count: ${pageCount} pages`);
+    
+    return pageCount;
+  } catch (error) {
+    console.error('Error counting PDF pages:', error);
+    // If we can't count pages, assume it's valid to avoid blocking uploads
+    // The actual conversion will catch any real PDF issues
+    return 1;
+  }
+}
+
+/**
+ * Validate that a file doesn't exceed the maximum page count
+ * 
+ * @param file - File to validate
+ * @param maxPages - Maximum allowed pages (default: 30)
+ * @returns FileValidationResult with pageCount included
+ */
+export async function validatePageCount(
+  file: File, 
+  maxPages: number = MAX_PDF_PAGES
+): Promise<FileValidationResult> {
+  const pageCount = await getPDFPageCount(file);
+  
+  if (pageCount > maxPages) {
+    return {
+      isValid: false,
+      errorCode: 'TOO_MANY_PAGES',
+      errorMessage: `File has ${pageCount} pages, which exceeds the maximum allowed of ${maxPages} pages`,
+      pageCount
+    };
+  }
+  
+  return { 
+    isValid: true,
+    pageCount
+  };
+}
+
+/**
+ * Comprehensive file validation (without page count check)
  */
 export async function validateFile(file: File): Promise<FileValidationResult> {
   // Check format
@@ -155,6 +232,29 @@ export async function validateFile(file: File): Promise<FileValidationResult> {
   }
   
   return { isValid: true };
+}
+
+/**
+ * Comprehensive file validation including page count check
+ * Use this before uploading files to ensure they meet all requirements
+ */
+export async function validateFileWithPageCount(file: File): Promise<FileValidationResult> {
+  // First run standard validations
+  const basicResult = await validateFile(file);
+  if (!basicResult.isValid) {
+    return basicResult;
+  }
+  
+  // Then check page count for PDFs
+  const pageCountResult = await validatePageCount(file);
+  if (!pageCountResult.isValid) {
+    return pageCountResult;
+  }
+  
+  return { 
+    isValid: true,
+    pageCount: pageCountResult.pageCount
+  };
 }
 
 

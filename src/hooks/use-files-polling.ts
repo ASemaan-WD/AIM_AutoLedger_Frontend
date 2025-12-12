@@ -26,6 +26,12 @@ export function useFilesPolling() {
   // Ref to track IDs of files that need polling (key: uploadFileId, value: airtableRecordId)
   const activePollIdsRef = useRef<Map<string, string>>(new Map());
   
+  // Ref to track consecutive error counts for each file (key: uploadFileId, value: error count)
+  const errorCountRef = useRef<Map<string, number>>(new Map());
+  
+  // Number of consecutive error polls before stopping
+  const ERROR_POLL_THRESHOLD = 6;
+  
   // Ref for the single polling interval
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -38,6 +44,7 @@ export function useFilesPolling() {
   // Stop polling for a specific file (removes from active set)
   const stopPolling = useCallback((fileId: string) => {
     activePollIdsRef.current.delete(fileId);
+    errorCountRef.current.delete(fileId); // Clean up error count
     console.log(`🛑 Removed file from polling list: ${fileId}`);
     
     // If no files left, clear interval
@@ -56,6 +63,7 @@ export function useFilesPolling() {
         pollingIntervalRef.current = null;
       }
       activePollIdsRef.current.clear();
+      errorCountRef.current.clear();
     };
   }, []);
 
@@ -241,15 +249,53 @@ export function useFilesPolling() {
       setFiles(currentFiles => {
         currentFiles.forEach(f => {
           if (activeMap.has(f.id)) {
-            const isComplete = 
-              getProcessingProgress(f.processingStatus) >= 100 || 
-              f.mainStatus === 'Error' || 
-              f.mainStatus === 'Processed' || 
-              f.status === 'exported';
+            const isError = f.mainStatus === 'Error' || f.status === 'error';
             
-            if (isComplete) {
+            // Check if all invoices are in a final state (Matched, Exported, or Error)
+            // This handles files with multiple invoices - continue polling until ALL are complete
+            const invoices = f.invoices || [];
+            const finalInvoiceStatuses = ['Matched', 'Exported', 'Error'];
+            const allInvoicesComplete = invoices.length > 0 
+              ? invoices.every(inv => finalInvoiceStatuses.includes(inv.status))
+              : false;
+            
+            // For files with invoices: only stop when all invoices are in final state
+            // For files without invoices yet: use file-level status
+            const isSuccessComplete = invoices.length > 0
+              ? (allInvoicesComplete && !isError) || f.status === 'exported'
+              : (getProcessingProgress(f.processingStatus) >= 100 || f.mainStatus === 'Processed' || f.status === 'exported');
+            
+            if (isError) {
+              // Track consecutive error occurrences
+              const currentCount = errorCountRef.current.get(f.id) || 0;
+              const newCount = currentCount + 1;
+              errorCountRef.current.set(f.id, newCount);
+              
+              console.log(`⚠️ File ${f.id} has error (${newCount}/${ERROR_POLL_THRESHOLD} polls)`);
+              
+              // Only stop polling after ERROR_POLL_THRESHOLD consecutive errors
+              if (newCount >= ERROR_POLL_THRESHOLD) {
+                activeMap.delete(f.id);
+                errorCountRef.current.delete(f.id);
+                console.log(`🛑 File ${f.id} error persisted for ${ERROR_POLL_THRESHOLD} polls. Stopping poll.`);
+              }
+            } else if (isSuccessComplete) {
+              // Success - stop polling and clear error count
               activeMap.delete(f.id);
-              console.log(`✅ File ${f.id} completed. Stopping poll.`);
+              errorCountRef.current.delete(f.id);
+              const completedCount = invoices.filter(inv => finalInvoiceStatuses.includes(inv.status)).length;
+              console.log(`✅ File ${f.id} completed successfully (${completedCount}/${invoices.length} invoices). Stopping poll.`);
+            } else {
+              // Not an error and not complete - reset error count (status recovered)
+              if (errorCountRef.current.has(f.id)) {
+                console.log(`✅ File ${f.id} recovered from error state`);
+                errorCountRef.current.delete(f.id);
+              }
+              // Log progress for files with multiple invoices
+              if (invoices.length > 1) {
+                const completedCount = invoices.filter(inv => finalInvoiceStatuses.includes(inv.status)).length;
+                console.log(`📊 File ${f.id}: ${completedCount}/${invoices.length} invoices complete, continuing poll...`);
+              }
             }
           }
         });

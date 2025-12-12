@@ -656,15 +656,28 @@ export function UploadStatusCard({
   // =============================================================================
   
   if (status === "processing-error") {
+    // Show invoice details if available, otherwise show filename
+    const hasInvoiceDetails = invoice?.vendor || invoice?.invoiceNumber;
+    
     return (
       <>
         <CardContainer>
           <CardHeaderSection>
             <StatusBadge color="error">Error Occurred</StatusBadge>
-            <InvoiceHeader 
-              title={filename} 
-              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-            />
+            {hasInvoiceDetails ? (
+              <InvoiceHeader 
+                title={invoice?.vendor || getCardTitle()} 
+                invoiceNumber={invoice?.invoiceNumber}
+                subtitle={invoice?.date}
+                description={invoice?.description}
+                amount={invoice?.amount}
+              />
+            ) : (
+              <InvoiceHeader 
+                title={filename} 
+                fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+              />
+            )}
             <StatusMessage variant="error">
               {errorMessage || getResultStatusText('processingError')}
             </StatusMessage>
@@ -748,17 +761,31 @@ export function UploadStatusCard({
   // =============================================================================
   
   if (status === "error") {
-    const badgeText = (processingStatus === 'ERROR' && errorCode) ? errorCode : "Error Occurred"
+    // Strip bracketed prefix like "[CODE] Description" -> "Description"
+    const rawBadgeText = (processingStatus === 'ERROR' && errorCode) ? errorCode : "Error Occurred"
+    const badgeText = rawBadgeText.replace(/^\[.*?\]\s*/, '')
+    // Show invoice details if available, otherwise show filename
+    const hasInvoiceDetails = invoice?.vendor || invoice?.invoiceNumber;
     
     return (
       <>
         <CardContainer>
           <CardHeaderSection>
             <StatusBadge color="error">{badgeText}</StatusBadge>
-            <InvoiceHeader 
-              title={filename} 
-              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-            />
+            {hasInvoiceDetails ? (
+              <InvoiceHeader 
+                title={invoice?.vendor || getCardTitle()} 
+                invoiceNumber={invoice?.invoiceNumber}
+                subtitle={invoice?.date}
+                description={invoice?.description}
+                amount={invoice?.amount}
+              />
+            ) : (
+              <InvoiceHeader 
+                title={filename} 
+                fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+              />
+            )}
             <StatusMessage variant="error">
               {errorMessage || getResultStatusText('error')}
             </StatusMessage>

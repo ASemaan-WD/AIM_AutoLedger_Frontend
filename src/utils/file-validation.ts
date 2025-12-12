@@ -10,7 +10,7 @@ if (typeof pdfjsLib !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) 
 }
 
 // Maximum allowed pages for PDF files
-export const MAX_PDF_PAGES = 30;
+export const MAX_PDF_PAGES = 8;
 
 export interface FileValidationResult {
   isValid: boolean;

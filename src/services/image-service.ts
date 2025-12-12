@@ -53,32 +53,48 @@ export async function uploadImage(
  * @param pathPrefix - Optional path prefix (default: 'images/')
  * @returns Array of upload results
  */
+const BATCH_SIZE = 10; // Airtable limit for attachments per request
+
 export async function uploadImages(
   images: File[],
   pathPrefix: string = 'images/'
 ): Promise<ImageUploadResult[]> {
-  console.log(`📤 Batch uploading ${images.length} images...`);
+  console.log(`📤 Batch uploading ${images.length} images in batches of ${BATCH_SIZE}...`);
   
-  try {
-    // Use the batch upload function from vercel-blob
-    const results = await uploadMultipleToBlob(images, pathPrefix);
+  const allResults: ImageUploadResult[] = [];
+  
+  // Split images into batches of 10
+  for (let i = 0; i < images.length; i += BATCH_SIZE) {
+    const batch = images.slice(i, i + BATCH_SIZE);
+    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+    const totalBatches = Math.ceil(images.length / BATCH_SIZE);
     
-    const uploadResults: ImageUploadResult[] = results.map((result, index) => ({
-      url: result.url,
-      filename: images[index].name,
-      size: images[index].size,
-      pathname: result.pathname,
-    }));
+    console.log(`📦 Uploading batch ${batchNumber}/${totalBatches} (${batch.length} images)...`);
     
-    console.log(`✅ Batch upload complete: ${uploadResults.length} images uploaded`);
-    
-    return uploadResults;
-  } catch (error) {
-    console.error('❌ Batch image upload failed:', error);
-    throw new Error(
-      `Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+    try {
+      // Use the batch upload function from vercel-blob
+      const results = await uploadMultipleToBlob(batch, pathPrefix);
+      
+      const uploadResults: ImageUploadResult[] = results.map((result, index) => ({
+        url: result.url,
+        filename: batch[index].name,
+        size: batch[index].size,
+        pathname: result.pathname,
+      }));
+      
+      allResults.push(...uploadResults);
+      console.log(`✅ Batch ${batchNumber}/${totalBatches} complete`);
+    } catch (error) {
+      console.error(`❌ Batch ${batchNumber} upload failed:`, error);
+      throw new Error(
+        `Failed to upload images (batch ${batchNumber}): ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
+  
+  console.log(`✅ All batches complete: ${allResults.length} images uploaded`);
+  
+  return allResults;
 }
 
 /**
@@ -136,38 +152,51 @@ export async function createImageRecords(
   console.log(`📝 Batch creating ${images.length} Image records...`);
   
   const uploadedDate = new Date().toISOString().split('T')[0];
+  const allRecordIds: string[] = [];
   
-  try {
-    // Prepare batch records
-    const records = images.map((image) => ({
-      fields: {
-        'ImageURL': image.url,
-        'UploadedDate': uploadedDate,
-        'FileID': [fileRecordId], // Link to parent File record
-      },
-    }));
+  // Split images into batches of 10
+  for (let i = 0; i < images.length; i += BATCH_SIZE) {
+    const batch = images.slice(i, i + BATCH_SIZE);
+    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+    const totalBatches = Math.ceil(images.length / BATCH_SIZE);
     
-    // Create all records in one batch
-    const response = await createRecords('Images', {
-      records,
-    });
+    console.log(`📦 Creating records batch ${batchNumber}/${totalBatches} (${batch.length} records)...`);
     
-    const recordIds = response.records.map((record) => record.id);
-    
-    if (recordIds.length !== images.length) {
-      console.warn(
-        `⚠️ Expected ${images.length} records, but got ${recordIds.length}`
+    try {
+      // Prepare batch records
+      const records = batch.map((image) => ({
+        fields: {
+          'ImageURL': image.url,
+          'UploadedDate': uploadedDate,
+          'FileID': [fileRecordId], // Link to parent File record
+        },
+      }));
+      
+      // Create records in this batch
+      const response = await createRecords('Images', {
+        records,
+      });
+      
+      const recordIds = response.records.map((record) => record.id);
+      allRecordIds.push(...recordIds);
+      
+      console.log(`✅ Batch ${batchNumber}/${totalBatches} complete`);
+    } catch (error) {
+      console.error(`❌ Batch ${batchNumber} record creation failed:`, error);
+      throw new Error(
+        `Failed to create Image records (batch ${batchNumber}): ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
-    
-    console.log(`✅ Batch create complete: ${recordIds.length} Image records created`);
-    return recordIds;
-  } catch (error) {
-    console.error('❌ Batch Image record creation failed:', error);
-    throw new Error(
-      `Failed to create Image records: ${error instanceof Error ? error.message : 'Unknown error'}`
+  }
+  
+  if (allRecordIds.length !== images.length) {
+    console.warn(
+      `⚠️ Expected ${images.length} records, but got ${allRecordIds.length}`
     );
   }
+  
+  console.log(`✅ All batches complete: ${allRecordIds.length} Image records created`);
+  return allRecordIds;
 }
 
 /**

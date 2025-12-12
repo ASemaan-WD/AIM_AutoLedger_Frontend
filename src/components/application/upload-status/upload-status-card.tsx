@@ -346,7 +346,7 @@ export function UploadStatusCard({
                 size="md" 
                 color="secondary"
                 iconLeading={Trash01}
-                onClick={() => setShowCancelModal(true)}
+                onClick={() => setShowDeleteModal(true)}
               >
                 Remove
               </Button>

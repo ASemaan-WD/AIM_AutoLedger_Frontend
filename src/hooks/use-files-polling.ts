@@ -4,7 +4,7 @@ import { mapFileStatusToUI, getProcessingProgress } from '@/lib/status-mapper';
 import { FILE_STATUS } from '@/lib/airtable/schema-types';
 import { convertPDFToImages } from '@/lib/pdf-converter';
 import { triggerOCRByFile } from '@/services/ocr-service';
-import { uploadAndCreateImageRecords } from '@/services/image-service';
+import { uploadAndCreateSubFileRecords } from '@/services/subfile-service';
 import { 
   parseInvoiceRecord, 
   parseErrorCode, 
@@ -29,6 +29,12 @@ export function useFilesPolling() {
   // Ref to track consecutive error counts for each file (key: uploadFileId, value: error count)
   const errorCountRef = useRef<Map<string, number>>(new Map());
   
+  // Ref to track consecutive error counts for each invoice (key: invoiceRecordId, value: error count)
+  const invoiceErrorCountRef = useRef<Map<string, number>>(new Map());
+  
+  // Set to track invoices that have reached error threshold and should stop being considered for polling
+  const invoicesStoppedPollingRef = useRef<Set<string>>(new Set());
+  
   // Number of consecutive error polls before stopping
   const ERROR_POLL_THRESHOLD = 6;
   
@@ -42,9 +48,18 @@ export function useFilesPolling() {
   const isFetchInProgressRef = useRef(false);
 
   // Stop polling for a specific file (removes from active set)
-  const stopPolling = useCallback((fileId: string) => {
+  const stopPolling = useCallback((fileId: string, invoiceIds?: string[]) => {
     activePollIdsRef.current.delete(fileId);
     errorCountRef.current.delete(fileId); // Clean up error count
+    
+    // Clean up invoice-level error tracking for this file's invoices
+    if (invoiceIds) {
+      invoiceIds.forEach(invId => {
+        invoiceErrorCountRef.current.delete(invId);
+        invoicesStoppedPollingRef.current.delete(invId);
+      });
+    }
+    
     console.log(`🛑 Removed file from polling list: ${fileId}`);
     
     // If no files left, clear interval
@@ -64,6 +79,8 @@ export function useFilesPolling() {
       }
       activePollIdsRef.current.clear();
       errorCountRef.current.clear();
+      invoiceErrorCountRef.current.clear();
+      invoicesStoppedPollingRef.current.clear();
     };
   }, []);
 
@@ -249,52 +266,118 @@ export function useFilesPolling() {
       setFiles(currentFiles => {
         currentFiles.forEach(f => {
           if (activeMap.has(f.id)) {
-            const isError = f.mainStatus === 'Error' || f.status === 'error';
-            
-            // Check if all invoices are in a final state (Matched, Exported, or Error)
-            // This handles files with multiple invoices - continue polling until ALL are complete
             const invoices = f.invoices || [];
-            const finalInvoiceStatuses = ['Matched', 'Exported', 'Error'];
-            const allInvoicesComplete = invoices.length > 0 
-              ? invoices.every(inv => finalInvoiceStatuses.includes(inv.status))
-              : false;
+            const finalInvoiceStatuses = ['Matched', 'Exported'];
             
-            // For files with invoices: only stop when all invoices are in final state
-            // For files without invoices yet: use file-level status
-            const isSuccessComplete = invoices.length > 0
-              ? (allInvoicesComplete && !isError) || f.status === 'exported'
-              : (getProcessingProgress(f.processingStatus) >= 100 || f.mainStatus === 'Processed' || f.status === 'exported');
+            // Track invoice-level errors and determine which invoices are still being polled
+            let invoicesStillProcessing = 0;
+            let invoicesInFinalState = 0;
+            let invoicesWithErrorThresholdReached = 0;
             
-            if (isError) {
-              // Track consecutive error occurrences
-              const currentCount = errorCountRef.current.get(f.id) || 0;
-              const newCount = currentCount + 1;
-              errorCountRef.current.set(f.id, newCount);
+            if (invoices.length > 0) {
+              invoices.forEach(inv => {
+                if (!inv.recordId) return;
+                
+                const isInvoiceError = inv.status === 'Error';
+                const isInvoiceFinal = finalInvoiceStatuses.includes(inv.status);
+                const hasReachedThreshold = invoicesStoppedPollingRef.current.has(inv.recordId);
+                
+                if (isInvoiceError) {
+                  if (hasReachedThreshold) {
+                    // Invoice already marked as stopped - don't increment counter
+                    invoicesWithErrorThresholdReached++;
+                  } else {
+                    // Track consecutive error occurrences for this invoice
+                    const currentCount = invoiceErrorCountRef.current.get(inv.recordId) || 0;
+                    const newCount = currentCount + 1;
+                    invoiceErrorCountRef.current.set(inv.recordId, newCount);
+                    
+                    console.log(`⚠️ Invoice ${inv.recordId} (file ${f.id}) has error (${newCount}/${ERROR_POLL_THRESHOLD} polls)`);
+                    
+                    if (newCount >= ERROR_POLL_THRESHOLD) {
+                      // Mark this invoice as stopped polling due to persistent error
+                      invoicesStoppedPollingRef.current.add(inv.recordId);
+                      invoiceErrorCountRef.current.delete(inv.recordId);
+                      invoicesWithErrorThresholdReached++;
+                      console.log(`🛑 Invoice ${inv.recordId} error persisted for ${ERROR_POLL_THRESHOLD} polls. Stopping poll for this invoice.`);
+                    }
+                    // Invoice has error but hasn't reached threshold yet - continue polling
+                  }
+                } else if (isInvoiceFinal) {
+                  // Invoice completed successfully
+                  invoicesInFinalState++;
+                  // Clear any previous error count if the invoice recovered
+                  if (invoiceErrorCountRef.current.has(inv.recordId)) {
+                    console.log(`✅ Invoice ${inv.recordId} recovered from error state`);
+                    invoiceErrorCountRef.current.delete(inv.recordId);
+                    invoicesStoppedPollingRef.current.delete(inv.recordId);
+                  }
+                } else {
+                  // Invoice still processing
+                  invoicesStillProcessing++;
+                  // Clear any previous error count if the invoice recovered
+                  if (invoiceErrorCountRef.current.has(inv.recordId)) {
+                    console.log(`✅ Invoice ${inv.recordId} recovered from error state`);
+                    invoiceErrorCountRef.current.delete(inv.recordId);
+                    invoicesStoppedPollingRef.current.delete(inv.recordId);
+                  }
+                }
+              });
               
-              console.log(`⚠️ File ${f.id} has error (${newCount}/${ERROR_POLL_THRESHOLD} polls)`);
-              
-              // Only stop polling after ERROR_POLL_THRESHOLD consecutive errors
-              if (newCount >= ERROR_POLL_THRESHOLD) {
-                activeMap.delete(f.id);
-                errorCountRef.current.delete(f.id);
-                console.log(`🛑 File ${f.id} error persisted for ${ERROR_POLL_THRESHOLD} polls. Stopping poll.`);
-              }
-            } else if (isSuccessComplete) {
-              // Success - stop polling and clear error count
-              activeMap.delete(f.id);
-              errorCountRef.current.delete(f.id);
-              const completedCount = invoices.filter(inv => finalInvoiceStatuses.includes(inv.status)).length;
-              console.log(`✅ File ${f.id} completed successfully (${completedCount}/${invoices.length} invoices). Stopping poll.`);
-            } else {
-              // Not an error and not complete - reset error count (status recovered)
-              if (errorCountRef.current.has(f.id)) {
-                console.log(`✅ File ${f.id} recovered from error state`);
-                errorCountRef.current.delete(f.id);
-              }
               // Log progress for files with multiple invoices
               if (invoices.length > 1) {
-                const completedCount = invoices.filter(inv => finalInvoiceStatuses.includes(inv.status)).length;
-                console.log(`📊 File ${f.id}: ${completedCount}/${invoices.length} invoices complete, continuing poll...`);
+                console.log(`📊 File ${f.id}: ${invoicesInFinalState} final, ${invoicesStillProcessing} processing, ${invoicesWithErrorThresholdReached} error-stopped out of ${invoices.length} invoices`);
+              }
+              
+              // Determine if file polling should stop
+              // Stop only when ALL invoices are either in final state OR have reached error threshold
+              const allInvoicesHandled = (invoicesInFinalState + invoicesWithErrorThresholdReached) === invoices.length;
+              
+              if (allInvoicesHandled && invoices.length > 0) {
+                // All invoices are done (either successfully or with persistent errors)
+                activeMap.delete(f.id);
+                errorCountRef.current.delete(f.id);
+                // Clean up invoice tracking for this file
+                invoices.forEach(inv => {
+                  if (inv.recordId) {
+                    invoiceErrorCountRef.current.delete(inv.recordId);
+                    invoicesStoppedPollingRef.current.delete(inv.recordId);
+                  }
+                });
+                console.log(`✅ File ${f.id} completed (${invoicesInFinalState} successful, ${invoicesWithErrorThresholdReached} with errors). Stopping poll.`);
+              }
+              // If there are still processing invoices or active errors not yet at threshold, continue polling
+              
+            } else {
+              // No invoices yet - use file-level status
+              const isFileError = f.mainStatus === 'Error' || f.status === 'error';
+              const isFileComplete = getProcessingProgress(f.processingStatus) >= 100 || 
+                                     f.mainStatus === 'Processed' || 
+                                     f.status === 'exported';
+              
+              if (isFileError) {
+                // Track consecutive error occurrences at file level
+                const currentCount = errorCountRef.current.get(f.id) || 0;
+                const newCount = currentCount + 1;
+                errorCountRef.current.set(f.id, newCount);
+                
+                console.log(`⚠️ File ${f.id} has error (${newCount}/${ERROR_POLL_THRESHOLD} polls)`);
+                
+                if (newCount >= ERROR_POLL_THRESHOLD) {
+                  activeMap.delete(f.id);
+                  errorCountRef.current.delete(f.id);
+                  console.log(`🛑 File ${f.id} error persisted for ${ERROR_POLL_THRESHOLD} polls. Stopping poll.`);
+                }
+              } else if (isFileComplete) {
+                activeMap.delete(f.id);
+                errorCountRef.current.delete(f.id);
+                console.log(`✅ File ${f.id} completed successfully. Stopping poll.`);
+              } else {
+                // Not an error and not complete - reset error count if needed
+                if (errorCountRef.current.has(f.id)) {
+                  console.log(`✅ File ${f.id} recovered from error state`);
+                  errorCountRef.current.delete(f.id);
+                }
               }
             }
           }
@@ -370,13 +453,13 @@ export function useFilesPolling() {
         f.id === uploadId ? { ...f, pageCount: images.length } : f
       ));
 
-      console.log(`📤 [Background] Uploading ${images.length} images to Vercel and creating Airtable records...`);
-      const { uploadResults, recordIds } = await uploadAndCreateImageRecords(
+      console.log(`📤 [Background] Uploading ${images.length} subfiles to Vercel and creating Airtable records...`);
+      const { uploadResults, recordIds } = await uploadAndCreateSubFileRecords(
         images,
         airtableRecordId,
-        'images/'
+        'subfiles/'
       );
-      console.log(`✅ [Background] ${uploadResults.length} images uploaded and ${recordIds.length} records created`);
+      console.log(`✅ [Background] ${uploadResults.length} subfiles uploaded and ${recordIds.length} records created`);
 
       console.log(`🚀 [Background] Triggering OCR for file ID ${fileId}...`);
       const ocrResponse = await triggerOCRByFile(fileId);
@@ -672,9 +755,11 @@ export function useFilesPolling() {
       abortControllersRef.current.delete(fileId);
     }
     
-    stopPolling(fileId);
-    
     const file = files.find(f => f.id === fileId);
+    
+    // Pass invoice IDs to clean up invoice-level tracking
+    const invoiceIds = file?.invoices?.map(inv => inv.recordId).filter((id): id is string => !!id);
+    stopPolling(fileId, invoiceIds);
     if (file?.airtableRecordId) {
       try {
         const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;

@@ -85,27 +85,16 @@ function AccordionRoot({
     return new Set()
   })
 
-  // Force update trigger to ensure UI reflects registered items
-  const [, forceUpdate] = useState({})
-  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Track all registered item IDs and their content counts
-  const registeredItemsRef = useRef<Set<string>>(new Set())
+  // Track registered items as state (not ref) so registration triggers re-renders
+  const [registeredItems, setRegisteredItems] = useState<Set<string>>(new Set())
+  
+  // Track item counts and previous items with refs (don't need re-renders for these)
   const previousItemsRef = useRef<Set<string>>(new Set())
   const itemCountsRef = useRef<Map<string, number>>(new Map())
 
   // Compute expanded items: all registered items minus collapsed ones
   const expandedItems = new Set(
-    Array.from(registeredItemsRef.current).filter(id => !collapsedItems.has(id))
+    Array.from(registeredItems).filter(id => !collapsedItems.has(id))
   )
 
   // Expand a specific item (remove from collapsed)
@@ -120,52 +109,50 @@ function AccordionRoot({
 
   // Register an item and auto-expand if it's new or has new content
   const registerItem = useCallback((id: string, itemCount?: number) => {
-    const isNewItem = !registeredItemsRef.current.has(id)
-    if (isNewItem) {
-      registeredItemsRef.current.add(id)
-      // Batch updates to handle initial render of multiple items efficiently
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current)
+    setRegisteredItems(prev => {
+      const isNewItem = !prev.has(id)
+      
+      // Track item count and detect if new content was added
+      const previousCount = itemCountsRef.current.get(id) ?? 0
+      const currentCount = itemCount ?? 0
+      const hasNewContent = currentCount > previousCount && previousCount > 0
+      
+      if (itemCount !== undefined) {
+        itemCountsRef.current.set(id, currentCount)
       }
-      updateTimeoutRef.current = setTimeout(() => {
-        forceUpdate({})
-        updateTimeoutRef.current = null
-      }, 100)
-    }
-    
-    // Track item count and detect if new content was added
-    const previousCount = itemCountsRef.current.get(id) ?? 0
-    const currentCount = itemCount ?? 0
-    const hasNewContent = currentCount > previousCount && previousCount > 0
-    
-    if (itemCount !== undefined) {
-      itemCountsRef.current.set(id, currentCount)
-    }
-    
-    // Auto-expand if:
-    // 1. This is a brand new accordion item (not seen before)
-    // 2. OR the item has new content added to it
-    if (isNewItem && previousItemsRef.current.size > 0) {
-      // New accordion item appeared - expand it
-      setCollapsedItems(prev => {
+      
+      // Auto-expand if:
+      // 1. This is a brand new accordion item (not seen before)
+      // 2. OR the item has new content added to it
+      if (isNewItem && previousItemsRef.current.size > 0) {
+        // New accordion item appeared - expand it
+        setCollapsedItems(prevCollapsed => {
+          const next = new Set(prevCollapsed)
+          next.delete(id)
+          return next
+        })
+      } else if (hasNewContent) {
+        // Existing accordion item got new content - expand it
+        setCollapsedItems(prevCollapsed => {
+          const next = new Set(prevCollapsed)
+          next.delete(id)
+          return next
+        })
+      }
+      
+      if (isNewItem) {
         const next = new Set(prev)
-        next.delete(id)
+        next.add(id)
         return next
-      })
-    } else if (hasNewContent) {
-      // Existing accordion item got new content - expand it
-      setCollapsedItems(prev => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
-    }
+      }
+      return prev
+    })
   }, [])
 
   // Update previous items after render
   useEffect(() => {
-    previousItemsRef.current = new Set(registeredItemsRef.current)
-  })
+    previousItemsRef.current = new Set(registeredItems)
+  }, [registeredItems])
 
   // Persist collapsed state to cookie
   useEffect(() => {
@@ -174,7 +161,7 @@ function AccordionRoot({
     }
   }, [collapsedItems, persistKey])
 
-  const toggleItem = (id: string) => {
+  const toggleItem = useCallback((id: string) => {
     setCollapsedItems(prev => {
       const next = new Set(prev)
       if (next.has(id)) {
@@ -185,7 +172,7 @@ function AccordionRoot({
         if (!allowMultiple) {
           // In single mode, expand this one (remove from collapsed) and collapse others
           next.clear()
-          registeredItemsRef.current.forEach(itemId => {
+          registeredItems.forEach(itemId => {
             if (itemId !== id) next.add(itemId)
           })
         } else {
@@ -194,7 +181,7 @@ function AccordionRoot({
       }
       return next
     })
-  }
+  }, [allowMultiple, registeredItems])
 
   return (
     <AccordionContext.Provider value={{ expandedItems, toggleItem, expandItem, allowMultiple, registerItem }}>
@@ -309,12 +296,13 @@ interface AccordionContentProps {
 }
 
 function AccordionContent({ children, className }: AccordionContentProps) {
-  const { isExpanded } = useAccordionItemContext()
+  const { id, isExpanded } = useAccordionItemContext()
 
   return (
     <AnimatePresence initial={false}>
       {isExpanded && (
         <motion.div
+          key={`accordion-content-${id}`}
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}

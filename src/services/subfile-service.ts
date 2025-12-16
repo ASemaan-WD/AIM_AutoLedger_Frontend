@@ -102,14 +102,16 @@ export async function uploadSubFiles(
  * @param fileUrl - URL of the uploaded PDF subfile
  * @param fileName - Original file name
  * @param parentFileRecordId - Airtable record ID of the parent File
+ * @param order - Order/position of this page in the original PDF (1-based)
  * @returns Airtable record ID of the created SubFile record
  */
 export async function createSubFileRecord(
   fileUrl: string,
   fileName: string,
-  parentFileRecordId: string
+  parentFileRecordId: string,
+  order: number
 ): Promise<string> {
-  console.log(`📝 Creating SubFile record for: ${fileName}`);
+  console.log(`📝 Creating SubFile record for: ${fileName} (order: ${order})`);
   
   const uploadedDate = new Date().toISOString().split('T')[0];
   
@@ -119,6 +121,7 @@ export async function createSubFileRecord(
         'FileURL': fileUrl,
         'UploadedDate': uploadedDate,
         'ParentFileID': [parentFileRecordId], // Link to parent File record
+        'Order': order,
       },
     });
     
@@ -140,12 +143,12 @@ export async function createSubFileRecord(
 /**
  * Create multiple SubFile records in Airtable (batch)
  * 
- * @param subfiles - Array of subfile data (url, fileName)
+ * @param subfiles - Array of subfile data (url, fileName, order)
  * @param parentFileRecordId - Airtable record ID of the parent File
  * @returns Array of Airtable record IDs
  */
 export async function createSubFileRecords(
-  subfiles: Array<{ url: string; fileName: string }>,
+  subfiles: Array<{ url: string; fileName: string; order: number }>,
   parentFileRecordId: string
 ): Promise<string[]> {
   console.log(`📝 Batch creating ${subfiles.length} SubFile records...`);
@@ -168,6 +171,7 @@ export async function createSubFileRecords(
           'FileURL': subfile.url,
           'UploadedDate': uploadedDate,
           'ParentFileID': [parentFileRecordId], // Link to parent File record
+          'Order': subfile.order,
         },
       }));
       
@@ -201,7 +205,7 @@ export async function createSubFileRecords(
 /**
  * Upload PDF subfiles to Vercel and create corresponding Airtable records (all-in-one)
  * 
- * @param pdfFiles - Array of PDF files (single-page PDFs from splitting)
+ * @param pdfFiles - Array of PDF files (single-page PDFs from splitting, in order)
  * @param parentFileRecordId - Airtable record ID of the parent File
  * @param pathPrefix - Optional path prefix for Vercel uploads
  * @returns Object containing upload results and Airtable record IDs
@@ -221,10 +225,12 @@ export async function uploadAndCreateSubFileRecords(
   // Step 1: Batch upload PDF subfiles to Vercel
   const uploadResults = await uploadSubFiles(pdfFiles, pathPrefix);
   
-  // Step 2: Batch create SubFile records in Airtable
-  const subfileData = uploadResults.map((result) => ({
+  // Step 2: Batch create SubFile records in Airtable with order preserved
+  // Order is 1-based (first page = 1, second page = 2, etc.)
+  const subfileData = uploadResults.map((result, index) => ({
     url: result.url,
     fileName: result.filename,
+    order: index + 1, // 1-based order matching page number in PDF
   }));
   
   const recordIds = await createSubFileRecords(subfileData, parentFileRecordId);

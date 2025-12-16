@@ -2,7 +2,7 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-12-15T18:58:41.561Z
+ * Generated: 2025-12-16T15:19:45.376Z
  * Base ID: appuCyekfNZBULRYT
  * 
  * DO NOT EDIT MANUALLY
@@ -45,6 +45,7 @@ export const FIELD_IDS = {
   SUBFILES: {
     SUBFILEID: 'fld09sjAT3eh33k5p',
     FILEURL: 'fldtc5nb2wWkGuJl3',
+    ORDER: 'fldVTqi6GdViTlj95',
     UPLOADEDDATE: 'fldT0NBfyOJ4UsxwZ',
     CREATED_AT: 'fldQEMXW4vopcqAir',
     MODIFIED_AT: 'fldjRNpcBCEXNQUOM',
@@ -305,6 +306,7 @@ export const FIELD_NAMES = {
   SUBFILES: {
     SUBFILEID: 'SubFileID',
     FILEURL: 'FileURL',
+    ORDER: 'Order',
     UPLOADEDDATE: 'UploadedDate',
     CREATED_AT: 'Created-At',
     MODIFIED_AT: 'Modified-At',
@@ -616,6 +618,7 @@ export interface SubFilesRecord {
   fields: {
     SubFileID?: number;
     FileURL?: string;
+    Order?: number;
     UploadedDate?: string;
     'Created-At'?: string;
     'Modified-At'?: string;

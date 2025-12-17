@@ -625,10 +625,17 @@ export function useFilesPolling() {
       setFiles(mappedFiles);
 
       // 5. Start polling for active files
+      // Poll if file is in processing state OR if any invoice is not in a final state
+      const finalInvoiceStatuses = ['Matched', 'Exported', 'Error'];
+      
       mappedFiles.forEach(file => {
-         const isProcessing = file.status === 'uploading' || file.status === 'queued' || file.status === 'processing' || file.status === 'connecting';
+         const isFileProcessing = file.status === 'uploading' || file.status === 'queued' || file.status === 'processing' || file.status === 'connecting';
          
-         if (isProcessing && file.airtableRecordId) {
+         // Check if any invoice is still processing (not in final state)
+         const hasProcessingInvoices = file.invoices && file.invoices.length > 0 && 
+           file.invoices.some(inv => !finalInvoiceStatuses.includes(inv.status));
+         
+         if ((isFileProcessing || hasProcessingInvoices) && file.airtableRecordId) {
              startFilePolling(file.id, file.airtableRecordId);
          }
       });

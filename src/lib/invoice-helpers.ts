@@ -1,5 +1,5 @@
-import type { DetailedIssue } from '@/components/application/upload-status/upload-status-card';
-import type { InvoiceWarningType } from '@/types/upload-file';
+import type { DetailedIssue, UploadStatus } from '@/components/application/upload-status/upload-status-card';
+import type { InvoiceWarningType, UploadedFile } from '@/types/upload-file';
 import type { AirtableRecord } from '@/lib/airtable/types';
 
 // =============================================================================
@@ -199,7 +199,7 @@ export const formatInvoiceWarning = (warning: InvoiceWarningType): string | null
         } else if (qtyMismatch) {
           return `- Line ${item.LineNo} – quantity mismatch (Invoice: ${item.DocQty}, PO: ${item.RecQty}).`;
         } else if (priceMismatch) {
-          return `- Line ${item.LineNo} – unit price mismatch (Invoice: $${item.DocPrice}, PO: $${item.RecPrice}).`;
+          return `- Line ${item.LineNo} – unit price mismatch (Invoice: $${item.DocPrice}, PO: ${item.RecPrice}).`;
         }
         return `- Line ${item.LineNo} – mismatch detected.`;
       }).join('\n');
@@ -278,3 +278,53 @@ export function getGreeting() {
   return 'Good evening';
 }
 
+/**
+ * Maps Invoice Status to UploadStatus (UI)
+ * @param status Invoice status from Airtable
+ * @param hasIssues whether invoice has warnings/issues
+ */
+export function mapInvoiceStatusToUploadStatus(status: string | undefined, hasIssues: boolean): UploadStatus {
+  if (!status) return 'processing';
+  
+  switch (status) {
+    case 'Exported':
+      return 'exported';
+    case 'Error':
+      return 'error';
+    case 'Matched':
+    case 'Open': // Legacy/Alt status
+      return hasIssues ? 'success-with-caveats' : 'success';
+    case 'Matching':
+      return 'connecting';
+    case 'Queued':
+      // 'Queued' typically means queued for export
+      return 'success'; 
+    case 'Pending':
+    default:
+      return 'processing';
+  }
+}
+
+/**
+ * Derives processing status (UPL, MATCHING, etc.) from Invoice Status
+ * Used for progress bar display on invoice cards
+ */
+export function deriveInvoiceProcessingStatus(status: string | undefined): 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR' {
+  if (!status) return 'PARSE';
+  
+  switch (status) {
+    case 'Pending':
+      return 'PARSE';
+    case 'Matching':
+      return 'MATCHING';
+    case 'Matched':
+    case 'Open':
+    case 'Exported':
+    case 'Queued':
+      return 'MATCHED';
+    case 'Error':
+      return 'ERROR';
+    default:
+      return 'MATCHING';
+  }
+}

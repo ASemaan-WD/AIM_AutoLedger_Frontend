@@ -37,11 +37,12 @@ export async function checkFileHashDuplicate(
     const airtableClient = createAirtableClient(baseId);
     
     // Search for existing files with the same hash
+    // Only check files that haven't been cleared (Cleared = FALSE or empty)
     // Note: Using new schema field names (FileHash, FileName, UploadedDate)
     const response = await airtableClient.listRecords('Files', {
-      filterByFormula: `{FileHash} = "${fileHash}"`,
+      filterByFormula: `AND({FileHash} = "${fileHash}", NOT({Cleared}))`,
       maxRecords: 5, // Get up to 5 matches for analysis
-      fields: ['FileName', 'Created-At', 'FileHash', 'Status', 'UploadedDate']
+      fields: ['FileName', 'Created-At', 'FileHash', 'Status', 'UploadedDate', 'Cleared']
     });
     
     if (response.records && response.records.length > 0) {
@@ -122,8 +123,9 @@ export async function getFilesByHash(
   try {
     const airtableClient = createAirtableClient(baseId);
     
+    // Only get files that haven't been cleared
     const response = await airtableClient.listRecords('Files', {
-      filterByFormula: `{FileHash} = "${fileHash}"`,
+      filterByFormula: `AND({FileHash} = "${fileHash}", NOT({Cleared}))`,
       sort: [{ field: 'Created-At', direction: 'asc' }]
     });
     
@@ -182,11 +184,11 @@ export async function generateDuplicateReport(baseId: string): Promise<{
   try {
     const airtableClient = createAirtableClient(baseId);
     
-    // Get all files with hashes
+    // Get all files with hashes that haven't been cleared
     // Note: Using new schema field names (FileHash, FileName, UploadedDate)
     const response = await airtableClient.listRecords('Files', {
-      fields: ['FileName', 'FileHash', 'UploadedDate', 'Status'],
-      filterByFormula: `{FileHash} != ""`
+      fields: ['FileName', 'FileHash', 'UploadedDate', 'Status', 'Cleared'],
+      filterByFormula: `AND({FileHash} != "", NOT({Cleared}))`
     });
     
     const files = response.records || [];

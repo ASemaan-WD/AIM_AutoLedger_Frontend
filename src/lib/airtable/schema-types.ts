@@ -2,7 +2,7 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-12-08T13:59:23.681Z
+ * Generated: 2025-12-16T15:19:45.376Z
  * Base ID: appuCyekfNZBULRYT
  * 
  * DO NOT EDIT MANUALLY
@@ -19,6 +19,7 @@ export const FIELD_IDS = {
     FILEURL: 'fldxdxWbvC9KDHee7',
     FILEHASH: 'fldAkFbKnjYLzQJqS',
     FILENAME: 'fld7E1dvgRISwW0Pt',
+    PAGES: 'fldQy3FJyx6mqMKOi',
     UPLOADEDDATE: 'fldX1faf1UWuRF2p3',
     STATUS: 'fldV1n0WIjvaQVFjz',
     PARSEDAT: 'fldbB5yMnHs6fITao',
@@ -35,19 +36,21 @@ export const FIELD_IDS = {
     PROCESSING_STATUS: 'fldH93Ldd3EQoldMO',
     JOBS: 'fldKrD2WCqE1fP6UR',
     ORGANIZATIONID: 'fldKExnglFOvmEjKS',
-    IMAGEIDS: 'fldC5s2vHB7VMCh9d',
-    IMAGERECORDIDS: 'fldfrN7ocMWaGhj8J',
+    SUBFILEIDS: 'fldC5s2vHB7VMCh9d',
+    SUBFILERECORDIDS: 'fld9KnJ3DD05IwTpQ',
     CLEARED: 'fldRQC0opkdUvzvJO',
     CLEARED_AT: 'fldWcVsJnWczAvfOD',
+    SUBFILES: 'fldAWcwkNKmTKbrA9',
   },
-  IMAGES: {
-    IMAGEID: 'fldf6wxF1QGSrZ7iI',
-    IMAGEURL: 'fldI99BgajoV4qwym',
-    UPLOADEDDATE: 'fld8XRPkGBbFiokJi',
-    CREATED_AT: 'fld5BQb1ciQ0AmnvK',
-    MODIFIED_AT: 'fldyORDhJp6ybMH15',
-    FILEID: 'fldkKmRJVQKhfioJb',
-    FILERECORDID: 'fld0HMo2VuQyxH9tg',
+  SUBFILES: {
+    SUBFILEID: 'fld09sjAT3eh33k5p',
+    FILEURL: 'fldtc5nb2wWkGuJl3',
+    ORDER: 'fldVTqi6GdViTlj95',
+    UPLOADEDDATE: 'fldT0NBfyOJ4UsxwZ',
+    CREATED_AT: 'fldQEMXW4vopcqAir',
+    MODIFIED_AT: 'fldjRNpcBCEXNQUOM',
+    PARENTFILEID: 'fldDwVrAdRwetbI5T',
+    PARENTFILERECORDID: 'fldLKIaXNHoX9LmgX',
   },
   INVOICES: {
     RECORDID: 'fldvQzw4GlIefZTPy',
@@ -245,7 +248,7 @@ export const FIELD_IDS = {
 
 export const TABLE_IDS = {
   FILES: 'tbluYB0mHO6CQWrwL',
-  IMAGES: 'tblFUdFrmvlNhFJQ0',
+  SUBFILES: 'tblqX9rmeITcTJWDH',
   INVOICES: 'tblokyH2U1PBhhCE9',
   POINVOICEHEADERS: 'tblgEJz0WQtZusPAT',
   POINVOICEDETAILS: 'tblajSDlRV6SsUtw8',
@@ -259,7 +262,7 @@ export const TABLE_IDS = {
 
 export const TABLE_NAMES = {
   FILES: 'Files',
-  IMAGES: 'Images',
+  SUBFILES: 'SubFiles',
   INVOICES: 'Invoices',
   POINVOICEHEADERS: 'POInvoiceHeaders',
   POINVOICEDETAILS: 'POInvoiceDetails',
@@ -277,6 +280,7 @@ export const FIELD_NAMES = {
     FILEURL: 'FileURL',
     FILEHASH: 'FileHash',
     FILENAME: 'FileName',
+    PAGES: 'Pages',
     UPLOADEDDATE: 'UploadedDate',
     STATUS: 'Status',
     PARSEDAT: 'ParsedAt',
@@ -293,19 +297,21 @@ export const FIELD_NAMES = {
     PROCESSING_STATUS: 'Processing-Status',
     JOBS: 'Jobs',
     ORGANIZATIONID: 'OrganizationId',
-    IMAGEIDS: 'ImageIDs',
-    IMAGERECORDIDS: 'ImageRecordIDs',
+    SUBFILEIDS: 'SubFileIDs',
+    SUBFILERECORDIDS: 'SubFileRecordIDs',
     CLEARED: 'Cleared',
     CLEARED_AT: 'Cleared-At',
+    SUBFILES: 'SubFiles',
   },
-  IMAGES: {
-    IMAGEID: 'ImageID',
-    IMAGEURL: 'ImageURL',
+  SUBFILES: {
+    SUBFILEID: 'SubFileID',
+    FILEURL: 'FileURL',
+    ORDER: 'Order',
     UPLOADEDDATE: 'UploadedDate',
     CREATED_AT: 'Created-At',
     MODIFIED_AT: 'Modified-At',
-    FILEID: 'FileID',
-    FILERECORDID: 'FileRecordID',
+    PARENTFILEID: 'ParentFileID',
+    PARENTFILERECORDID: 'ParentFileRecordID',
   },
   INVOICES: {
     RECORDID: 'RecordID',
@@ -581,6 +587,7 @@ export interface FilesRecord {
     FileURL?: string;
     FileHash?: string;
     FileName?: string;
+    Pages?: number;
     UploadedDate?: string;
     Status?: 'Queued' | 'Processing' | 'Processed' | 'Attention';
     ParsedAt?: string;
@@ -597,24 +604,26 @@ export interface FilesRecord {
     'Processing-Status'?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR';
     Jobs?: string;
     OrganizationId?: string;
-    ImageIDs?: string[];
-    ImageRecordIDs?: any;
+    SubFileIDs?: string[];
+    SubFileRecordIDs?: any;
     Cleared?: boolean;
     'Cleared-At'?: string;
+    SubFiles?: string;
   };
 }
 
-export interface ImagesRecord {
+export interface SubFilesRecord {
   id: string;
   createdTime: string;
   fields: {
-    ImageID?: number;
-    ImageURL?: string;
+    SubFileID?: number;
+    FileURL?: string;
+    Order?: number;
     UploadedDate?: string;
     'Created-At'?: string;
     'Modified-At'?: string;
-    FileID?: string[];
-    FileRecordID?: any;
+    ParentFileID?: string[];
+    ParentFileRecordID?: any;
   };
 }
 

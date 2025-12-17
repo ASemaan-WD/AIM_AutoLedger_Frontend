@@ -4,7 +4,14 @@ import { UploadStatusCard } from '@/components/application/upload-status/upload-
 import { Accordion } from '@/components/application/accordion/accordion';
 import { Badge } from '@/components/base/badges/badges';
 import { useFilesPolling } from '@/hooks/use-files-polling';
-import { getGreeting } from '@/lib/invoice-helpers';
+import { 
+  getGreeting, 
+  mapInvoiceStatusToUploadStatus,
+  deriveInvoiceProcessingStatus,
+  transformWarningToDetailedIssues,
+  generateAnalysisSummary,
+  deriveVarianceInfo
+} from '@/lib/invoice-helpers';
 import { stateGroups } from '@/config/upload-states';
 import type { UploadedFile } from '@/types/upload-file';
 
@@ -36,15 +43,64 @@ export default function HomePage() {
     }
   };
 
+  // Flatten files into display items (Files or Invoices)
+  const flattenedItems = useMemo(() => {
+    const items: (UploadedFile & { originalFileId?: string })[] = [];
+    
+    files.forEach(file => {
+      // If file has invoices, create an item for each invoice
+      if (file.invoices && file.invoices.length > 0) {
+        file.invoices.forEach((inv, index) => {
+           // Calculate issues for this specific invoice
+           const detailedIssues = inv.warnings?.flatMap(w => transformWarningToDetailedIssues(w)) || [];
+           const issues = detailedIssues.map(i => `${i.description} ${i.impact ? `(${i.impact})` : ''}`);
+           
+           const hasIssues = detailedIssues.length > 0;
+           const uiStatus = mapInvoiceStatusToUploadStatus(inv.status, hasIssues);
+           
+           // Derive processing status for invoice
+           const processingStatus = deriveInvoiceProcessingStatus(inv.status);
+           
+           // Analysis summary
+           const analysisSummary = generateAnalysisSummary(detailedIssues, inv.vendor);
+           
+           // Variance info
+           const varianceInfo = deriveVarianceInfo(inv.balance);
+
+           items.push({
+               ...file, // Inherit file props
+               id: inv.recordId || `${file.id}-${index}`, // Unique ID from invoice
+               originalFileId: file.id, // Keep reference to original file ID for actions
+               name: file.name, // Keep file name for "filename" prop, but card will show vendor in header
+               invoices: [inv], // Pass ONLY this invoice
+               status: uiStatus,
+               processingStatus: processingStatus, // Override processing status
+               issues: issues,
+               detailedIssues: detailedIssues.length > 0 ? detailedIssues : undefined,
+               analysisSummary: analysisSummary,
+               varianceInfo: varianceInfo,
+               // Use invoice error info if available, otherwise undefined (don't show file error on successful invoice)
+               errorCode: inv.errorCode || undefined, 
+               errorDescription: inv.errorDescription || undefined,
+           });
+        });
+      } else {
+        // No invoices yet, or file-level error -> Show file card
+        items.push(file);
+      }
+    });
+    return items;
+  }, [files]);
+
   // Group and sort files by state
   const groupedFiles = useMemo(() => {
-    const groups: Map<string, UploadedFile[]> = new Map();
+    const groups: Map<string, (UploadedFile & { originalFileId?: string })[]> = new Map();
 
     stateGroups.forEach(group => {
       groups.set(group.id, []);
     });
 
-    files.forEach(file => {
+    flattenedItems.forEach(file => {
       const group = stateGroups.find(g => g.statuses.includes(file.status));
       if (group) {
         const groupFiles = groups.get(group.id) || [];
@@ -68,7 +124,7 @@ export default function HomePage() {
     });
 
     return groups;
-  }, [files]);
+  }, [flattenedItems]);
 
   // Get groups with files, sorted by priority
   const activeGroups = useMemo(() => {
@@ -149,13 +205,13 @@ export default function HomePage() {
                                 originalFilename: 'Original File', // We might want to pass this if available
                                 uploadedDate: 'Previously'
                             } : undefined}
-                            onCancel={() => handleAction('Cancel', file.id)}
-                            onExport={() => handleAction('Export', file.id)}
-                            onRemove={() => handleAction('Remove', file.id)}
-                            onGetHelp={() => handleAction('Get Help', file.id)}
-                            onViewFile={() => handleAction('View File', file.id)}
-                            onReprocess={() => handleAction('Reprocess', file.id)}
-                            onContactVendor={() => handleAction('Contact Vendor', file.id)}
+                            onCancel={() => handleAction('Cancel', file.originalFileId || file.id)}
+                            onExport={() => handleAction('Export', file.originalFileId || file.id)}
+                            onRemove={() => handleAction('Remove', file.originalFileId || file.id)}
+                            onGetHelp={() => handleAction('Get Help', file.originalFileId || file.id)}
+                            onViewFile={() => handleAction('View File', file.originalFileId || file.id)}
+                            onReprocess={() => handleAction('Reprocess', file.originalFileId || file.id)}
+                            onContactVendor={() => handleAction('Contact Vendor', file.originalFileId || file.id)}
                           />
                         ))}
                       </div>

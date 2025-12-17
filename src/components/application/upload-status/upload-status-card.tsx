@@ -325,30 +325,30 @@ export function UploadStatusCard({
         <>
           {showContactVendor && (
             <>
-              <Dropdown.Root>
-                <Button size="md" color="secondary" iconLeading={DotsVertical} />
-                <Dropdown.Popover>
-                  <Dropdown.Menu>
-                    <Dropdown.Item 
-                      icon={RefreshCw05}
-                      label="Reprocess"
-                      onAction={() => openCrispChat(`I'd like to request a reprocess for file "${filename}". The problem is [enter details here]`)}
-                    />
-                    <Dropdown.Item 
-                      icon={Trash01}
-                      label="Remove"
-                      onAction={() => setShowCancelModal(true)}
-                    />
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown.Root>
-              <Button 
+              {/* <Button 
                 size="md" 
                 color="secondary"
                 iconLeading={Mail01}
                 onClick={() => setShowContactVendorModal(true)}
               >
                 Contact Vendor
+              </Button> */}
+
+              <Button 
+                size="md" 
+                color="secondary" 
+                iconLeading={RefreshCw05} 
+                onClick={() => openCrispChat(`I'd like to request a reprocess for file "${filename}". The problem is [enter details here]`)}
+              >
+                Reprocess
+              </Button>
+              <Button 
+                size="md" 
+                color="secondary"
+                iconLeading={Trash01}
+                onClick={() => setShowDeleteModal(true)}
+              >
+                Remove
               </Button>
             </>
           )}
@@ -656,15 +656,28 @@ export function UploadStatusCard({
   // =============================================================================
   
   if (status === "processing-error") {
+    // Show invoice details if available, otherwise show filename
+    const hasInvoiceDetails = invoice?.vendor || invoice?.invoiceNumber;
+    
     return (
       <>
         <CardContainer>
           <CardHeaderSection>
             <StatusBadge color="error">Error Occurred</StatusBadge>
-            <InvoiceHeader 
-              title={filename} 
-              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-            />
+            {hasInvoiceDetails ? (
+              <InvoiceHeader 
+                title={invoice?.vendor || getCardTitle()} 
+                invoiceNumber={invoice?.invoiceNumber}
+                subtitle={invoice?.date}
+                description={invoice?.description}
+                amount={invoice?.amount}
+              />
+            ) : (
+              <InvoiceHeader 
+                title={filename} 
+                fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+              />
+            )}
             <StatusMessage variant="error">
               {errorMessage || getResultStatusText('processingError')}
             </StatusMessage>
@@ -748,17 +761,31 @@ export function UploadStatusCard({
   // =============================================================================
   
   if (status === "error") {
-    const badgeText = (processingStatus === 'ERROR' && errorCode) ? errorCode : "Error Occurred"
+    // Strip bracketed prefix like "[CODE] Description" -> "Description"
+    const rawBadgeText = (processingStatus === 'ERROR' && errorCode) ? errorCode : "Error Occurred"
+    const badgeText = rawBadgeText.replace(/^\[.*?\]\s*/, '')
+    // Show invoice details if available, otherwise show filename
+    const hasInvoiceDetails = invoice?.vendor || invoice?.invoiceNumber;
     
     return (
       <>
         <CardContainer>
           <CardHeaderSection>
             <StatusBadge color="error">{badgeText}</StatusBadge>
-            <InvoiceHeader 
-              title={filename} 
-              fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
-            />
+            {hasInvoiceDetails ? (
+              <InvoiceHeader 
+                title={invoice?.vendor || getCardTitle()} 
+                invoiceNumber={invoice?.invoiceNumber}
+                subtitle={invoice?.date}
+                description={invoice?.description}
+                amount={invoice?.amount}
+              />
+            ) : (
+              <InvoiceHeader 
+                title={filename} 
+                fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
+              />
+            )}
             <StatusMessage variant="error">
               {errorMessage || getResultStatusText('error')}
             </StatusMessage>

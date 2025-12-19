@@ -3,14 +3,13 @@
  * Frontend service for Authentication operations
  */
 
-// ⚠️ AUTH BYPASS - Remove before production
-const BYPASS_AUTH = true;
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const TOKEN_KEY = 'auth_token';
+const CLIENT_ID_KEY = 'client_id';
 
 interface TokenResponse {
   token: string;
+  clientId: string;
 }
 
 /**
@@ -24,12 +23,6 @@ interface TokenResponse {
  * @returns Promise that resolves when login is successful
  */
 export async function login(username: string, password: string): Promise<void> {
-  if (BYPASS_AUTH) {
-    console.log(`🔓 [BYPASS] Auto-login for: ${username}`);
-    localStorage.setItem(TOKEN_KEY, 'bypass-token');
-    return;
-  }
-
   console.log(`🚀 Logging in user: ${username}`);
 
   try {
@@ -50,6 +43,9 @@ export async function login(username: string, password: string): Promise<void> {
     
     if (result.token) {
         localStorage.setItem(TOKEN_KEY, result.token);
+        if (result.clientId) {
+            localStorage.setItem(CLIENT_ID_KEY, result.clientId);
+        }
         console.log(`✅ Login successful for user: ${username}`);
     } else {
         throw new Error('No token received in response');
@@ -64,11 +60,12 @@ export async function login(username: string, password: string): Promise<void> {
 /**
  * Logout user
  * 
- * Clears the stored token and redirects to login page.
+ * Clears the stored token and clientId, then redirects to login page.
  */
 export function logout() {
   console.log('👋 Logging out user');
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(CLIENT_ID_KEY);
   // Optional: Redirect to login page if not handled by component state
   window.location.href = '/login';
 }
@@ -79,8 +76,16 @@ export function logout() {
  * @returns The stored auth token or null if not found
  */
 export function getToken(): string | null {
-  if (BYPASS_AUTH) return 'bypass-token';
   return localStorage.getItem(TOKEN_KEY);
+}
+
+/**
+ * Get stored client ID
+ * 
+ * @returns The stored client ID or null if not found
+ */
+export function getClientId(): string | null {
+  return localStorage.getItem(CLIENT_ID_KEY);
 }
 
 /**
@@ -92,11 +97,6 @@ export function getToken(): string | null {
  * @returns Promise resolving to true if token is valid, false otherwise
  */
 export async function validateToken(): Promise<boolean> {
-  if (BYPASS_AUTH) {
-    console.log(`🔓 [BYPASS] Token always valid`);
-    return true;
-  }
-
   const token = getToken();
   if (!token) return false;
 
@@ -119,7 +119,7 @@ export async function validateToken(): Promise<boolean> {
 
     const result = await response.json();
     // Assuming API returns true/false directly as per previous code assumption
-    const isValid = result &&result.auth && result.auth === true;
+    const isValid = result && result.auth && result.auth === true;
     
     if (isValid) {
         console.log(`✅ Token is valid`);
@@ -140,6 +140,5 @@ export async function validateToken(): Promise<boolean> {
  * @returns true if token exists
  */
 export function isAuthenticated(): boolean {
-  if (BYPASS_AUTH) return true;
   return !!getToken();
 }

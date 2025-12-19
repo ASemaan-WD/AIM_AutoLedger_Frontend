@@ -2,7 +2,7 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-12-16T15:19:45.376Z
+ * Generated: 2025-12-18T16:54:19.124Z
  * Base ID: appuCyekfNZBULRYT
  * 
  * DO NOT EDIT MANUALLY
@@ -35,12 +35,11 @@ export const FIELD_IDS = {
     STATUS_MODIFIED_TIME: 'fldacexiDeUtwmKCV',
     PROCESSING_STATUS: 'fldH93Ldd3EQoldMO',
     JOBS: 'fldKrD2WCqE1fP6UR',
-    ORGANIZATIONID: 'fldKExnglFOvmEjKS',
+    CLIENTID: 'fldKExnglFOvmEjKS',
     SUBFILEIDS: 'fldC5s2vHB7VMCh9d',
     SUBFILERECORDIDS: 'fld9KnJ3DD05IwTpQ',
     CLEARED: 'fldRQC0opkdUvzvJO',
     CLEARED_AT: 'fldWcVsJnWczAvfOD',
-    SUBFILES: 'fldAWcwkNKmTKbrA9',
   },
   SUBFILES: {
     SUBFILEID: 'fld09sjAT3eh33k5p',
@@ -88,6 +87,7 @@ export const FIELD_IDS = {
     NAME_CANDIDATES: 'fldUqMvWCDZq1HAAu',
     WARNINGS: 'flduKtm4zmcsDYR74',
     ITEMS: 'fldVuCDJcehGTk6B8',
+    CLIENTID: 'fldeCUzvlADPDPagd',
   },
   POINVOICEHEADERS: {
     RECORDID: 'fldhszvX1XbN0cGah',
@@ -296,12 +296,11 @@ export const FIELD_NAMES = {
     STATUS_MODIFIED_TIME: 'Status-Modified-Time',
     PROCESSING_STATUS: 'Processing-Status',
     JOBS: 'Jobs',
-    ORGANIZATIONID: 'OrganizationId',
+    CLIENTID: 'ClientId',
     SUBFILEIDS: 'SubFileIDs',
     SUBFILERECORDIDS: 'SubFileRecordIDs',
     CLEARED: 'Cleared',
     CLEARED_AT: 'Cleared-At',
-    SUBFILES: 'SubFiles',
   },
   SUBFILES: {
     SUBFILEID: 'SubFileID',
@@ -349,6 +348,7 @@ export const FIELD_NAMES = {
     NAME_CANDIDATES: 'Name-Candidates',
     WARNINGS: 'Warnings',
     ITEMS: 'Items',
+    CLIENTID: 'ClientId',
   },
   POINVOICEHEADERS: {
     RECORDID: 'RecordID',
@@ -603,12 +603,11 @@ export interface FilesRecord {
     'Status-Modified-Time'?: string;
     'Processing-Status'?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR';
     Jobs?: string;
-    OrganizationId?: string;
+    ClientId?: string;
     SubFileIDs?: string[];
     SubFileRecordIDs?: any;
     Cleared?: boolean;
     'Cleared-At'?: string;
-    SubFiles?: string;
   };
 }
 
@@ -666,6 +665,7 @@ export interface InvoicesRecord {
     'Name-Candidates'?: string;
     Warnings?: string;
     Items?: string;
+    ClientId?: any;
   };
 }
 

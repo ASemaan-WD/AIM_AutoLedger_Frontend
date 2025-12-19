@@ -3,6 +3,8 @@
  * Frontend service for OCR processing operations
  */
 
+import { getToken } from './auth-service';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 /**
@@ -30,13 +32,20 @@ export interface TriggerOCRResponse {
 export async function triggerOCRByFile(fileRecordId: number): Promise<TriggerOCRResponse> {
   console.log(`🚀 Triggering OCR for file record ID: ${fileRecordId}`);
   
+  // Get stored auth token for bearer authentication
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
   try{
 
     const response = await fetch(`${API_BASE_URL}/ocr/trigger-by-file`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ "fileRecordId": fileRecordId.toString() }),
     });
   

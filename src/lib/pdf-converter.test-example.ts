@@ -6,6 +6,7 @@
  */
 
 import { convertPDFToImages, isPDFConverterAvailable } from './pdf-converter';
+import { getToken } from '@/services/auth-service';
 
 /**
  * Example: Convert a PDF from a URL
@@ -96,8 +97,16 @@ async function exampleFileUploadIntegration(file: File) {
     formData.append(`file${index + 1}`, image);
   });
   
+  // Get stored auth token for bearer authentication
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
   const response = await fetch('/api/ocr/trigger-with-files', {
     method: 'POST',
+    headers,
     body: formData,
   });
   

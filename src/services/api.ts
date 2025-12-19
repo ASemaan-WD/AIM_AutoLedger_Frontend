@@ -3,6 +3,8 @@
  * All API calls will be proxied through Vite dev server to Azure Functions
  */
 
+import { getToken } from './auth-service';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export interface ApiError {
@@ -25,18 +27,27 @@ export class ApiException extends Error {
 
 /**
  * Base fetch wrapper with error handling
+ * Automatically includes bearer token for authenticated requests
  */
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  
+  // Get stored auth token for bearer authentication
+  const token = getToken();
+  const authHeaders: Record<string, string> = {};
+  if (token) {
+    authHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   try {
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
         ...options.headers,
       },
     });

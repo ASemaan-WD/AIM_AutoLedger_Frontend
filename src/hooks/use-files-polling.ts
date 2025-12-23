@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createAirtableClient } from '@/lib/airtable/client';
+import { getClientId } from '@/services/auth-service';
 import { mapFileStatusToUI, getProcessingProgress } from '@/lib/status-mapper';
 import { FILE_STATUS } from '@/lib/airtable/schema-types';
 import { convertPDFToImages } from '@/lib/pdf-converter';
@@ -498,12 +499,20 @@ export function useFilesPolling() {
     
     try {
       const client = createAirtableClient(baseId);
+      const clientId = getClientId();
       
-      // 1. Fetch all files
+      // Build filter formula with client ID filtering
+      const notClearedFilter = 'NOT({Cleared})';
+      const clientIdFilter = clientId ? `{ClientId} = "${clientId}"` : '';
+      const filterFormula = clientIdFilter 
+        ? `AND(${notClearedFilter}, ${clientIdFilter})`
+        : notClearedFilter;
+      
+      // 1. Fetch all files for this client
       console.log('📥 Fetching existing files...');
       const filesRecords = await client.getAllRecords('Files', {
         sort: [{ field: 'Created-At', direction: 'desc' }],
-        filterByFormula: 'NOT({Cleared})'
+        filterByFormula: filterFormula
       });
       console.log(`✅ Fetched ${filesRecords.length} files`);
 

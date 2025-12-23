@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createAirtableClient } from './client';
+import { getClientId } from '@/services/auth-service';
 import { transformAirtableToInvoiceEntity } from './transforms';
 import type { Invoice } from '@/types/documents';
 import type { AirtableRecord } from './types';
@@ -88,13 +89,17 @@ export function useInvoicePolling(options: UseInvoicePollingOptions = {}): UseIn
 
     try {
       const client = createAirtableClient(BASE_ID);
+      const clientId = getClientId();
       
       // Calculate timestamp for the update window
       const checkTime = new Date(Date.now() - updateWindow);
       const isoString = checkTime.toISOString();
       
-      // Airtable formula to check if Status-Modified-Time is within the window
-      const formula = `IS_AFTER({Status-Modified-Time}, "${isoString}")`;
+      // Airtable formula to check if Status-Modified-Time is within the window AND matches client ID
+      const timeFilter = `IS_AFTER({Status-Modified-Time}, "${isoString}")`;
+      const formula = clientId 
+        ? `AND(${timeFilter}, {ClientId} = "${clientId}")`
+        : timeFilter;
 
       const data = await client.listRecords('Invoices', {
         filterByFormula: formula,

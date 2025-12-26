@@ -1,6 +1,7 @@
 import type { DetailedIssue, UploadStatus } from '@/components/application/upload-status/upload-status-card';
 import type { InvoiceWarningType, UploadedFile } from '@/types/upload-file';
 import type { AirtableRecord } from '@/lib/airtable/types';
+import { isInvoiceStatusSuccess } from '@/config/client-workflows';
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -280,10 +281,17 @@ export function getGreeting() {
 
 /**
  * Maps Invoice Status to UploadStatus (UI)
+ * Uses client-specific workflow to determine success states
+ * 
  * @param status Invoice status from Airtable
  * @param hasIssues whether invoice has warnings/issues
+ * @param clientId Optional client ID for client-specific behavior (e.g., CREST)
  */
-export function mapInvoiceStatusToUploadStatus(status: string | undefined, hasIssues: boolean): UploadStatus {
+export function mapInvoiceStatusToUploadStatus(
+  status: string | undefined, 
+  hasIssues: boolean,
+  clientId?: string | null
+): UploadStatus {
   if (!status) return 'processing';
   
   switch (status) {
@@ -294,6 +302,12 @@ export function mapInvoiceStatusToUploadStatus(status: string | undefined, hasIs
     case 'Matched':
     case 'Open': // Legacy/Alt status
       return hasIssues ? 'success-with-caveats' : 'success';
+    case 'Parsed':
+      // Use workflow to determine if Parsed is success
+      if (isInvoiceStatusSuccess(clientId, 'Parsed')) {
+        return hasIssues ? 'success-with-caveats' : 'success';
+      }
+      return 'processing';
     case 'Matching':
       return 'connecting';
     case 'Queued':
@@ -308,12 +322,24 @@ export function mapInvoiceStatusToUploadStatus(status: string | undefined, hasIs
 /**
  * Derives processing status (UPL, MATCHING, etc.) from Invoice Status
  * Used for progress bar display on invoice cards
+ * @param status Invoice status from Airtable
+ * @param clientId Optional client ID for client-specific behavior
  */
-export function deriveInvoiceProcessingStatus(status: string | undefined): 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR' {
+export function deriveInvoiceProcessingStatus(
+  status: string | undefined,
+  clientId?: string | null
+): 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR' {
   if (!status) return 'PARSE';
   
   switch (status) {
     case 'Pending':
+      return 'PARSE';
+    case 'Parsed':
+      // For CREST clients, Parsed is the final state
+      // For other clients, it's still at PARSE stage before matching
+      if (clientId === 'CREST') {
+        return 'PARSE'; // Will show 100% for CREST workflow
+      }
       return 'PARSE';
     case 'Matching':
       return 'MATCHING';

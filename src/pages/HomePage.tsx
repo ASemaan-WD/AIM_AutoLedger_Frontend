@@ -56,10 +56,11 @@ export default function HomePage() {
            const issues = detailedIssues.map(i => `${i.description} ${i.impact ? `(${i.impact})` : ''}`);
            
            const hasIssues = detailedIssues.length > 0;
-           const uiStatus = mapInvoiceStatusToUploadStatus(inv.status, hasIssues);
+           // Pass clientId for client-specific status mapping (e.g., CREST Parsed = success)
+           const uiStatus = mapInvoiceStatusToUploadStatus(inv.status, hasIssues, file.clientId);
            
-           // Derive processing status for invoice
-           const processingStatus = deriveInvoiceProcessingStatus(inv.status);
+           // Derive processing status for invoice (pass clientId for client-specific behavior)
+           const processingStatus = deriveInvoiceProcessingStatus(inv.status, file.clientId);
            
            // Analysis summary
            const analysisSummary = generateAnalysisSummary(detailedIssues, inv.vendor);
@@ -68,7 +69,7 @@ export default function HomePage() {
            const varianceInfo = deriveVarianceInfo(inv.balance);
 
            items.push({
-               ...file, // Inherit file props
+               ...file, // Inherit file props (includes clientId)
                id: inv.recordId || `${file.id}-${index}`, // Unique ID from invoice
                originalFileId: file.id, // Keep reference to original file ID for actions
                name: file.name, // Keep file name for "filename" prop, but card will show vendor in header
@@ -192,8 +193,10 @@ export default function HomePage() {
                             filename={file.name}
                             status={file.status}
                             processingStatus={file.processingStatus as any}
+                            invoiceStatus={file.invoices?.[0]?.status}
                             pageCount={file.pageCount}
                             fileSize={file.size}
+                            clientId={file.clientId}
                             invoices={file.invoices}
                             issues={file.issues}
                             detailedIssues={file.detailedIssues}

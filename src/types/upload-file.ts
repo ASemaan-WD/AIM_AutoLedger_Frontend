@@ -23,6 +23,8 @@ export interface UploadedFile {
   mainStatus?: string;
   pageCount?: number;
   createdAt?: Date;
+  /** Client ID for workflow-specific behavior (e.g., 'LTC', 'CREST') */
+  clientId?: string | null;
   invoices?: Array<{
     vendor: string;
     date: string;

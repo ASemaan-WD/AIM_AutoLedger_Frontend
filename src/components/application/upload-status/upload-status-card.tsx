@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05, Mail01, ArrowRight, LinkExternal01, DotsVertical, Trash01, HelpCircle, XClose } from "@untitledui/icons"
+import { useNavigate } from "react-router-dom"
+import { CheckCircle, XCircle, AlertTriangle, File04, File06, Copy01, LinkBroken01, RefreshCw05, Mail01, ArrowRight, LinkExternal01, DotsVertical, Trash01, HelpCircle, XClose, FileCheck02 } from "@untitledui/icons"
 import { Button } from "@/components/base/buttons/button"
 import { Badge } from "@/components/base/badges/badges"
 import { 
@@ -19,7 +20,7 @@ import {
 } from "./components"
 import { DeleteFileModal, ExportWithIssuesModal, ContactVendorModal, CancelFileModal } from "./modals"
 import { Dropdown } from "@/components/base/dropdown/dropdown"
-import { getProcessingStatusText, getProcessingProgress, getResultStatusText } from "@/lib/status-mapper"
+import { getProcessingStatusText, getProcessingProgress, getProgressByInvoiceStatus, getResultStatusText, shouldShowExportButton, shouldShowGoToInvoiceButton } from "@/lib/status-mapper"
 import { createAirtableClient } from "@/lib/airtable/client"
 import { openCrispChat } from "@/utils/crisp"
 
@@ -62,10 +63,15 @@ export interface DetailedIssue {
 export interface UploadStatusCardProps {
   filename: string
   status: UploadStatus
+  /** Processing status for label text display (UPL, DETINV, PARSE, etc.) */
   processingStatus?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR'
+  /** Invoice status for progress calculation (Pending, Parsed, Matching, Matched, etc.) */
+  invoiceStatus?: string | null
   errorCode?: string
   pageCount?: number
   fileSize?: number
+  /** Client ID for workflow-specific behavior (e.g., 'LTC', 'CREST') */
+  clientId?: string | null
   invoices?: Array<{
     vendor: string
     date: string
@@ -74,6 +80,7 @@ export interface UploadStatusCardProps {
     description: string
     invoiceNumber?: string
     recordId?: string
+    status?: string
   }>
   issues?: string[]
   detailedIssues?: DetailedIssue[]
@@ -95,6 +102,8 @@ export interface UploadStatusCardProps {
   onViewFile?: () => void
   onReprocess?: () => void
   onContactVendor?: () => void
+  /** Called when "Go to Invoice" is clicked (for CREST clients) */
+  onGoToInvoice?: (invoiceRecordId: string) => void
 }
 
 // =============================================================================
@@ -116,9 +125,11 @@ export function UploadStatusCard({
   filename,
   status,
   processingStatus,
+  invoiceStatus,
   errorCode,
   pageCount,
   fileSize,
+  clientId,
   invoices,
   issues,
   detailedIssues,
@@ -134,10 +145,24 @@ export function UploadStatusCard({
   onViewFile,
   onReprocess,
   onContactVendor,
+  onGoToInvoice,
 }: UploadStatusCardProps) {
+  
+  const navigate = useNavigate()
   
   // Get first invoice for display
   const invoice = invoices?.[0]
+  
+  // Derive invoice status: use prop if provided, otherwise get from first invoice
+  const effectiveInvoiceStatus = invoiceStatus ?? invoice?.status ?? null
+  
+  // Calculate progress based on invoice status (not processing status)
+  const hasInvoice = invoices && invoices.length > 0
+  const progressValue = getProgressByInvoiceStatus(effectiveInvoiceStatus, clientId, hasInvoice)
+  
+  // Determine which action buttons to show based on client workflow
+  const showExport = shouldShowExportButton(clientId)
+  const showGoToInvoice = shouldShowGoToInvoiceButton(clientId)
   
   // Helper to get display title
   const getCardTitle = () => {
@@ -318,6 +343,19 @@ export function UploadStatusCard({
     </>
   )
 
+  /** Handle "Go to Invoice" click for CREST clients */
+  const handleGoToInvoice = () => {
+    const invoiceRecordId = invoices?.[0]?.recordId
+    if (invoiceRecordId) {
+      if (onGoToInvoice) {
+        onGoToInvoice(invoiceRecordId)
+      } else {
+        // Default navigation to invoices page with the invoice selected
+        navigate(`/invoices?id=${invoiceRecordId}`)
+      }
+    }
+  }
+
   /** Renders export-related action buttons */
   const renderExportActions = (showContactVendor = false) => (
     <>
@@ -357,29 +395,42 @@ export function UploadStatusCard({
               Remove
             </Button>
           )}
-          <Button 
-            size="md" 
-            color="primary"
-            iconTrailing={ArrowRight}
-            onClick={handleExportClick}
-            isLoading={isExporting}
-          >
-            Export
-          </Button>
+          {/* Show Export button for LTC clients, "Go to Invoice" for CREST clients */}
+          {showExport && (
+            <Button 
+              size="md" 
+              color="primary"
+              iconTrailing={ArrowRight}
+              onClick={handleExportClick}
+              isLoading={isExporting}
+            >
+              Export
+            </Button>
+          )}
+          {showGoToInvoice && invoices?.[0]?.recordId && (
+            <Button 
+              size="md" 
+              color="primary"
+              iconTrailing={FileCheck02}
+              onClick={handleGoToInvoice}
+            >
+              Go to Invoice
+            </Button>
+          )}
         </>
       )}
-      {exportState === 'queued' && (
+      {exportState === 'queued' && showExport && (
         <Button size="md" color="secondary" isDisabled iconLeading={RefreshCw05}>
           Queued
         </Button>
       )}
-      {exportState === 'exported' && (
+      {exportState === 'exported' && showExport && (
         <div className="flex items-center gap-2 text-success-primary">
           <CheckCircle className="size-5" />
           <span className="text-sm font-semibold">Export Successful</span>
         </div>
       )}
-      {exportState === 'error' && (
+      {exportState === 'error' && showExport && (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-error-primary">
             <AlertTriangle className="size-5" />
@@ -460,9 +511,9 @@ export function UploadStatusCard({
               fileMetadata={{ fileSize: formatFileSize(fileSize), pageCount }}
             />
             <StatusMessage>
-              {getProcessingStatusText(processingStatus)}
+              {getProcessingStatusText(processingStatus, clientId)}
             </StatusMessage>
-            <CardProgress value={getProcessingProgress(processingStatus)} />
+            <CardProgress value={progressValue} />
           </CardHeaderSection>
           <CardFooter>
             <FileLink filename={filename} onClick={onViewFile} />
@@ -483,7 +534,7 @@ export function UploadStatusCard({
   // =============================================================================
   
   if (status === "processing") {
-    const helperText = getProcessingStatusText(processingStatus)
+    const helperText = getProcessingStatusText(processingStatus, clientId)
     
     return (
       <>
@@ -498,7 +549,7 @@ export function UploadStatusCard({
               amount={invoice?.amount}
             />
             <StatusMessage>{helperText}</StatusMessage>
-            <CardProgress value={getProcessingProgress(processingStatus)} />
+            <CardProgress value={progressValue} />
           </CardHeaderSection>
           <CardFooter>
             <FileLink filename={filename} onClick={onViewFile} />
@@ -532,9 +583,9 @@ export function UploadStatusCard({
               amount={invoice?.amount}
             />
             <StatusMessage>
-              {getProcessingStatusText(processingStatus)}
+              {getProcessingStatusText(processingStatus, clientId)}
             </StatusMessage>
-            <CardProgress value={getProcessingProgress(processingStatus)} />
+            <CardProgress value={progressValue} />
           </CardHeaderSection>
           <CardFooter>
             <FileLink filename={filename} onClick={onViewFile} />
@@ -567,7 +618,7 @@ export function UploadStatusCard({
               description={invoice?.description}
               amount={invoice?.amount}
             />
-            <StatusMessage variant="brand">{getResultStatusText('success')}</StatusMessage>
+            <StatusMessage variant="brand">{getResultStatusText('success', clientId)}</StatusMessage>
           </CardHeaderSection>
           <CardFooter>
             <FileLink filename={filename} onClick={handleViewFile} />
@@ -641,7 +692,7 @@ export function UploadStatusCard({
             description={invoice?.description}
             amount={invoice?.amount}
           />
-          <StatusMessage variant="success">{getResultStatusText('exported')}</StatusMessage>
+          <StatusMessage variant="success">{getResultStatusText('exported', clientId)}</StatusMessage>
         </CardHeaderSection>
         <CardFooter>
           <FileLink filename={filename} onClick={handleViewFile} />

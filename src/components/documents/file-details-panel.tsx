@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabList, Tab, TabPanel } from "@/components/application/tabs/tabs";
 import { Button } from "@/components/base/buttons/button";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Badge } from "@/components/base/badges/badges";
-import { AlertTriangle, CheckCircle, Trash01, RefreshCw05, Copy01 } from "@untitledui/icons";
+import { AlertTriangle, CheckCircle, Trash01, RefreshCw05, Copy01, FileCheck02 } from "@untitledui/icons";
 import { getErrorCodeDefinition, getErrorDisplayName, getErrorIcon, getErrorColor, getErrorDescription, hasErrorCode } from "@/lib/error-codes";
 import { DialogTrigger as AriaDialogTrigger, DialogTrigger, Heading as AriaHeading } from "react-aria-components";
 import { cx } from "@/utils/cx";
@@ -17,6 +18,7 @@ import { BackgroundPattern } from "@/components/shared-assets/background-pattern
 import { AlertFloating } from "@/components/application/alerts/alerts";
 import { useFileLinks } from "@/lib/airtable/linked-documents-hooks";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
+import { shouldShowGoToInvoiceButton } from "@/lib/status-mapper";
 import type { AirtableFile } from "@/lib/airtable/files-hooks";
 import type { Invoice } from "@/types/documents";
 
@@ -136,6 +138,7 @@ export const FileDetailsPanel = ({
     activeTab = "overview",
     onTabChange,
 }: FileDetailsPanelProps) => {
+    const navigate = useNavigate();
     const [editedFile, setEditedFile] = useState<AirtableFile | undefined>(file);
     
     // Refs for scroll delegation
@@ -144,6 +147,9 @@ export const FileDetailsPanel = ({
 
     // Fetch linked documents (invoices and delivery tickets) for the current file
     const { linkedItems, files: linkedFiles, emails, invoices, loading: linkedDocsLoading, error: linkedDocsError } = useFileLinks(file?.id);
+    
+    // Determine if we should show "Go to Invoice" instead of "View Invoice" based on client workflow
+    const showGoToInvoice = shouldShowGoToInvoiceButton(file?.clientId);
 
     // Keep panel state in sync with selected file
     useEffect(() => {
@@ -278,9 +284,13 @@ export const FileDetailsPanel = ({
             );
         }
 
-        // Processed state: show View Invoice (primary), Reprocess (secondary), Delete (utility)
+        // Processed state: show View Invoice or Go to Invoice (primary), Reprocess (secondary), Delete (utility)
         if (isProcessed) {
             const linkedInvoice = invoices && invoices.length > 0 ? invoices[0] : null;
+            
+            // For CREST clients, show "Go to Invoice" button that navigates to Invoices page
+            const invoiceButtonLabel = showGoToInvoice ? 'Go to Invoice' : 'View Invoice';
+            const invoiceButtonIcon = showGoToInvoice ? FileCheck02 : undefined;
             
             return (
                 <div className="flex items-center gap-2 w-full">
@@ -289,11 +299,12 @@ export const FileDetailsPanel = ({
                             size="sm" 
                             color="primary"
                             className="flex-1"
+                            iconTrailing={invoiceButtonIcon}
                             onClick={() => {
-                                window.location.href = `/invoices?id=${linkedInvoice.id}`;
+                                navigate(`/invoices?id=${linkedInvoice.id}`);
                             }}
                         >
-                            View Invoice
+                            {invoiceButtonLabel}
                         </Button>
                     ) : (
                         <Button 
@@ -302,7 +313,7 @@ export const FileDetailsPanel = ({
                             className="flex-1"
                             isDisabled={true}
                         >
-                            View Invoice
+                            {invoiceButtonLabel}
                         </Button>
                     )}
                     

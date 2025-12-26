@@ -6,7 +6,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createAirtableClient } from './client';
-import { getClientId } from '@/services/auth-service';
 import { transformAirtableToInvoiceEntity, transformInvoiceToAirtableEntity } from './transforms';
 import { TABLE_NAMES } from './schema-types';
 import type { Invoice } from '@/types/documents';
@@ -53,27 +52,13 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesResult
 
     try {
       const client = createAirtableClient(BASE_ID);
-      const clientId = getClientId();
       
       const listParams: any = {
         pageSize: 50
       };
 
-      // Build filter formula with client ID filtering
-      const clientIdFilter = clientId ? `{ClientId} = "${clientId}"` : '';
-      
-      // Combine with existing filter using AND if both exist
-      let filterFormula = '';
-      if (filter && clientIdFilter) {
-        filterFormula = `AND(${clientIdFilter}, ${filter})`;
-      } else if (clientIdFilter) {
-        filterFormula = clientIdFilter;
-      } else if (filter) {
-        filterFormula = filter;
-      }
-      
-      if (filterFormula) {
-        listParams.filterByFormula = filterFormula;
+      if (filter) {
+        listParams.filterByFormula = filter;
       }
 
       if (sort) {
@@ -251,18 +236,7 @@ export function useInvoiceCounts() {
 
     try {
       const client = createAirtableClient(BASE_ID);
-      const clientId = getClientId();
-      
-      const listParams: any = { 
-        fields: ['Status', 'Vendor-Name', 'Invoice-Number', 'Amount'] 
-      };
-      
-      // Filter by client ID if available
-      if (clientId) {
-        listParams.filterByFormula = `{ClientId} = "${clientId}"`;
-      }
-      
-      const data = await client.listRecords('Invoices', listParams);
+      const data = await client.listRecords('Invoices', { fields: ['Status', 'Vendor-Name', 'Invoice-Number', 'Amount'] });
       
       const statusCounts: Record<string, number> = {};
 

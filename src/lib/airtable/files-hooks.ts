@@ -4,7 +4,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createAirtableClient, buildFilter, filters } from './index';
-import { getClientId } from '@/services/auth-service';
 import type { AirtableAttachment } from './types';
 import type { FilterCondition, LogicalFilter } from './formula';
 
@@ -29,6 +28,7 @@ export interface AirtableFile {
     errorCode?: string; // Error-Code from Airtable
     errorDescription?: string; // Error-Description from Airtable
     errorLink?: string; // Error-Link from Airtable
+    clientId?: string; // Client ID for workflow-specific behavior (e.g., 'LTC', 'CREST')
     // Computed fields
     isLinked: boolean; // Calculated field based on relationships
     createdAt?: Date;
@@ -109,6 +109,7 @@ function transformAirtableRecord(record: any): AirtableFile {
         errorCode: errorCode,
         errorDescription: record.fields['Error-Description'] || undefined,
         errorLink: record.fields['Error-Link'] || undefined,
+        clientId: record.fields['ClientId'] || undefined, // Client ID for workflow-specific behavior
         isLinked,
         createdAt: record.createdTime ? new Date(record.createdTime) : undefined,
         updatedAt: record.fields['Modified-At'] ? new Date(record.fields['Modified-At']) : undefined,
@@ -198,27 +199,13 @@ export function useFiles(options: UseFilesOptions = {}): UseFilesResult {
         
         try {
             const client = createAirtableClient(BASE_ID);
-            const clientId = getClientId();
             
             const listParams: any = {
                 sort: [{ field: 'FileName', direction: 'asc' as const }],
                 pageSize: 100
             };
 
-            // Build filter formula with client ID filtering
-            const fileFilterFormula = fileFilters ? buildFileFilter(fileFilters) : '';
-            const clientIdFilter = clientId ? `{ClientId} = "${clientId}"` : '';
-            
-            // Combine filters with AND if both exist
-            let filterFormula = '';
-            if (fileFilterFormula && clientIdFilter) {
-                filterFormula = `AND(${clientIdFilter}, ${fileFilterFormula})`;
-            } else if (clientIdFilter) {
-                filterFormula = clientIdFilter;
-            } else if (fileFilterFormula) {
-                filterFormula = fileFilterFormula;
-            }
-            
+            const filterFormula = fileFilters ? buildFileFilter(fileFilters) : '';
             if (filterFormula) {
                 listParams.filterByFormula = filterFormula;
             }
@@ -395,16 +382,7 @@ export function useFileCounts(): UseFileCountsResult {
             }
 
             const client = createAirtableClient(BASE_ID);
-            const clientId = getClientId();
-            
-            const listParams: any = { pageSize: 100 };
-            
-            // Filter by client ID if available
-            if (clientId) {
-                listParams.filterByFormula = `{ClientId} = "${clientId}"`;
-            }
-            
-            const data = await client.listRecords('Files', listParams);
+            const data = await client.listRecords('Files', { pageSize: 100 });
             const files = data.records.map(transformAirtableRecord);
             
             const newCounts = {

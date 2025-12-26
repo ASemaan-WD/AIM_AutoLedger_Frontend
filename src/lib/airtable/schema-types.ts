@@ -2,8 +2,8 @@
  * Auto-generated Airtable schema types
  * Generated from airtable-schema.json
  * 
- * Generated: 2025-12-18T16:54:19.124Z
- * Base ID: appuCyekfNZBULRYT
+ * Generated: 2025-12-26T16:15:20.138Z
+ * Base ID: appgsI6Fp0EFw36v4
  * 
  * DO NOT EDIT MANUALLY
  * Run 'node scripts/generate-schema-types.js' to regenerate
@@ -32,6 +32,10 @@ export const FIELD_IDS = {
     MODIFIED_AT: 'fldnSfYc4IRnK3pHQ',
     INVOICES: 'flduJO35gW8Lo6Mh9',
     INVOICERECORDIDS: 'fldbjQKrmz7YHR5Am',
+    DELIVERYTICKETS: 'fldDfj2EsqPp0tNr6',
+    DELIVERYRICKETRECORDIDS: 'fldbYmpTY0uxzhrfg',
+    STORERECEIVERS: 'fldXLkjPDTjM85u25',
+    STORERECEIVERRECORDIDS: 'fldeAnsiUbc0o8r4k',
     STATUS_MODIFIED_TIME: 'fldacexiDeUtwmKCV',
     PROCESSING_STATUS: 'fldH93Ldd3EQoldMO',
     JOBS: 'fldKrD2WCqE1fP6UR',
@@ -219,6 +223,70 @@ export const FIELD_IDS = {
     TXBLAMT02: 'fldYWkUBK56G895DP',
     TXBLAMT03: 'fldeT4ChgqreD0CfD',
   },
+  DELIVERYTICKETS: {
+    RECORDID: 'fldGai3nWNk4FvrK7',
+    DELIVERY_TICKET_NUMBER: 'fldry1TN78y6MaK6a',
+    INVOICE_NUMBER: 'fldTt4wb8jJkCdnCb',
+    VENDID: 'fldsbzjXu3TTYh7MS',
+    VENDOR_NAME: 'fldU0GihIz90nlFsq',
+    AMOUNT: 'fldZsYkj3o7YDWbFb',
+    DATE: 'fldPRPoRWShbqsQq9',
+    GL_ACCOUNT: 'fld2l6eDJSYluIExf',
+    STORE_NUMBER: 'fld0quM77O5Cppm1P',
+    FREIGHT_CHARGE: 'fld9hliGJev54jiEJ',
+    MISC_CHARGE: 'fld8k9m922SAAndSC',
+    SURCHARGE: 'fldTAFLlY7fEQTwJA',
+    POS: 'fldxIuwbewJthbVv0',
+    DOCUMENT_RAW_TEXT: 'fldMpoJaLoktqwr8W',
+    FILES: 'fldOTHCVxyRsfwvCY',
+    FILERECORDID: 'fldQjqYatekrLf1ZY',
+    CREATED_AT: 'fldZBPawYSEz0NeCn',
+    MODIFIED_AT: 'fld3Uh67QZ1faTGmQ',
+    ERRORCODE: 'fldHMe9v7AdiduoQ6',
+    ERROR_DESCRIPTION: 'fldy1RqJHXWVseF9I',
+    STATUS: 'fldjjqDLxG3e2Rjrk',
+    FILE_RAW_TEXT: 'fldmBd4KDZlR50V43',
+    MISSING_FIELDS: 'fld2E6DnUJlPKgiLP',
+    ATTACHMENTS: 'fldMco2tRbAaKHIMN',
+    STATUS_MODIFIED_TIME: 'fldRwspp2uzSjlf6r',
+    SUMMARY: 'fldsjz6mIri79dwo1',
+    NAME_CANDIDATES: 'fld5Kv2fS5Bgrd8v3',
+    WARNINGS: 'fldF4cTnPOOi3up2D',
+    ITEMS: 'fld6Ola2sGTwjQEwH',
+    CLIENTID: 'fldpWD6OB2fF3lIbM',
+  },
+  STORERECEIVERS: {
+    RECORDID: 'fldMfyXDr3bXo1Dd1',
+    STORE_RECEIVER_NUMBER: 'fldxDhN3CopZvGWz4',
+    INVOICE_NUMBER: 'fldZykqrDzAdlJz55',
+    VENDID: 'fldygPddZjKMHNjfM',
+    VENDOR_NAME: 'fld05WcxdP0T6RRVk',
+    AMOUNT: 'fld5xeezyEYRmsn85',
+    DATE: 'fldVW5i7r8849Y2T3',
+    GL_ACCOUNT: 'fld8qm8Te8PedeQ09',
+    STORE_NUMBER: 'fld6vKGnC4Wv8VyuJ',
+    FREIGHT_CHARGE: 'fldfmBcWeumYNPu7D',
+    MISC_CHARGE: 'fldeppgpxiJtjTplw',
+    SURCHARGE: 'fldZFVFBtn6xzpIcu',
+    POS: 'fldDNKqrJMAm0H7YU',
+    DOCUMENT_RAW_TEXT: 'fldSuEDqgEbm92DBQ',
+    FILES: 'fldUYXwb2OIlY2H5S',
+    FILERECORDID: 'fldWoGSqYubkuLdsS',
+    CREATED_AT: 'fld5G54Mt8vsJjq5h',
+    MODIFIED_AT: 'fld9Zx0nlfS8TpSPK',
+    ERRORCODE: 'fldNRu3LCQ4bW0Aj0',
+    ERROR_DESCRIPTION: 'fldE67kZcdNObKRCC',
+    STATUS: 'fldpoGx12WU7LnvUe',
+    FILE_RAW_TEXT: 'fldsGtY08fcKOw7xX',
+    MISSING_FIELDS: 'fld8JmxDpZcItMueJ',
+    ATTACHMENTS: 'fldShEWJmrr3tdUfH',
+    STATUS_MODIFIED_TIME: 'fldXBIjFxKqL2Rrzl',
+    SUMMARY: 'fldyoP0CdH90SJIRV',
+    NAME_CANDIDATES: 'fldbPLWvnls9aJkYX',
+    WARNINGS: 'fldL9sNDk4FbM0Bvx',
+    ITEMS: 'fldcTB4iXWKp2mQZB',
+    CLIENTID: 'fldv1T046i6yMRUEG',
+  },
   JOBS: {
     RECORDID: 'fldWxFHCUspjwRSVH',
     KIND: 'fldHTTbQg0THduYRz',
@@ -226,10 +294,10 @@ export const FIELD_IDS = {
     RELATEDRECORDID: 'fldo5DUZ1ZqH81cMK',
     STATUS: 'fldrLsufhRoczexhW',
     ATTEMPTS: 'fldnuypciXqhTcjxF',
+    CLIENTID: 'fldihxZc6aRlVhvUN',
     ERROR: 'fld82YekEL3sWscLX',
     CREATEDAT: 'fldCdqR9MQUATvFVz',
     MODIFIEDAT: 'fldAto9sfQBrJcaBl',
-    ORGANIZATIONID: 'fldihxZc6aRlVhvUN',
   },
   LOGS: {
     RECORDID: 'fldZZtCAIZSYrPlI6',
@@ -252,6 +320,8 @@ export const TABLE_IDS = {
   INVOICES: 'tblokyH2U1PBhhCE9',
   POINVOICEHEADERS: 'tblgEJz0WQtZusPAT',
   POINVOICEDETAILS: 'tblajSDlRV6SsUtw8',
+  DELIVERYTICKETS: 'tblzEhelatrrHNazI',
+  STORERECEIVERS: 'tblFJx8BFJikqjm2C',
   JOBS: 'tbl5ultFQKxpbqSk2',
   LOGS: 'tblydVugKkN2lSEre',
 } as const;
@@ -266,6 +336,8 @@ export const TABLE_NAMES = {
   INVOICES: 'Invoices',
   POINVOICEHEADERS: 'POInvoiceHeaders',
   POINVOICEDETAILS: 'POInvoiceDetails',
+  DELIVERYTICKETS: 'DeliveryTickets',
+  STORERECEIVERS: 'StoreReceivers',
   JOBS: 'Jobs',
   LOGS: 'Logs',
 } as const;
@@ -293,6 +365,10 @@ export const FIELD_NAMES = {
     MODIFIED_AT: 'Modified-At',
     INVOICES: 'Invoices',
     INVOICERECORDIDS: 'InvoiceRecordIDs',
+    DELIVERYTICKETS: 'DeliveryTickets',
+    DELIVERYRICKETRECORDIDS: 'DeliveryRicketRecordIDs',
+    STORERECEIVERS: 'StoreReceivers',
+    STORERECEIVERRECORDIDS: 'StoreReceiverRecordIDs',
     STATUS_MODIFIED_TIME: 'Status-Modified-Time',
     PROCESSING_STATUS: 'Processing-Status',
     JOBS: 'Jobs',
@@ -480,6 +556,70 @@ export const FIELD_NAMES = {
     TXBLAMT02: 'txblAmt02',
     TXBLAMT03: 'txblAmt03',
   },
+  DELIVERYTICKETS: {
+    RECORDID: 'RecordID',
+    DELIVERY_TICKET_NUMBER: 'Delivery-Ticket-Number',
+    INVOICE_NUMBER: 'Invoice-Number',
+    VENDID: 'VendId',
+    VENDOR_NAME: 'Vendor-Name',
+    AMOUNT: 'Amount',
+    DATE: 'Date',
+    GL_ACCOUNT: 'GL-Account',
+    STORE_NUMBER: 'Store-Number',
+    FREIGHT_CHARGE: 'Freight-Charge',
+    MISC_CHARGE: 'Misc-Charge',
+    SURCHARGE: 'Surcharge',
+    POS: 'POs',
+    DOCUMENT_RAW_TEXT: 'Document-Raw-Text',
+    FILES: 'Files',
+    FILERECORDID: 'FileRecordID',
+    CREATED_AT: 'Created-At',
+    MODIFIED_AT: 'Modified-At',
+    ERRORCODE: 'ErrorCode',
+    ERROR_DESCRIPTION: 'Error-Description',
+    STATUS: 'Status',
+    FILE_RAW_TEXT: 'File-Raw-Text',
+    MISSING_FIELDS: 'Missing-Fields',
+    ATTACHMENTS: 'Attachments',
+    STATUS_MODIFIED_TIME: 'Status-Modified-Time',
+    SUMMARY: 'Summary',
+    NAME_CANDIDATES: 'Name-Candidates',
+    WARNINGS: 'Warnings',
+    ITEMS: 'Items',
+    CLIENTID: 'ClientId',
+  },
+  STORERECEIVERS: {
+    RECORDID: 'RecordID',
+    STORE_RECEIVER_NUMBER: 'Store-Receiver-Number',
+    INVOICE_NUMBER: 'Invoice-Number',
+    VENDID: 'VendId',
+    VENDOR_NAME: 'Vendor-Name',
+    AMOUNT: 'Amount',
+    DATE: 'Date',
+    GL_ACCOUNT: 'GL-Account',
+    STORE_NUMBER: 'Store-Number',
+    FREIGHT_CHARGE: 'Freight-Charge',
+    MISC_CHARGE: 'Misc-Charge',
+    SURCHARGE: 'Surcharge',
+    POS: 'POs',
+    DOCUMENT_RAW_TEXT: 'Document-Raw-Text',
+    FILES: 'Files',
+    FILERECORDID: 'FileRecordID',
+    CREATED_AT: 'Created-At',
+    MODIFIED_AT: 'Modified-At',
+    ERRORCODE: 'ErrorCode',
+    ERROR_DESCRIPTION: 'Error-Description',
+    STATUS: 'Status',
+    FILE_RAW_TEXT: 'File-Raw-Text',
+    MISSING_FIELDS: 'Missing-Fields',
+    ATTACHMENTS: 'Attachments',
+    STATUS_MODIFIED_TIME: 'Status-Modified-Time',
+    SUMMARY: 'Summary',
+    NAME_CANDIDATES: 'Name-Candidates',
+    WARNINGS: 'Warnings',
+    ITEMS: 'Items',
+    CLIENTID: 'ClientId',
+  },
   JOBS: {
     RECORDID: 'RecordID',
     KIND: 'Kind',
@@ -487,10 +627,10 @@ export const FIELD_NAMES = {
     RELATEDRECORDID: 'RelatedRecordID',
     STATUS: 'Status',
     ATTEMPTS: 'Attempts',
+    CLIENTID: 'ClientId',
     ERROR: 'Error',
     CREATEDAT: 'CreatedAt',
     MODIFIEDAT: 'ModifiedAt',
-    ORGANIZATIONID: 'OrganizationId',
   },
   LOGS: {
     RECORDID: 'RecordID',
@@ -600,6 +740,10 @@ export interface FilesRecord {
     'Modified-At'?: string;
     Invoices?: string[];
     InvoiceRecordIDs?: any;
+    DeliveryTickets?: string[];
+    DeliveryRicketRecordIDs?: any;
+    StoreReceivers?: string[];
+    StoreReceiverRecordIDs?: any;
     'Status-Modified-Time'?: string;
     'Processing-Status'?: 'UPL' | 'DETINV' | 'PARSE' | 'RELINV' | 'MATCHING' | 'MATCHED' | 'ERROR';
     Jobs?: string;
@@ -649,7 +793,7 @@ export interface InvoicesRecord {
     'Modified-At'?: string;
     MatchPayloadJSON?: string;
     ErrorCode?: string;
-    Status?: 'Pending' | 'Matching' | 'Matched' | 'Queued' | 'Exported' | 'Error';
+    Status?: 'Pending' | 'Parsed' | 'Matching' | 'Matched' | 'Queued' | 'Exported' | 'Error';
     Balance?: any;
     'Balance-Explanation'?: string;
     'File-Raw-Text'?: any;
@@ -809,6 +953,80 @@ export interface POInvoiceDetailsRecord {
   };
 }
 
+export interface DeliveryTicketsRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    RecordID?: number;
+    'Delivery-Ticket-Number'?: string;
+    'Invoice-Number'?: string;
+    VendId?: string;
+    'Vendor-Name'?: string;
+    Amount?: number;
+    Date?: string;
+    'GL-Account'?: string;
+    'Store-Number'?: string;
+    'Freight-Charge'?: number;
+    'Misc-Charge'?: number;
+    Surcharge?: number;
+    POs?: string;
+    'Document-Raw-Text'?: string;
+    Files?: string[];
+    FileRecordID?: any;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+    ErrorCode?: string;
+    'Error-Description'?: string;
+    Status?: 'Pending' | 'Matching' | 'Matched' | 'Queued' | 'Exported' | 'Error';
+    'File-Raw-Text'?: any;
+    'Missing-Fields'?: any;
+    Attachments?: any;
+    'Status-Modified-Time'?: string;
+    Summary?: string;
+    'Name-Candidates'?: string;
+    Warnings?: string;
+    Items?: string;
+    ClientId?: any;
+  };
+}
+
+export interface StoreReceiversRecord {
+  id: string;
+  createdTime: string;
+  fields: {
+    RecordID?: number;
+    'Store-Receiver-Number'?: string;
+    'Invoice-Number'?: string;
+    VendId?: string;
+    'Vendor-Name'?: string;
+    Amount?: number;
+    Date?: string;
+    'GL-Account'?: string;
+    'Store-Number'?: string;
+    'Freight-Charge'?: number;
+    'Misc-Charge'?: number;
+    Surcharge?: number;
+    POs?: string;
+    'Document-Raw-Text'?: string;
+    Files?: string[];
+    FileRecordID?: any;
+    'Created-At'?: string;
+    'Modified-At'?: string;
+    ErrorCode?: string;
+    'Error-Description'?: string;
+    Status?: 'Pending' | 'Matching' | 'Matched' | 'Queued' | 'Exported' | 'Error';
+    'File-Raw-Text'?: any;
+    'Missing-Fields'?: any;
+    Attachments?: any;
+    'Status-Modified-Time'?: string;
+    Summary?: string;
+    'Name-Candidates'?: string;
+    Warnings?: string;
+    Items?: string;
+    ClientId?: any;
+  };
+}
+
 export interface JobsRecord {
   id: string;
   createdTime: string;
@@ -819,10 +1037,10 @@ export interface JobsRecord {
     RelatedRecordID?: number;
     Status?: 'Pending' | 'Processing' | 'Completed' | 'Failed';
     Attempts?: number;
+    ClientId?: string;
     Error?: string;
     CreatedAt?: string;
     ModifiedAt?: string;
-    OrganizationId?: string;
   };
 }
 

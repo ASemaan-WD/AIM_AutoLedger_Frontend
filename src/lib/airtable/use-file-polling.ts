@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createAirtableClient } from './client';
-import { getClientId } from '@/services/auth-service';
 import type { AirtableFile } from './files-hooks';
 
 interface UseFilePollingOptions {
@@ -120,17 +119,13 @@ export function useFilePolling(options: UseFilePollingOptions = {}): UseFilePoll
 
     try {
       const client = createAirtableClient(BASE_ID);
-      const clientId = getClientId();
       
       // Calculate timestamp for the update window
       const checkTime = new Date(Date.now() - updateWindow);
       const isoString = checkTime.toISOString();
       
-      // Airtable formula to check if Status-Modified-Time is within the window AND matches client ID
-      const timeFilter = `IS_AFTER({Status-Modified-Time}, "${isoString}")`;
-      const formula = clientId 
-        ? `AND(${timeFilter}, {ClientId} = "${clientId}")`
-        : timeFilter;
+      // Airtable formula to check if Status-Modified-Time is within the window
+      const formula = `IS_AFTER({Status-Modified-Time}, "${isoString}")`;
 
       const data = await client.listRecords('Files', {
         filterByFormula: formula,

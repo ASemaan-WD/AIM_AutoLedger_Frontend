@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createAirtableClient } from '@/lib/airtable/client';
-import { getClientId } from '@/services/auth-service';
 import { mapFileStatusToUI, getProcessingProgress } from '@/lib/status-mapper';
 import { FILE_STATUS } from '@/lib/airtable/schema-types';
 import { convertPDFToImages } from '@/lib/pdf-converter';
 import { triggerOCRByFile } from '@/services/ocr-service';
 import { uploadAndCreateSubFileRecords } from '@/services/subfile-service';
+import { getClientId } from '@/services/auth-service';
 import { 
   parseInvoiceRecord, 
   parseErrorCode, 
@@ -171,9 +171,10 @@ export function useFilesPolling() {
           let errorCode = fields['Error-Code'] as string;
           let errorDescription = fields['Error-Description'] as string;
           const invoiceRecordIds = fields['Invoices'] as string[];
+          const clientId = fields['ClientId'] as string | undefined;
 
-          // Default UI status
-          let uiStatus = mapFileStatusToUI(mainStatus, processingStatus);
+          // Default UI status (pass clientId for client-specific workflow mapping)
+          let uiStatus = mapFileStatusToUI(mainStatus, processingStatus, clientId);
           
           let collectedIssues: string[] = [];
           let detailedIssues: DetailedIssue[] = [];
@@ -196,8 +197,15 @@ export function useFilesPolling() {
                 errorDescription = parseErrorDescription(errorInvoice.errorDescription || '');
                 uiStatus = 'error';
               } else {
+                // Check for success states based on client workflow
+                // For CREST: Parsed is the final success state
+                // For LTC: Matched is the final success state
+                const successStatuses = clientId === 'CREST' 
+                  ? ['Parsed', 'Matched', 'Queued', 'Exported']
+                  : ['Matched', 'Queued', 'Exported'];
+                
                 const warningInvoices = fileInvoices.filter(inv => 
-                  inv.status === 'Matched' && 
+                  successStatuses.includes(inv.status) && 
                   ((inv.warnings && inv.warnings.length > 0) || (inv.balance !== undefined && inv.balance !== 0))
                 );
                 
@@ -220,6 +228,12 @@ export function useFilesPolling() {
                   if (warningInvoices[0]) {
                      analysisSummary = generateAnalysisSummary(detailedIssues, warningInvoices[0].vendor);
                   }
+                } else {
+                  // Check if all invoices are in a success state for this client
+                  const allInSuccessState = fileInvoices.every(inv => successStatuses.includes(inv.status));
+                  if (allInSuccessState && fileInvoices.length > 0) {
+                    uiStatus = 'success';
+                  }
                 }
 
                 const allExported = fileInvoices.every(inv => inv.status === 'Exported');
@@ -230,7 +244,7 @@ export function useFilesPolling() {
             }
           }
 
-          const progress = getProcessingProgress(processingStatus);
+          const progress = getProcessingProgress(processingStatus, clientId);
 
           // Check if we should stop polling this file
           if (progress >= 100 || mainStatus === 'Error' || mainStatus === 'Processed' || uiStatus === 'exported') {
@@ -254,6 +268,7 @@ export function useFilesPolling() {
             mainStatus,
             errorCode,
             errorDescription,
+            clientId: clientId || f.clientId, // Include client ID for workflow-specific behavior
             invoices: fileInvoices.length > 0 ? fileInvoices : f.invoices,
             issues: collectedIssues.length > 0 ? collectedIssues : f.issues,
             detailedIssues: detailedIssues.length > 0 ? detailedIssues : f.detailedIssues,
@@ -268,7 +283,10 @@ export function useFilesPolling() {
         currentFiles.forEach(f => {
           if (activeMap.has(f.id)) {
             const invoices = f.invoices || [];
-            const finalInvoiceStatuses = ['Matched', 'Exported'];
+            // For CREST clients, "Parsed" is also a final state
+            const finalInvoiceStatuses = f.clientId === 'CREST' 
+              ? ['Parsed', 'Matched', 'Exported']
+              : ['Matched', 'Exported'];
             
             // Track invoice-level errors and determine which invoices are still being polled
             let invoicesStillProcessing = 0;
@@ -352,7 +370,7 @@ export function useFilesPolling() {
             } else {
               // No invoices yet - use file-level status
               const isFileError = f.mainStatus === 'Error' || f.status === 'error';
-              const isFileComplete = getProcessingProgress(f.processingStatus) >= 100 || 
+              const isFileComplete = getProcessingProgress(f.processingStatus, f.clientId) >= 100 || 
                                      f.mainStatus === 'Processed' || 
                                      f.status === 'exported';
               
@@ -499,20 +517,12 @@ export function useFilesPolling() {
     
     try {
       const client = createAirtableClient(baseId);
-      const clientId = getClientId();
       
-      // Build filter formula with client ID filtering
-      const notClearedFilter = 'NOT({Cleared})';
-      const clientIdFilter = clientId ? `{ClientId} = "${clientId}"` : '';
-      const filterFormula = clientIdFilter 
-        ? `AND(${notClearedFilter}, ${clientIdFilter})`
-        : notClearedFilter;
-      
-      // 1. Fetch all files for this client
+      // 1. Fetch all files
       console.log('📥 Fetching existing files...');
       const filesRecords = await client.getAllRecords('Files', {
         sort: [{ field: 'Created-At', direction: 'desc' }],
-        filterByFormula: filterFormula
+        filterByFormula: 'NOT({Cleared})'
       });
       console.log(`✅ Fetched ${filesRecords.length} files`);
 
@@ -541,6 +551,7 @@ export function useFilesPolling() {
         const createdAt = createdAtStr ? new Date(createdAtStr) : new Date();
         const invoiceIds = (fileRecord.fields['Invoices'] as string[]) || [];
         const pageCount = fileRecord.fields['Pages'] as number | undefined;
+        const clientId = fileRecord.fields['ClientId'] as string | undefined;
         
         // Find associated invoices
         const fileInvoices = invoiceIds
@@ -549,8 +560,8 @@ export function useFilesPolling() {
             .map(parseInvoiceRecord)
             .filter((inv): inv is NonNullable<ReturnType<typeof parseInvoiceRecord>> => !!inv);
             
-        // Determine UI status
-        let uiStatus = mapFileStatusToUI(fileStatus, processingStatus);
+        // Determine UI status (pass clientId for client-specific workflow mapping)
+        let uiStatus = mapFileStatusToUI(fileStatus, processingStatus, clientId);
         
         let collectedIssues: string[] = [];
         let detailedIssues: DetailedIssue[] = [];
@@ -564,9 +575,16 @@ export function useFilesPolling() {
              if (errorInvoice) {
                 uiStatus = 'error';
              } else {
+                 // Check for success states based on client workflow
+                 // For CREST: Parsed is the final success state
+                 // For LTC: Matched is the final success state
+                 const successStatuses = clientId === 'CREST' 
+                   ? ['Parsed', 'Matched', 'Queued', 'Exported']
+                   : ['Matched', 'Queued', 'Exported'];
+                 
                  // Check for warnings (success-with-caveats)
                  const warningInvoices = fileInvoices.filter(inv => 
-                   inv.status === 'Matched' && 
+                   successStatuses.includes(inv.status) && 
                    ((inv.warnings && inv.warnings.length > 0) || (inv.balance !== undefined && inv.balance !== 0))
                  );
                  
@@ -600,6 +618,12 @@ export function useFilesPolling() {
                    if (warningInvoices[0]) {
                      analysisSummary = generateAnalysisSummary(detailedIssues, warningInvoices[0].vendor);
                    }
+                 } else {
+                   // Check if all invoices are in a success state for this client
+                   const allInSuccessState = fileInvoices.every(inv => successStatuses.includes(inv.status));
+                   if (allInSuccessState && fileInvoices.length > 0) {
+                     uiStatus = 'success';
+                   }
                  }
 
                  // Check export status: if all invoices are 'Exported', status is 'exported'
@@ -622,6 +646,7 @@ export function useFilesPolling() {
             errorCode,
             errorDescription,
             createdAt,
+            clientId, // Include client ID for workflow-specific behavior
             invoices: fileInvoices,
             issues: collectedIssues,
             detailedIssues: detailedIssues.length > 0 ? detailedIssues : undefined,
@@ -635,10 +660,13 @@ export function useFilesPolling() {
 
       // 5. Start polling for active files
       // Poll if file is in processing state OR if any invoice is not in a final state
-      const finalInvoiceStatuses = ['Matched', 'Exported', 'Error'];
-      
       mappedFiles.forEach(file => {
          const isFileProcessing = file.status === 'uploading' || file.status === 'queued' || file.status === 'processing' || file.status === 'connecting';
+         
+         // For CREST clients, "Parsed" is also a final state
+         const finalInvoiceStatuses = file.clientId === 'CREST' 
+           ? ['Parsed', 'Matched', 'Exported', 'Error']
+           : ['Matched', 'Exported', 'Error'];
          
          // Check if any invoice is still processing (not in final state)
          const hasProcessingInvoices = file.invoices && file.invoices.length > 0 && 
@@ -657,6 +685,9 @@ export function useFilesPolling() {
   }, [startFilePolling]);
 
   const uploadFiles = async (uploadedFiles: FileList) => {
+    // Get clientId immediately so files have correct workflow from the start
+    const currentClientId = getClientId();
+    
     const newFiles: UploadedFile[] = Array.from(uploadedFiles).map((file) => ({
       id: Math.random().toString(36).substr(2, 9),
       name: file.name,
@@ -664,6 +695,7 @@ export function useFilesPolling() {
       status: 'uploading' as UploadStatus,
       type: file.type,
       createdAt: new Date(),
+      clientId: currentClientId, // Set clientId from the start for proper workflow behavior
     }));
 
     setFiles((prev) => [...prev, ...newFiles]);
@@ -686,6 +718,9 @@ export function useFilesPolling() {
         abortControllersRef.current.delete(uploadFile.id);
 
         if (result.success) {
+          // Get clientId from auth service to set on the file immediately
+          const currentClientId = getClientId();
+          
           setFiles((prev) =>
             prev.map((f) =>
               f.id === uploadFile.id
@@ -697,6 +732,7 @@ export function useFilesPolling() {
                     processingStatus: 'UPL',
                     mainStatus: FILE_STATUS.QUEUED,
                     pageCount: result.pageCount, // Store page count from upload
+                    clientId: currentClientId, // Set clientId immediately for proper workflow behavior
                   }
                 : f
             )
